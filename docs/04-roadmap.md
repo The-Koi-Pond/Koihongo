@@ -21,8 +21,8 @@ Each phase ends with something you can **use daily**. Don't start the next phase
 - ✅ "Just 5 minutes" mode, and "Stop here" any time without losing progress.
 - ✅ Manual mnemonic editing with history; synonyms; Sources & licences screen.
 - Catch-up mode after a break (today: overdue reviews come most-at-risk first and you can stop any time, but nothing spreads them over several days yet).
-- Backup button (today: copy `%APPDATA%\com.xel.nihongo\user.db`).
-- Settings screen for pacing numbers.
+- ✅ Backups: automatic once a day (last 14 kept), "Back up now", and restore from a list, in `Documents\Koihongo\Backups` (`src/backup.ts`, `src-tauri/src/backup.rs`).
+- ✅ Settings screen for pacing numbers (lessons and kana per day, backlog pause, day start), saved in user.db `settings`.
 
 **Done when:** you can do daily kanji/vocab lessons and reviews in the app and would rather use it than WaniKani for this.
 
