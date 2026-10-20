@@ -19,6 +19,7 @@ async function freshDb() {
       INSERT INTO word_sentences VALUES ('1', '9', '休み');
       INSERT INTO path (position, item_key, kind) VALUES (1, 'component:木', 'component'), (2, 'kanji:木', 'kanji'), (3, 'component:化', 'component'),
         (4, 'kanji:休', 'kanji'), (5, 'word:1', 'word');
+      INSERT INTO mnemonics VALUES ('kanji:木', 'meaning', 'A TREE with branches.');
     `),
   );
   await migrate(db);
@@ -71,4 +72,14 @@ test("notes keep every version and show the newest; synonyms are accepted", asyn
 test("unknown items are an error", async () => {
   await assert.rejects(getItemDetails(await freshDb(), "kanji:龍"), /Unknown kanji/);
   await assert.rejects(getItemDetails(await freshDb(), "nope:1"), /Bad item key/);
+});
+
+test("Koihongo's default mnemonic shows until you save your own", async () => {
+  const db = await freshDb();
+  let d = await getItemDetails(db, "kanji:木");
+  assert.deepEqual(d.notes.mnemonic_meaning, { text: "A TREE with branches.", author: "default", created_at: 0 });
+  assert.equal(d.notes.mnemonic_reading, undefined);
+  await saveNote(db, "kanji:木", "mnemonic_meaning", "My own tree story.", "you", 5);
+  d = await getItemDetails(db, "kanji:木");
+  assert.deepEqual(d.notes.mnemonic_meaning, { text: "My own tree story.", author: "you", created_at: 5 });
 });
