@@ -590,15 +590,19 @@ textarea {
   min-height: calc(100vh - var(--titlebar-h) - 28px - var(--bottombar-h));
 }
 
-/* On lesson pages the bottom card grows out of the bottom bar like a raised tab:
-   no gap, square bottom corners, same colour, covering the bar's top line. */
+/* On lesson pages the info card spans the window like the bottom bar, sitting
+   right on it (the bar's top border is the divider). Its content stays lined up
+   with the 1040px page column. */
+.with-bottom-bar .item-info > .split-card {
+  margin-inline: calc(50% - 50vw);
+  padding-inline: max(0px, calc(50vw - 520px));
+  border-left: none;
+  border-right: none;
+  border-radius: 0;
+}
+
 .with-bottom-bar .item-info > .split-card:last-child {
-  position: relative;
-  z-index: 41; /* above the fixed bottom bar (40) */
-  margin-bottom: -1px;
   border-bottom: none;
-  border-bottom-left-radius: 0;
-  border-bottom-right-radius: 0;
   background: var(--surface);
 }
 
