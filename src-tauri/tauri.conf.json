@@ -1,6 +1,6 @@
 {
   "$schema": "https://schema.tauri.app/config/2",
-  "productName": "nihongo",
+  "productName": "Koihongo",
   "version": "0.1.0",
   "identifier": "com.xel.nihongo",
   "build": {
@@ -12,7 +12,7 @@
   "app": {
     "windows": [
       {
-        "title": "nihongo",
+        "title": "Koihongo",
         "width": 1100,
         "height": 750
       }

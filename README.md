@@ -1,6 +1,6 @@
-# nihongo
+# Koihongo
 
-A personal, all-in-one Windows desktop app for learning Japanese. It takes the best methods from existing tools (WaniKani, Anki, Bunpro) and links kanji, vocabulary, grammar and reading together in one place. Where it helps, it can call AI models (for example, to rework a kanji mnemonic you don't like).
+Koihongo (鯉 *koi* "carp" + 恋 *koi* "love" + 日本語 *nihongo*) is a personal, all-in-one Windows desktop app for learning Japanese. It takes the best methods from existing tools (WaniKani, Anki, Bunpro) and links kanji, vocabulary, grammar and reading together in one place. Where it helps, it can call AI models (for example, to rework a kanji mnemonic you don't like).
 
 Status: **Phase 1, first studyable version.** Lessons, reviews, mnemonics and synonyms work. Remaining for Phase 1: catch-up mode, backup button, settings screen, and whatever daily use turns up.
 
