@@ -18,6 +18,7 @@
   /* Fixed chrome heights, used to size pages to the window. */
   --titlebar-h: 44px;
   --bottombar-h: 80px;
+  --page-pad-bottom: 48px;
 
   font-family: "Segoe UI", "Yu Gothic UI", "Meiryo", system-ui, sans-serif;
   font-size: 16px;
@@ -40,6 +41,12 @@
   }
 }
 
+/* When scrolling can't be avoided (e.g. the library grid), a thin, faint scrollbar. */
+html {
+  scrollbar-width: thin;
+  scrollbar-color: color-mix(in srgb, var(--muted) 45%, transparent) transparent;
+}
+
 body {
   margin: 0;
   background: var(--bg);
@@ -53,7 +60,7 @@ body {
 .app {
   max-width: 760px;
   margin: 0 auto;
-  padding: 28px 16px 48px;
+  padding: 28px 16px var(--page-pad-bottom);
   display: grid;
   gap: 16px;
 }
@@ -584,7 +591,7 @@ textarea {
   display: flex;
   flex-direction: column;
   gap: 12px;
-  min-height: calc(100vh - var(--titlebar-h) - 28px - 48px);
+  min-height: calc(100vh - var(--titlebar-h) - 28px - var(--page-pad-bottom));
 }
 
 .with-bottom-bar .item-view {
@@ -609,6 +616,7 @@ textarea {
 
 .banner {
   --kind: var(--kanji);
+  box-sizing: border-box; /* min-heights include the padding */
   position: relative;
   overflow: hidden;
   min-height: 250px;
@@ -770,7 +778,7 @@ textarea {
 .item-view > .banner {
   flex: 1 1 auto;
   container-type: size; /* lets the character size itself from the banner (cqh/cqw) */
-  min-height: 240px;
+  min-height: 180px;
 }
 
 .banner.bleed::after {
@@ -930,8 +938,8 @@ textarea {
 
 .stroke-frame {
   display: block;
-  width: 68px;
-  height: 68px;
+  width: var(--stroke-frame, 68px);
+  height: var(--stroke-frame, 68px);
   border: 1px solid var(--border);
   border-radius: 50%;
   background: var(--surface-2);
@@ -1417,7 +1425,9 @@ textarea {
 
 /* Today */
 .today-banner {
-  flex: 1 1 auto;
+  /* Grow from zero into leftover space (not from its natural height), so the page
+     shrinks to the window instead of the page growing to fit the banner. */
+  flex: 1 1 0;
   min-height: 200px;
   grid-template-rows: auto 1fr;
 }
@@ -1446,11 +1456,14 @@ textarea {
   background: rgb(0 0 0 / 0.25);
 }
 
+/* Start, the order toggle and "Just 5 minutes" side by side (wraps if narrow). */
 .start-stack {
   align-self: center;
-  display: grid;
-  justify-items: center;
-  gap: 10px;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  align-items: center;
+  gap: 10px 14px;
 }
 
 .start-btn {
@@ -1803,4 +1816,125 @@ textarea {
   margin: 0;
   display: grid;
   gap: 12px;
+}
+
+/* ---------------------------------------------------------------------------
+   Short windows: compact in stages so pages still fit without scrolling.
+   Banners shrink first (they flex); these tighten everything else.
+   --------------------------------------------------------------------------- */
+@media (max-height: 700px) {
+  :root {
+    --page-pad-bottom: 16px;
+    --bottombar-h: 64px;
+    --stroke-frame: 54px;
+  }
+
+  .app {
+    gap: 10px;
+  }
+
+  .item-view,
+  .fit-page,
+  .today-tiles {
+    gap: 10px;
+  }
+
+  .card,
+  .field,
+  .split-card > .field {
+    padding: 10px 14px 12px;
+  }
+
+  .item-view > .banner {
+    min-height: 140px;
+    padding-bottom: 70px;
+  }
+
+  .banner + .item-info > .overlap {
+    margin-top: -60px;
+    padding-bottom: 8px;
+  }
+
+  .banner + .item-info > .overlap > .field,
+  .banner + .item-info > .overlap > .field + .field {
+    padding: 6px 14px;
+  }
+
+  .bottom-bar-center .muted.small {
+    display: none; /* the "← → keys" hint */
+  }
+
+  .today-banner {
+    min-height: 150px;
+  }
+
+  .banner.bleed.today-banner {
+    padding-top: 12px;
+    padding-bottom: 14px;
+  }
+
+  .greeting-ja {
+    font-size: 1.5rem;
+  }
+
+  .start-btn {
+    padding: 10px 22px;
+    font-size: 1rem;
+  }
+
+
+
+  .tile-big {
+    font-size: 1.6rem;
+  }
+
+  .forecast-bars {
+    height: 36px;
+  }
+
+  /* Two progress rows per line halves the card's height. */
+  .progress-rows {
+    grid-template-columns: 1fr 1fr;
+    gap: 6px 24px;
+  }
+
+  .progress-rows li {
+    grid-template-columns: 84px minmax(0, 1fr) 88px;
+    gap: 8px;
+  }
+}
+
+@media (max-height: 580px) {
+  .greeting-en,
+  .forecast {
+    display: none; /* the "N more in the next 24 hours" line stays */
+  }
+
+  .today-banner {
+    min-height: 120px;
+  }
+
+  .banner.bleed.today-banner {
+    padding-top: 8px;
+    padding-bottom: 10px;
+  }
+
+  .app,
+  .fit-page,
+  .item-view,
+  .today-tiles {
+    gap: 8px;
+  }
+
+  .tile-title {
+    margin-bottom: 2px;
+  }
+
+  .track-preview {
+    margin-top: 4px;
+  }
+
+  .item-view > .banner {
+    min-height: 120px;
+  }
 }
