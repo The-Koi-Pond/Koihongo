@@ -1,4 +1,4 @@
-import { BookOpen, Ear, Languages, Lightbulb, List, Pencil, PenLine, Quote, Search, Shapes, Sparkles, Tag, Tags, Volume2, type LucideIcon } from "lucide-react";
+import { BookOpen, Ear, Info, Languages, Lightbulb, List, Pencil, PenLine, Quote, Search, Shapes, Sparkles, Tag, Tags, type LucideIcon, Volume2 } from "lucide-react";
 import { useState } from "react";
 import { tauriDb } from "../db/tauriDb.ts";
 import { addSynonym, removeSynonym, saveNote, type ItemDetails, type Note, type NoteKind } from "../items.ts";
@@ -156,21 +156,42 @@ export function ItemInfo({ item, onChange }: { item: ItemDetails; onChange: () =
 /** The "as in f(a)ther" hint; no heading, the example speaks for itself. */
 function SoundsLike({ romaji, accept }: { romaji: string; accept: string[] }) {
   const hint = soundHint(romaji);
+  const tip = [hint.tip, accept.length > 0 && `Also accepted when typing: ${accept.join(", ")}.`].filter(Boolean).join(" ");
   return (
     <Field>
+      {/* One line: speaker, the sound-alike word (or a respelling), and an ⓘ for any extra advice. */}
       <div className="as-in-row">
         <AudioPlaceholder />
-        {hint.asIn && (
-          <p className="as-in">
-            <span className="muted">as in</span> {hint.asIn[0]}
-            <mark>{hint.asIn[1]}</mark>
-            {hint.asIn[2]}
-          </p>
-        )}
+        <p className="as-in">
+          {hint.word ? (
+            <>
+              <span className="muted">as in</span> {hint.word[0]}
+              <mark>{hint.word[1]}</mark>
+              {hint.word[2]}
+            </>
+          ) : (
+            <>
+              <span className="muted">say</span> “<mark>{hint.say}</mark>”
+            </>
+          )}
+        </p>
+        {tip && <InfoTip text={tip} />}
       </div>
-      {hint.note && <p className="small">{hint.note}</p>}
-      {accept.length > 0 && <p className="muted small">Also accepted: {accept.join(", ")}</p>}
     </Field>
+  );
+}
+
+/** A small ⓘ that shows `text` while hovered or focused. */
+function InfoTip({ text }: { text: string }) {
+  return (
+    <span className="info-tip">
+      <button type="button" className="info-tip-btn" aria-label={text}>
+        <Info size={16} strokeWidth={2} aria-hidden="true" />
+      </button>
+      <span className="info-tip-bubble" role="tooltip">
+        {text}
+      </span>
+    </span>
   );
 }
 

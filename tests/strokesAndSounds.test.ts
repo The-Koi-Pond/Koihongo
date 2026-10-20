@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { soundHint } from "../src/kanaSounds.ts";
+import { allKana } from "../scripts/content/kana.ts";
+import { HINTED, soundHint } from "../src/kanaSounds.ts";
 import { strokePaths, strokeStart } from "../src/strokes.ts";
 
 test("stroke paths come out in stroke order, with or without extra attributes", () => {
@@ -14,20 +15,24 @@ test("stroke paths come out in stroke order, with or without extra attributes", 
   assert.deepEqual(strokePaths(""), []);
 });
 
-test("vowel hints highlight the vowel", () => {
-  assert.deepEqual(soundHint("u"), { asIn: ["p", "u", "t"] });
-  assert.deepEqual(soundHint("ka").asIn, ["f", "a", "ther"]);
-  assert.match(soundHint("ka").note!, /“k” as in English/);
-  assert.deepEqual(soundHint("kya").asIn, ["f", "a", "ther"]);
+test("every kana sound has a hand-written one-line hint", () => {
+  const missing = [...new Set(allKana().map((k) => k.romaji))].filter((r) => !HINTED.includes(r));
+  assert.deepEqual(missing, []);
+  for (const r of HINTED) {
+    const h = soundHint(r);
+    assert.ok(Boolean(h.word) !== Boolean(h.say), `${r}: needs exactly one of word or say`);
+  }
 });
 
-test("special sounds get their own hints", () => {
-  assert.deepEqual(soundHint("shi").asIn, ["", "she", ""]);
-  assert.match(soundHint("tsu").note!, /cats/);
-  assert.match(soundHint("fu").note!, /f.*h/);
-  assert.match(soundHint("ri").note!, /tap/);
-  assert.match(soundHint("n").note!, /nasal/);
-  assert.match(soundHint("wo").note!, /お/);
+test("hints highlight the whole syllable, with tips for tricky sounds", () => {
+  assert.deepEqual(soundHint("ka").word, ["", "ca", "lm"]);
+  assert.deepEqual(soundHint("kyo").word, ["To", "kyo", ""]);
+  assert.equal(soundHint("kya").say, "kyah");
+  assert.match(soundHint("tsu").tip!, /cats/);
+  assert.match(soundHint("fu").tip!, /f and h/);
+  assert.match(soundHint("ri").tip!, /tap/);
+  assert.match(soundHint("n").tip!, /nasal/);
+  assert.match(soundHint("wo").tip!, /お/);
 });
 
 test("stroke start points", () => {
