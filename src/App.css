@@ -1,44 +1,42 @@
+/* "Starry night" theme: twilight indigo with pastel glows. One theme (no light/dark split yet). */
 :root {
-  --bg: #f6f5f2;
-  --surface: #ffffff;
-  --surface-2: #f0eee9;
-  --text: #1f1f24;
-  --muted: #6b6b76;
-  --border: #e2e0da;
-  --accent: #d9572b;
-  --accent-text: #ffffff;
-  --kana: #c2417a;
-  --component: #1f8a8a;
-  --kanji: #d9572b;
-  --word: #4b5bb5;
-  --right: #2e7d4f;
-  --wrong: #b3261e;
-  --hint: #8a6a00;
+  --bg: #262866;
+  --surface: #30348a;
+  --surface-2: #262a73;
+  --chrome: #2c2f7c; /* title bar, bottom bars */
+  --text: #f3f0ff;
+  --muted: #b9b7f0;
+  --border: #5b5fc4;
+  --panel-border: #8b90ea;
+  --panel-glow: inset 0 0 0 2px #262a73, 0 0 16px rgb(139 144 234 / 0.22);
+  --accent: #ff8fd0;
+  --accent-text: #231a55;
+  /* Kind colours are light pastels, so text on them uses dark ink. */
+  --on-kind: #231a55;
+  --kana: #ff7ac6;
+  --component: #7fd8ff;
+  --kanji: #b48cff;
+  --word: #ffe08a;
+  --right: #7ee0a8;
+  --wrong: #ff9db3;
+  --hint: #ffe08a;
+
+  --font-pixel: "Pixelify Sans", "M PLUS Rounded 1c", sans-serif;
+  /* Pixel font for kana only: complex kanji need a font that keeps every stroke legible. */
+  --font-kana: "DotGothic16", "M PLUS Rounded 1c", sans-serif;
 
   /* Fixed chrome heights, used to size pages to the window. */
-  --titlebar-h: 44px;
+  --titlebar-h: 46px;
   --bottombar-h: 80px;
+  --statusbar-h: 34px;
+  --statusbar-gap: 12px;
   --page-pad-bottom: 48px;
 
-  font-family: "Segoe UI", "Yu Gothic UI", "Meiryo", system-ui, sans-serif;
+  font-family: "M PLUS Rounded 1c", "Yu Gothic UI", "Meiryo", system-ui, sans-serif;
   font-size: 16px;
   line-height: 1.5;
   color: var(--text);
   background: var(--bg);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --bg: #18181b;
-    --surface: #222226;
-    --surface-2: #2b2b30;
-    --text: #ececf0;
-    --muted: #9d9daa;
-    --border: #34343a;
-    --right: #6fcf97;
-    --wrong: #f2b8b5;
-    --hint: #e8c35a;
-  }
 }
 
 /* When scrolling can't be avoided (e.g. the library grid), a thin, faint scrollbar. */
@@ -72,18 +70,21 @@ body {
 
 h1 {
   margin: 0 0 4px;
+  font-family: var(--font-pixel);
   font-size: 1.75rem;
 }
 
 h2 {
   margin: 0;
-  font-size: 1rem;
+  font-family: var(--font-pixel);
+  font-size: 1.05rem;
   color: var(--muted);
   font-weight: 600;
 }
 
 h3 {
   margin: 0 0 4px;
+  font-family: var(--font-pixel);
   font-size: 0.8rem;
   text-transform: uppercase;
   letter-spacing: 0.06em;
@@ -97,8 +98,9 @@ p {
 
 .card {
   background: var(--surface);
-  border: 1px solid var(--border);
+  border: 2px solid var(--panel-border);
   border-radius: 12px;
+  box-shadow: var(--panel-glow);
   padding: 20px;
 }
 
@@ -205,9 +207,8 @@ textarea {
   display: flex;
   align-items: center;
   gap: 6px;
-  background: color-mix(in srgb, var(--surface) 92%, transparent);
-  backdrop-filter: blur(10px);
-  border-bottom: 1px solid var(--border);
+  background: var(--chrome);
+  border-bottom: 2px solid var(--border);
   user-select: none;
 }
 
@@ -284,6 +285,42 @@ textarea {
 
 .icon-btn.current {
   color: var(--accent);
+}
+
+.nav-tab {
+  height: 32px;
+  padding: 0 11px;
+  margin-right: 3px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  color: var(--muted);
+  font-family: var(--font-pixel);
+  font-size: 0.95rem;
+  font-weight: 600;
+}
+
+.nav-tab:not(:disabled):hover {
+  background: var(--surface);
+  color: var(--text);
+}
+
+.nav-tab {
+  position: relative; /* for the "soon" dot */
+}
+
+/* Narrow windows: icons only. */
+@media (max-width: 900px) {
+  .nav-tab-label {
+    display: none;
+  }
+}
+
+.nav-tab.current {
+  background: linear-gradient(180deg, #ff9bd6, #f06bbb);
+  color: var(--on-kind);
+  box-shadow: inset 0 -2px 0 #c94f99;
 }
 
 /* Short accent bar under the active section, like a tab indicator. */
@@ -381,7 +418,7 @@ textarea {
   min-width: 44px;
   padding: 6px 10px;
   border-radius: 8px;
-  color: #fff;
+  color: var(--on-kind);
   font-size: 1.4rem;
   text-align: center;
 }
@@ -438,7 +475,7 @@ textarea {
 }
 
 .glyph {
-  color: #fff;
+  color: var(--on-kind);
   border-radius: 14px;
   text-align: center;
   font-size: 4.5rem;
@@ -521,7 +558,7 @@ textarea {
 }
 
 .dot {
-  color: #fff;
+  color: var(--on-kind);
   border: 2px solid transparent;
   font-size: 1.1rem;
   padding: 2px 10px;
@@ -544,9 +581,8 @@ textarea {
   box-sizing: border-box;
   display: flex;
   align-items: center;
-  /* Solid, so the lesson card above can merge into it seamlessly. */
-  background: var(--surface);
-  border-top: 1px solid var(--border);
+  background: var(--chrome);
+  border-top: 2px solid var(--border);
 }
 
 .bottom-bar-inner {
@@ -626,19 +662,58 @@ textarea {
   grid-template-rows: auto 1fr auto;
   justify-items: center;
   color: #fff;
+  background: linear-gradient(
+    180deg,
+    #1c1e5c 0%,
+    #2f2b86 40%,
+    color-mix(in srgb, var(--kind) 30%, #5a45b0) 78%,
+    color-mix(in srgb, var(--kind) 55%, #b77ad6) 100%
+  );
   box-shadow: 0 8px 28px color-mix(in srgb, var(--kind) 30%, transparent);
+}
+
+/* Faint stars across the whole sky. */
+.banner-stars {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  background-image:
+    radial-gradient(1.5px 1.5px at 30px 40px, #fff, transparent),
+    radial-gradient(1px 1px at 110px 90px, #fff, transparent),
+    radial-gradient(1.5px 1.5px at 190px 30px, #fff3c4, transparent),
+    radial-gradient(1px 1px at 250px 120px, #fff, transparent),
+    radial-gradient(1px 1px at 70px 150px, #c3ecff, transparent);
+  background-size: 280px 180px;
+  opacity: 0.8;
 }
 
 .banner.kana { --kind: var(--kana); }
 .banner.component { --kind: var(--component); }
 .banner.word { --kind: var(--word); }
 
-.banner-scene {
+/* Side scenery: pinned to the edges and capped in width, so it frames the centre. */
+.banner-side {
   position: absolute;
-  inset: 0;
-  width: 100%;
-  height: 100%;
+  bottom: 0;
+  width: 30%;
+  height: 72%; /* below the top row (greeting, date, labels) */
   z-index: 0;
+}
+
+.banner-side.left { left: 0; }
+.banner-side.right { right: 0; }
+
+/* Calm water along the bottom edge, below the hero area. */
+.banner-water {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 10%;
+  z-index: 0;
+  background:
+    repeating-linear-gradient(180deg, transparent 0 6px, rgb(255 255 255 / 0.05) 6px 7px),
+    linear-gradient(180deg, rgb(42 44 120 / 0.6), #2a2c78);
 }
 
 .banner-branch {
@@ -649,10 +724,8 @@ textarea {
 }
 
 .banner-branch.left { left: 0; }
-.banner-branch.right { right: 0; }
 
-.banner-branch .branches path,
-.banner-scene .branches path {
+.banner-branch .branches path {
   fill: none;
   stroke: #2b1520;
   stroke-width: 5;
@@ -660,18 +733,16 @@ textarea {
   opacity: 0.7;
 }
 
-.banner-branch .petal,
-.banner-scene .petal {
+.banner-branch .petal {
   fill: #ffd8e6;
   opacity: 0.85;
 }
 
-.banner-branch .blossom-centre,
-.banner-scene .blossom-centre {
+.banner-branch .blossom-centre {
   fill: #f28fb3;
 }
 
-.banner > :not(.banner-scene, .banner-branch) {
+.banner > :not(.banner-deco) {
   position: relative;
   z-index: 1;
 }
@@ -713,11 +784,20 @@ textarea {
   text-align: center;
 }
 
+/* Small kana only: blown up, a pixel font turns curves into stair-steps,
+   which would teach a distorted shape. The big hero character stays rounded. */
+.tile.kana .tile-glyph,
+.popover-head.kana .popover-glyph,
+.greeting-ja {
+  font-family: var(--font-kana);
+}
+
 .banner-glyph {
   align-self: center;
+  font-weight: 700;
   /* As big as the banner allows: its height minus the label row, info pill and
      overlap padding (~185px), and its width split across the characters. */
-  font-size: clamp(2.5rem, min(calc((100cqh - 185px) / 1.1), calc(80cqw / var(--chars, 1))), 18rem);
+  font-size: clamp(2.5rem, min(calc((100cqh - 185px) / 1.1), calc(36cqw / var(--chars, 1))), 18rem);
   line-height: 1.1;
   padding: 6px 0 10px;
   text-shadow: 0 6px 24px rgb(0 0 0 / 0.35);
@@ -845,7 +925,7 @@ textarea {
   grid-auto-flow: column;
   grid-auto-columns: minmax(0, 1fr);
   background: var(--surface);
-  border: 1px solid var(--border);
+  border: 2px solid var(--panel-border);
   border-radius: 14px;
   overflow: hidden;
 }
@@ -861,6 +941,7 @@ textarea {
 
 .split-card > .field {
   border: none;
+  box-shadow: none;
   border-radius: 0;
   background: transparent;
   padding: 14px 18px 16px;
@@ -1030,8 +1111,9 @@ textarea {
 
 .field {
   background: var(--surface);
-  border: 1px solid var(--border);
+  border: 2px solid var(--panel-border);
   border-radius: 12px;
+  box-shadow: var(--panel-glow);
   padding: 12px 16px 14px;
 }
 
@@ -1094,7 +1176,7 @@ textarea {
 }
 
 .chip-glyph {
-  color: #fff;
+  color: var(--on-kind);
   border-radius: 6px;
   padding: 0 8px;
   font-size: 1.2rem;
@@ -1352,7 +1434,7 @@ textarea {
   text-transform: uppercase;
   line-height: 1;
   background: var(--kind);
-  color: #fff;
+  color: var(--on-kind);
 }
 
 /* Passed tiles are already filled with the kind colour: darken the band. */
@@ -1384,7 +1466,7 @@ textarea {
 .tile.passed {
   background: var(--kind);
   border: 1px solid var(--kind);
-  color: #fff;
+  color: var(--on-kind);
 }
 
 .tile:hover {
@@ -1405,7 +1487,7 @@ textarea {
 }
 
 .chip-link {
-  color: #fff;
+  color: var(--on-kind);
   padding: 0 8px;
   margin: 0 4px 0 0;
   font-size: 1.1rem;
@@ -1424,6 +1506,45 @@ textarea {
 }
 
 /* Today */
+
+/* Status bar along the bottom of Today. */
+.status-bar {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 40;
+  height: var(--statusbar-h);
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 0 18px;
+  background: var(--chrome);
+  border-top: 2px solid var(--border);
+}
+
+.status-message {
+  margin: 0;
+  font-family: var(--font-kana);
+  font-size: 0.95rem;
+  color: var(--muted);
+}
+
+.status-clock {
+  margin-left: auto;
+  font-family: var(--font-pixel);
+  font-weight: 600;
+}
+
+.app:has(.with-status-bar) {
+  padding-bottom: calc(var(--statusbar-h) + var(--statusbar-gap));
+}
+
+.fit-page.with-status-bar {
+  min-height: calc(100vh - var(--titlebar-h) - 28px - var(--statusbar-h) - var(--statusbar-gap));
+}
+
 .today-banner {
   /* Grow from zero into leftover space (not from its natural height), so the page
      shrinks to the window instead of the page growing to fit the banner. */
@@ -1456,14 +1577,22 @@ textarea {
   background: rgb(0 0 0 / 0.25);
 }
 
-/* Start, the order toggle and "Just 5 minutes" side by side (wraps if narrow). */
+/* Start, with the order toggle and "Just 5 minutes" in a row beneath: a narrow
+   column that fits between the side scenery. */
 .start-stack {
   align-self: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+}
+
+.start-options {
   display: flex;
   flex-wrap: wrap;
   justify-content: center;
   align-items: center;
-  gap: 10px 14px;
+  gap: 8px 14px;
 }
 
 .start-btn {
@@ -1472,12 +1601,13 @@ textarea {
   gap: 10px;
   padding: 14px 28px;
   border-radius: 999px;
-  border: none;
-  background: #fff;
-  color: color-mix(in srgb, var(--kind) 80%, #000);
-  font-size: 1.15rem;
+  border: 2px solid #fff;
+  background: linear-gradient(90deg, #ff8fd0 0%, #c9a2f5 55%, #8fdcff 100%);
+  color: var(--on-kind);
+  font-family: var(--font-pixel);
+  font-size: 1.3rem;
   font-weight: 700;
-  box-shadow: 0 10px 30px rgb(0 0 0 / 0.3);
+  box-shadow: 0 0 24px rgb(255 122 198 / 0.5), inset 0 2px 0 rgb(255 255 255 / 0.45);
   transition: transform 120ms;
 }
 
@@ -1516,7 +1646,7 @@ textarea {
 
 .order-toggle button[aria-pressed="true"] {
   background: rgb(255 255 255 / 0.92);
-  color: color-mix(in srgb, var(--kind) 80%, #000);
+  color: var(--on-kind);
   font-weight: 600;
 }
 
@@ -1603,7 +1733,7 @@ textarea {
   min-width: 26px;
   padding: 1px 5px;
   border-radius: 6px;
-  color: #fff;
+  color: var(--on-kind);
   font-size: 1rem;
   text-align: center;
 }
@@ -1783,7 +1913,7 @@ textarea {
   align-items: center;
   justify-content: space-between;
   gap: 8px;
-  color: #fff;
+  color: var(--on-kind);
   border-radius: 6px;
   padding: 2px 10px;
 }
@@ -1905,6 +2035,15 @@ textarea {
 }
 
 @media (max-height: 580px) {
+  :root {
+    --statusbar-h: 28px;
+    --statusbar-gap: 4px;
+  }
+
+  .banner-branch {
+    display: none;
+  }
+
   .greeting-en,
   .forecast {
     display: none; /* the "N more in the next 24 hours" line stays */

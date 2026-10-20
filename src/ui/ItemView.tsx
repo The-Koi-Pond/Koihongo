@@ -1,7 +1,7 @@
 import type { ItemDetails } from "../items.ts";
 import { Gloss } from "./Gloss.tsx";
 import { ItemInfo } from "./ItemInfo.tsx";
-import { BannerScene, CornerBranch } from "./Scene.tsx";
+import { BannerScene } from "./Scene.tsx";
 import { SpeakButton } from "./SpeakButton.tsx";
 import { itemLabel } from "./useItem.ts";
 
@@ -69,8 +69,6 @@ function ItemBanner({ item, start }: { item: ItemDetails; start?: React.ReactNod
   return (
     <header className={`banner bleed ${item.kind}`}>
       <BannerScene />
-      <CornerBranch side="left" />
-      <CornerBranch side="right" />
       <div className="banner-top">
         <div className="banner-top-start">
           {start}
