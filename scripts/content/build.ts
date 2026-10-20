@@ -14,6 +14,7 @@ import { allKana, CURATED_EXAMPLES, pickExample, type ExampleCandidate } from ".
 import { allMnemonics } from "./mnemonics/index.ts";
 import { buildPath, type PathKanji, type PathWord } from "./path.ts";
 import { NO_PRIORITY, parsePriorities } from "./priority.ts";
+import { entryTerms } from "../../src/searchTerms.ts";
 
 const ROOT = join(import.meta.dirname, "..", "..");
 const RAW = join(ROOT, "data", "raw");
@@ -271,6 +272,30 @@ async function main() {
     }
   }
 
+  // Dictionary search over every kanji and word.
+  const insertSearch = db.prepare("INSERT INTO search (term, field, item_key, weight, rank) VALUES (?, ?, ?, ?, ?)");
+  let searchRows = 0;
+  const indexEntry = (itemKey: string, rank: number, entry: Parameters<typeof entryTerms>[0]) => {
+    for (const t of entryTerms(entry)) {
+      insertSearch.run(t.term, t.field, itemKey, t.weight, rank);
+      searchRows++;
+    }
+  };
+  for (const c of kanjiChars) {
+    const groups = c.readingMeaning?.groups ?? [];
+    const readings = groups.flatMap((g) => g.readings.filter((r) => r.type === "ja_on" || r.type === "ja_kun").map((r) => r.value.replace(/[.-]/g, "")));
+    const meanings = groups.flatMap((g) => g.meanings.filter((m) => m.lang === "en").map((m) => [m.value]));
+    indexEntry(`kanji:${c.literal}`, c.misc.frequency ?? 9999, { forms: [c.literal], readings, meanings });
+  }
+  for (const w of words) {
+    const isKana = (f: string) => /^[p{Script=Hiragana}p{Script=Katakana}ー]+$/u.test(f);
+    indexEntry(`word:${w.id}`, w.priority, {
+      forms: [w.written, ...w.otherForms.filter((f) => !isKana(f))],
+      readings: [w.reading, ...w.otherForms.filter(isKana)],
+      meanings: w.senses.map((s) => s.glosses),
+    });
+  }
+
   const insertKana = db.prepare(
     "INSERT INTO kana (character, romaji, accept, script, grp, counterpart, stroke_svg, example_word_id, example_form) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
   );
@@ -334,6 +359,7 @@ async function main() {
   if (curatedMissing.length) console.log(`  hand-picked kana examples not found in common words: ${curatedMissing.join(" ")}`);
   if (kanaWithoutExample.length) console.log(`  kana without an example word: ${kanaWithoutExample.join(" ")}`);
   if (noSvg.length) console.log(`  jōyō kanji without stroke order: ${noSvg.join(" ")}`);
+  console.log(`  dictionary search: ${searchRows} terms`);
   console.log(`  default mnemonics: ${Object.keys(mnemonics).length} items`);
 }
 

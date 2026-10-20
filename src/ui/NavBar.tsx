@@ -32,7 +32,7 @@ export type Screen =
 const SECTIONS: { screen: Screen; icon: LucideIcon; ja: string; en: string; short?: string; soon?: boolean }[] = [
   { screen: "today", icon: House, ja: "今日", en: "Today" },
   { screen: "library", icon: LibraryBig, ja: "図書館", en: "Library" },
-  { screen: "dictionary", icon: BookA, ja: "辞書", en: "Dictionary", short: "Dict", soon: true },
+  { screen: "dictionary", icon: BookA, ja: "辞書", en: "Dictionary", short: "Dict" },
   { screen: "grammar", icon: Puzzle, ja: "文法", en: "Grammar", soon: true },
   { screen: "reading", icon: BookOpenText, ja: "読書", en: "Reading", soon: true },
 ];

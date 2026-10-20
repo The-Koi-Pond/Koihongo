@@ -1,12 +1,10 @@
 import { useEffect, useMemo, useState } from "react";
 import { isRomaji, toHiragana } from "wanakana";
 import { tauriDb } from "../db/tauriDb.ts";
-import { itemProgress, libraryItems, STATUS_NAME, type ItemProgress, type ItemStatus, type LibraryItem } from "../library.ts";
+import { libraryItems, STATUS_NAME, type ItemStatus, type LibraryItem } from "../library.ts";
 import type { ItemKind } from "../srs/progress.ts";
-import { ItemView } from "../ui/ItemView.tsx";
+import { ItemPage } from "../ui/ItemPage.tsx";
 import { ItemHover, OpenItemContext } from "../ui/Popover.tsx";
-import { useItem } from "../ui/useItem.ts";
-import { ErrorView } from "./Reviews.tsx";
 
 const PAGE = 300;
 const KIND_NAME: Record<ItemKind, string> = { kana: "kana", component: "component", kanji: "kanji", word: "word" };
@@ -62,7 +60,7 @@ export function Library() {
     };
     return (
       <OpenItemContext.Provider value={setSelected}>
-        <ItemPage itemKey={selected} onOpen={setSelected} onBack={back} />
+        <ItemPage itemKey={selected} backLabel="Library" onOpen={setSelected} onBack={back} />
       </OpenItemContext.Provider>
     );
   }
@@ -142,72 +140,4 @@ export function Library() {
 /** Grid columns a tile takes: words get about two characters per column, so they never need "…". */
 function tileSpan(item: LibraryItem): number {
   return item.kind === "word" ? Math.min(4, Math.max(1, Math.ceil([...item.label].length / 2))) : 1;
-}
-
-function ItemPage({ itemKey, onOpen, onBack }: { itemKey: string; onOpen: (key: string) => void; onBack: () => void }) {
-  const { item, error, reload } = useItem(itemKey);
-  const [progress, setProgress] = useState<ItemProgress>();
-
-  useEffect(() => {
-    setProgress(undefined);
-    itemProgress(tauriDb, itemKey).then(setProgress);
-  }, [itemKey]);
-
-  if (error) return <ErrorView message={error} onExit={onBack} />;
-
-  return (
-    <div className="item-body">
-      {item ? (
-        <ItemView
-          item={item}
-          onChange={reload}
-          bannerStart={
-            <button className="banner-back" onClick={onBack}>
-              ← Library
-            </button>
-          }
-          below={progress && <ProgressLine progress={progress} onOpen={onOpen} />}
-        />
-      ) : (
-        <p className="muted">Loading…</p>
-      )}
-    </div>
-  );
-}
-
-function ProgressLine({ progress, onOpen }: { progress: ItemProgress; onOpen: (key: string) => void }) {
-  const missing = progress.requires.filter((r) => r.status !== "passed");
-  const nextDue = Math.min(...progress.cards.map((c) => c.due));
-  return (
-    <div className="card progress-line">
-      <p>
-        <span className={`swatch ${progress.status}`} /> <strong>{STATUS_NAME[progress.status]}</strong>
-        {progress.cards.length > 0 && (
-          <span className="muted">
-            {" "}
-            · learned {new Date(Math.min(...progress.cards.map((c) => c.started_at))).toLocaleDateString()} · next review {describeDue(nextDue)}
-          </span>
-        )}
-      </p>
-      {progress.status === "locked" && missing.length > 0 && (
-        <p className="muted">
-          Unlocks after:{" "}
-          {missing.map((r) => (
-            <button key={r.item_key} className={`chip-link ${r.kind}`} lang="ja" title={r.meaning} onClick={() => onOpen(r.item_key)}>
-              {r.label}
-            </button>
-          ))}
-        </p>
-      )}
-      {progress.status === "available" && <p className="muted">Comes up in lessons when you reach it on the path.</p>}
-    </div>
-  );
-}
-
-function describeDue(due: number): string {
-  const hours = (due - Date.now()) / 3_600_000;
-  if (hours <= 0) return "now";
-  if (hours < 24) return `in ${Math.ceil(hours)} hour${Math.ceil(hours) === 1 ? "" : "s"}`;
-  const days = Math.round(hours / 24);
-  return days < 14 ? `in ${days} day${days === 1 ? "" : "s"}` : `on ${new Date(due).toLocaleDateString()}`;
 }

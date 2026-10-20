@@ -89,6 +89,9 @@ sentences           Tatoeba id, japanese, english                (15,302)
 word_sentences      word → sentence
 path                position, item_key, kind                    (7,869 items)
 path_requirements   item_key → requires_key   (an item unlocks when these are learned)
+mnemonics           item_key, kind, text      (Koihongo's default mnemonics)
+search              term, field, item_key, weight, rank
+                    (dictionary index over every word and kanji, ~226k terms)
 ```
 
 ### Tracks

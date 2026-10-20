@@ -1836,6 +1836,193 @@ textarea {
 .chip-link.kanji { background: var(--kanji); }
 .chip-link.word { background: var(--word); }
 
+/* Dictionary screen */
+
+.dictionary {
+  display: grid;
+  gap: 14px;
+  width: 100%;
+  max-width: 880px;
+  justify-self: center;
+}
+
+.dictionary section h3 {
+  margin-bottom: 8px;
+}
+
+/* The search box is a glowing panel; the input inside it is borderless. */
+.dict-search {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 2px 16px;
+  background: var(--surface);
+  border: 2px solid var(--panel-border);
+  border-radius: 12px;
+  box-shadow: var(--panel-glow);
+  color: var(--muted);
+}
+
+.dict-search:focus-within {
+  border-color: var(--accent);
+}
+
+.dict-search input {
+  flex: 1;
+  min-width: 0;
+  padding: 12px 0;
+  border: none;
+  background: transparent;
+  font-size: 1.25rem;
+}
+
+.dict-search input:focus-visible {
+  outline: none; /* the panel's border shows focus */
+}
+
+.dict-hint {
+  margin: 0;
+}
+
+.dict-example {
+  margin: 0 3px;
+  padding: 2px 10px;
+  border-radius: 999px;
+  font-size: 0.9rem;
+}
+
+.dict-example:hover {
+  border-color: var(--accent);
+}
+
+.dict-kanji,
+.dict-words {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.dict-kanji {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(96px, 1fr));
+  gap: 8px;
+}
+
+.dict-kanji-card {
+  width: 100%;
+  height: 100%;
+  padding: 8px 6px 7px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  border: 2px solid color-mix(in srgb, var(--kanji) 55%, var(--border));
+  border-radius: 10px;
+}
+
+.dict-kanji-glyph {
+  font-size: 2.4rem;
+  line-height: 1.15;
+  color: var(--kanji);
+}
+
+.dict-kanji-meaning {
+  max-width: 100%;
+  font-size: 0.8rem;
+  color: var(--muted);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.dict-kanji-card:hover,
+.dict-word:hover {
+  border-color: var(--kind-hover);
+  box-shadow: 0 0 0 1px var(--kind-hover);
+}
+
+.dict-kanji-card { --kind-hover: var(--kanji); }
+.dict-word { --kind-hover: var(--word); }
+
+.dict-words {
+  display: grid;
+  gap: 6px;
+}
+
+/* One result: the word and its reading on the left, numbered meanings, status on the right. */
+.dict-word {
+  width: 100%;
+  display: grid;
+  grid-template-columns: minmax(140px, 210px) 1fr auto;
+  align-items: start;
+  gap: 16px;
+  padding: 10px 14px;
+  text-align: left;
+  border: 1px solid var(--border);
+  border-left: 4px solid var(--word);
+  border-radius: 10px;
+}
+
+.dict-word-head {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.dict-word-written {
+  font-size: 1.6rem;
+  font-weight: 700;
+  line-height: 1.2;
+  color: var(--word);
+}
+
+.dict-word-sub {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  column-gap: 8px;
+}
+
+.dict-word-reading {
+  font-size: 0.95rem;
+}
+
+.dict-word-romaji {
+  font-size: 0.8rem;
+  color: var(--muted);
+}
+
+.dict-senses {
+  margin: 2px 0 0;
+  padding-left: 1.4em;
+  font-size: 0.95rem;
+  line-height: 1.45;
+}
+
+.dict-senses li::marker {
+  color: var(--muted);
+}
+
+.dict-senses .dict-more {
+  list-style: none;
+  font-size: 0.8rem;
+  color: var(--muted);
+}
+
+.dict-status {
+  font-size: 0.78rem;
+  color: var(--muted);
+  white-space: nowrap;
+}
+
+@media (max-width: 640px) {
+  .dict-word {
+    grid-template-columns: 1fr;
+    gap: 6px;
+  }
+}
+
 /* Dictionary notes in meanings, e.g. "dog (Canis (lupus) familiaris)": faded. */
 .gloss-note {
   opacity: 0.55;
