@@ -12,8 +12,9 @@ Each phase ends with something you can **use daily**. Don't start the next phase
 
 ## Phase 1: Kanji core (first usable version)
 
-- Import script: KANJIDIC2, KRADFILE, a JMdict subset, KanjiVG, a Tatoeba subset → SQLite.
-- Generate the learning path (components → kanji → vocabulary).
+- ✅ Import script: KANJIDIC2, KRADFILE, a JMdict subset, KanjiVG, a Tatoeba subset → SQLite (`pnpm content:build`).
+- ✅ Generate the learning path (components → kanji → vocabulary).
+- Progress database (`user.db`) and loading both databases in the app.
 - Lesson screen and review screen (typed answers, romaji → kana).
 - FSRS scheduling, backlog-aware new-item limit, "5 minutes" mode.
 - Today screen.
@@ -58,9 +59,10 @@ Audio/text-to-speech, pitch accent, progress charts, similar-kanji drills, Anki 
 
 Decisions to make before or during the relevant phase. Proposed answers are in *italics*.
 
-1. **React or Svelte for the UI?** *React: bigger ecosystem, more examples to learn from. Svelte is simpler to read. Either works.*
+1. ~~React or Svelte for the UI?~~ **Decided:** React (the project template is set up with it).
 2. **Separate meaning and reading reviews (WaniKani) or one combined card?** *Separate: it's proven and makes errors more specific.*
 3. **How strict is answer checking?** E.g. typos in English meanings. *Forgive small typos in meanings, never in readings.*
-4. **Where does the kanji order come from?** *Our own: JLPT N5→N1 and frequency, respecting component dependencies. Tune it after real use.*
+4. ~~Where does the kanji order come from?~~ **Decided:** our own order (old JLPT level → frequency → strokes, components first). See 03-architecture "How the default path is built". Tune after real use.
 5. **Which AI providers besides Claude?** *Claude only until there's a concrete reason to add another.*
-6. **How do you want to work on this with me?** E.g. I write code and you test-drive each feature, or you want to learn to code parts yourself. This changes how much I explain while building.
+6. ~~How do you want to work on this with me?~~ **Decided:** Claude writes the code and explains it; Xel test-drives each feature.
+7. **Component names** are our own (in `scripts/content/components.ts`). Some will feel off; they'll be renameable in-app.
