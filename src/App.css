@@ -552,21 +552,21 @@ footer {
   padding: 0;
   margin: 0;
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(76px, 1fr));
-  gap: 8px;
+  grid-template-columns: repeat(auto-fill, minmax(60px, 1fr));
+  gap: 5px;
 }
 
 .tile {
   --kind: var(--kanji);
   width: 100%;
-  height: 80px;
-  padding: 0 4px 4px;
+  height: 64px;
+  padding: 0 2px;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: flex-start;
-  gap: 2px;
-  border-radius: 10px;
+  gap: 0;
+  border-radius: 8px;
   overflow: hidden;
 }
 
@@ -575,8 +575,8 @@ footer {
 
 .tile-glyph {
   margin: auto 0; /* centred in the space below the band */
-  font-size: 1.8rem;
-  line-height: 1.2;
+  font-size: 2.3rem;
+  line-height: 1;
   white-space: nowrap;
   max-width: 100%;
   overflow: hidden;
@@ -584,16 +584,16 @@ footer {
 }
 
 .tile.word .tile-glyph {
-  font-size: 1.2rem;
+  font-size: 1.35rem;
 }
 
 /* Kind band across the top: shown in every status, so a 日 component, kanji
    and word never look alike. Content is centred in the space below it. */
 .tile-kind {
   align-self: stretch;
-  margin: 0 -4px;
-  padding: 3px 0;
-  font-size: 0.58rem;
+  margin: 0 -2px;
+  padding: 2px 0;
+  font-size: 0.5rem;
   font-weight: 700;
   letter-spacing: 0.06em;
   text-transform: uppercase;
