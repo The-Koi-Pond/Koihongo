@@ -2092,13 +2092,25 @@ textarea {
 
 .progress-rows li {
   display: grid;
-  grid-template-columns: 96px minmax(0, 1fr) 110px;
+  grid-template-columns: auto minmax(0, 1fr) 110px;
   align-items: center;
   gap: 12px;
 }
 
-.progress-name {
-  font-size: 0.9rem;
+/* JRPG stat label: pixel caps, one fixed-width cell per letter. */
+.stat-label {
+  display: flex;
+  font-family: var(--font-pixel);
+  font-weight: 700;
+  font-size: 1rem;
+  color: var(--text);
+  text-shadow: 0 0 8px rgb(255 122 198 / 0.35);
+  cursor: default;
+}
+
+.stat-label > span {
+  width: 0.78em;
+  text-align: center;
 }
 
 /* Retro game gauge: pixel frame with a dark outline, an inset trough, and
@@ -2309,7 +2321,7 @@ textarea {
   }
 
   .progress-rows li {
-    grid-template-columns: 84px minmax(0, 1fr) 88px;
+    grid-template-columns: auto minmax(0, 1fr) 88px;
     gap: 8px;
   }
 }
