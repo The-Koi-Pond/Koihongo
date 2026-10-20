@@ -1,5 +1,6 @@
 import { useId } from "react";
 import type { ItemDetails } from "../items.ts";
+import { Gloss } from "./Gloss.tsx";
 import { ItemInfo } from "./ItemInfo.tsx";
 import { SpeakButton } from "./SpeakButton.tsx";
 import { itemLabel } from "./useItem.ts";
@@ -86,7 +87,11 @@ function ItemBanner({ item, start }: { item: ItemDetails; start?: React.ReactNod
       </div>
       {(primary || secondary) && (
         <div className="banner-facts">
-          {primary && <p className="banner-primary">{primary}</p>}
+          {primary && (
+            <p className="banner-primary">
+              <Gloss text={primary} />
+            </p>
+          )}
           {secondary && (
             <p className="banner-secondary" lang="ja">
               {secondary}
