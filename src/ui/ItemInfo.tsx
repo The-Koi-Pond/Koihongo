@@ -21,19 +21,19 @@ export function ItemInfo({ item, onChange }: { item: ItemDetails; onChange: () =
             <SoundsLike romaji={item.romaji} accept={item.accept} />
             {item.example && (
               <Field>
-                {/* One row: speaker, the word in kana (what a kana learner can read), romaji, meaning, kanji as an aside. */}
+                {/* One row: speaker, the word in kana (what a kana learner can read), romaji, kanji, meaning. */}
                 <div className="example-row">
                   <SpeakButton text={item.example.reading} fallback={<AudioPlaceholder />} />
-                  <span lang="ja" className="example-form">
+                  <span lang="ja">
                     {KANA_ONLY.test(item.example.form) ? item.example.form : item.example.reading}
                   </span>
                   <span className="muted">{item.example.romaji}</span>
-                  <span className="example-meaning">{item.example.meaning}</span>
                   {!KANA_ONLY.test(item.example.form) && (
                     <span lang="ja" className="muted">
                       {item.example.form}
                     </span>
                   )}
+                  <span className="example-meaning">{item.example.meaning}</span>
                 </div>
               </Field>
             )}
@@ -155,7 +155,7 @@ function SoundsLike({ romaji, accept }: { romaji: string; accept: string[] }) {
         <AudioPlaceholder />
         {hint.asIn && (
           <p className="as-in">
-            <span className="muted small">as in</span> {hint.asIn[0]}
+            <span className="muted">as in</span> {hint.asIn[0]}
             <mark>{hint.asIn[1]}</mark>
             {hint.asIn[2]}
           </p>

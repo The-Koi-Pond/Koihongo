@@ -951,8 +951,13 @@ textarea {
   margin-bottom: 4px;
 }
 
+/* Both pronunciation rows use one text size, so words and symbols line up evenly. */
+.as-in,
+.example-row {
+  font-size: 1.2rem;
+}
+
 .as-in {
-  font-size: 1.4rem;
   margin: 0;
 }
 
@@ -971,10 +976,6 @@ textarea {
 
 .example-meaning {
   font-weight: 600;
-}
-
-.example-form {
-  font-size: 1.6rem;
 }
 
 /* Detail cards: short facts pair up two per row, long ones span the width. */
