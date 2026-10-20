@@ -4,7 +4,7 @@ import { itemLabel } from "./useItem.ts";
 
 const GROUP_NAME = { basic: "basic", dakuten: "゛/゜ marks", combo: "combination", extended: "extended" } as const;
 
-/** Full item page: a hero panel (character, key answer, stroke order) beside the detail cards. */
+/** Full item page: a hero panel (character and key answer) beside the detail cards. */
 export function ItemView({ item, onChange, above }: { item: ItemDetails; onChange: () => void; above?: React.ReactNode }) {
   return (
     <div className="item-view">
@@ -17,10 +17,11 @@ export function ItemView({ item, onChange, above }: { item: ItemDetails; onChang
   );
 }
 
-function heroFacts(item: ItemDetails): { kicker: string; primary: string; secondary?: string } {
+/** kicker: small label top-left. corner: big answer top-right (kana romaji). primary/secondary: lines under the character. */
+function heroFacts(item: ItemDetails): { kicker: string; corner?: string; primary?: string; secondary?: string } {
   switch (item.kind) {
     case "kana":
-      return { kicker: `${item.script} · ${GROUP_NAME[item.group]}`, primary: item.romaji, secondary: item.counterpart ?? undefined };
+      return { kicker: `${item.script} · ${GROUP_NAME[item.group]}`, corner: item.romaji };
     case "component":
       return { kicker: "component", primary: item.name };
     case "kanji":
@@ -41,23 +42,22 @@ function glyphSize(label: string): string {
 }
 
 function ItemHero({ item }: { item: ItemDetails }) {
-  const { kicker, primary, secondary } = heroFacts(item);
+  const { kicker, corner, primary, secondary } = heroFacts(item);
   const label = itemLabel(item);
-  const strokeSvg = item.kind === "kanji" || item.kind === "kana" ? item.strokeSvg : null;
   return (
     <aside className={`hero ${item.kind}`}>
-      <p className="hero-kind">{kicker}</p>
+      <div className="hero-top">
+        <p className="hero-kind">{kicker}</p>
+        {corner && <p className="hero-corner">{corner}</p>}
+      </div>
       <div className="hero-glyph" lang="ja" style={{ fontSize: glyphSize(label) }}>
         {label}
       </div>
-      <p className="hero-primary">{primary}</p>
+      {primary && <p className="hero-primary">{primary}</p>}
       {secondary && (
         <p className="hero-secondary" lang="ja">
           {secondary}
         </p>
-      )}
-      {strokeSvg && (
-        <img className="strokes" alt={`Stroke order for ${label}`} src={`data:image/svg+xml;charset=utf-8,${encodeURIComponent(strokeSvg)}`} />
       )}
     </aside>
   );

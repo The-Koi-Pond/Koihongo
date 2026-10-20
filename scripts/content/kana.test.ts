@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { allKana } from "./kana.ts";
+import { allKana, pickExample, type ExampleCandidate } from "./kana.ts";
 
 const kana = allKana();
 const by = (c: string) => kana.find((k) => k.character === c)!;
@@ -48,4 +48,28 @@ test("dakuten and combos require their plain kana; counterparts link the scripts
   assert.equal(by("ファ").counterpart, null);
   // Every requirement is itself a kana item.
   for (const k of kana) for (const r of k.requires) assert.ok(by(r), `${k.character} needs missing ${r}`);
+});
+
+test("example words: frequent nouns starting with the sound, not with a combination", () => {
+  const w = (id: string, written: string, reading: string, priority: number, isNoun = true): ExampleCandidate => ({ id, written, reading, otherForms: [], priority, isNoun });
+  const words = [
+    w("1", "今日", "きょう", 1), // starts with きょ, not き
+    w("2", "木", "き", 2), // the kana alone is too short to be an example
+    w("3", "季節", "きせつ", 5),
+    w("4", "聞く", "きく", 3, false), // verb: ranked after nouns
+    w("5", "ウナギ", "うなぎ", 9),
+    w("6", "歌", "うた", 4),
+  ];
+  assert.equal(pickExample(by("き"), words)?.word.id, "3");
+  assert.equal(pickExample(by("きょ"), words)?.word.id, "1", "the combination gets the きょ word");
+  assert.equal(pickExample(by("う"), words)?.word.id, "6");
+  assert.equal(pickExample(by("ウ"), words)?.word.id, "5", "katakana wants a katakana word");
+  assert.equal(pickExample(by("ん"), words), null);
+});
+
+test("hand-picked examples match alternative spellings and show the picked spelling", () => {
+  const eel: ExampleCandidate = { id: "9", written: "鰻", reading: "うなぎ", otherForms: ["ウナギ"], priority: 49, isNoun: true };
+  assert.deepEqual(pickExample(by("ウ"), [eel]), { word: eel, form: "ウナギ" });
+  const digits: ExampleCandidate = { id: "8", written: "６月", reading: "ろくがつ", otherForms: [], priority: 1, isNoun: true };
+  assert.equal(pickExample(by("ぷ"), [digits]), null);
 });

@@ -15,6 +15,8 @@ export function describeItem(item: ItemDetails): string {
       return [
         `Item: the ${item.script} character ${item.character}, read "${item.romaji}".`,
         item.counterpart && `The same sound in ${item.script === "hiragana" ? "katakana" : "hiragana"} is ${item.counterpart}.`,
+        item.example &&
+          `A common word starting with it: ${item.example.form} (${item.example.romaji}, "${item.example.meaning}"). It can make a good mnemonic hook, e.g. if the shape resembles the thing.`,
       ]
         .filter(Boolean)
         .join("\n");

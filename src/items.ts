@@ -1,5 +1,6 @@
 // Everything shown about one study item, plus your notes and synonyms for it.
 
+import { toRomaji } from "wanakana";
 import type { Db } from "./db/db.ts";
 import type { ItemKind } from "./srs/progress.ts";
 
@@ -24,6 +25,8 @@ export type KanaDetails = Common & {
   group: "basic" | "dakuten" | "combo" | "extended";
   counterpart: string | null;
   strokeSvg: string | null;
+  /** A common word starting with this sound (ウナギ for ウ). */
+  example: { form: string; reading: string; romaji: string; meaning: string } | null;
 };
 
 export type ComponentDetails = Common & {
@@ -80,8 +83,21 @@ export async function getItemDetails(db: Db, itemKey: string): Promise<ItemDetai
   };
 
   if (kind === "kana") {
-    const [k] = await db.all<{ romaji: string; accept: string; script: KanaDetails["script"]; grp: KanaDetails["group"]; counterpart: string | null; stroke_svg: string | null }>(
-      "SELECT romaji, accept, script, grp, counterpart, stroke_svg FROM content.kana WHERE character = ?",
+    const [k] = await db.all<{
+      romaji: string;
+      accept: string;
+      script: KanaDetails["script"];
+      grp: KanaDetails["group"];
+      counterpart: string | null;
+      stroke_svg: string | null;
+      example_form: string | null;
+      example_reading: string | null;
+      example_senses: string | null;
+    }>(
+      `SELECT k.romaji, k.accept, k.script, k.grp, k.counterpart, k.stroke_svg,
+              k.example_form, w.reading AS example_reading, w.senses AS example_senses
+       FROM content.kana k LEFT JOIN content.words w ON w.id = k.example_word_id
+       WHERE k.character = ?`,
       [id],
     );
     if (!k) throw new Error(`Unknown kana ${id}`);
@@ -95,6 +111,15 @@ export async function getItemDetails(db: Db, itemKey: string): Promise<ItemDetai
       group: k.grp,
       counterpart: k.counterpart,
       strokeSvg: k.stroke_svg,
+      example:
+        k.example_form && k.example_reading && k.example_senses
+          ? {
+              form: k.example_form,
+              reading: k.example_reading,
+              romaji: toRomaji(k.example_reading),
+              meaning: first<{ glosses: string[] }>(k.example_senses).glosses[0],
+            }
+          : null,
     };
   }
 

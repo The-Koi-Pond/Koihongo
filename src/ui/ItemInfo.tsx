@@ -2,7 +2,11 @@ import { useState } from "react";
 import { tauriDb } from "../db/tauriDb.ts";
 import { addSynonym, removeSynonym, saveNote, type ItemDetails, type Note, type NoteKind } from "../items.ts";
 import { MnemonicWorkshop } from "./MnemonicWorkshop.tsx";
+import { soundHint } from "../kanaSounds.ts";
 import { ItemHover, JapaneseText } from "./Popover.tsx";
+import { StrokeOrder } from "./StrokeOrder.tsx";
+
+const KANA_ONLY = /^[\p{Script=Hiragana}\p{Script=Katakana}ー]+$/u;
 
 /** An item's details as a grid of cards. ItemView adds the hero panel for full pages. */
 export function ItemInfo({ item, onChange }: { item: ItemDetails; onChange: () => void }) {
@@ -10,13 +14,35 @@ export function ItemInfo({ item, onChange }: { item: ItemDetails; onChange: () =
     <div className="item-info">
       {item.kind === "kana" && (
         <>
-          <Field label="Reading">
-            <span className="big-reading">{item.romaji}</span>
-            {item.accept.length > 0 && <p className="muted small">Also accepted: {item.accept.join(", ")}</p>}
-          </Field>
+          <SoundsLike romaji={item.romaji} accept={item.accept} />
+          {item.example && (
+            <Field label="Example word">
+              <p className="example-word">
+                {/* Show what a kana learner can read: the kana spelling, kanji only as an aside. */}
+                <span lang="ja" className="example-form">
+                  {KANA_ONLY.test(item.example.form) ? item.example.form : item.example.reading}
+                </span>
+                <span className="muted"> {item.example.romaji}</span>
+              </p>
+              <p>
+                {item.example.meaning}
+                {!KANA_ONLY.test(item.example.form) && (
+                  <span lang="ja" className="muted">
+                    {" "}
+                    · {item.example.form}
+                  </span>
+                )}
+              </p>
+            </Field>
+          )}
           {item.counterpart && (
             <Field label={item.script === "hiragana" ? "Same sound in katakana" : "Same sound in hiragana"}>
               <Chips items={[{ glyph: item.counterpart, text: item.romaji, kind: "kana", itemKey: `kana:${item.counterpart}` }]} />
+            </Field>
+          )}
+          {item.strokeSvg && (
+            <Field label="Stroke order" wide>
+              <StrokeOrder svg={item.strokeSvg} label={item.character} />
             </Field>
           )}
           <NoteEditor item={item} kind="mnemonic_reading" label="Mnemonic" onSaved={onChange} />
@@ -55,6 +81,11 @@ export function ItemInfo({ item, onChange }: { item: ItemDetails; onChange: () =
           <Field label="Components">
             <Chips items={item.components.map((c) => ({ glyph: c.display, text: c.name, kind: "component", itemKey: `component:${c.glyph}` }))} />
           </Field>
+          {item.strokeSvg && (
+            <Field label="Stroke order" wide>
+              <StrokeOrder svg={item.strokeSvg} label={item.character} />
+            </Field>
+          )}
           <NoteEditor item={item} kind="mnemonic_meaning" label="Meaning mnemonic" onSaved={onChange} />
           <NoteEditor item={item} kind="mnemonic_reading" label="Reading mnemonic" onSaved={onChange} />
           {item.words.length > 0 && (
@@ -111,6 +142,23 @@ export function ItemInfo({ item, onChange }: { item: ItemDetails; onChange: () =
 
       {item.kind !== "kana" && <SynonymEditor item={item} onChange={onChange} />}
     </div>
+  );
+}
+
+function SoundsLike({ romaji, accept }: { romaji: string; accept: string[] }) {
+  const hint = soundHint(romaji);
+  return (
+    <Field label="Sounds like">
+      {hint.asIn && (
+        <p className="as-in">
+          <span className="muted small">as in</span> {hint.asIn[0]}
+          <mark>{hint.asIn[1]}</mark>
+          {hint.asIn[2]}
+        </p>
+      )}
+      {hint.note && <p className="small">{hint.note}</p>}
+      {accept.length > 0 && <p className="muted small">Also accepted: {accept.join(", ")}</p>}
+    </Field>
   );
 }
 
