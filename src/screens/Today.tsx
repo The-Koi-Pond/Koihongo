@@ -1,21 +1,8 @@
-import { useEffect, useState } from "react";
-import { tauriDb } from "../db/tauriDb.ts";
-import { lessonAllowance, todaySummary, type TodaySummary } from "../srs/progress.ts";
+import { lessonAllowance, type TodaySummary } from "../srs/progress.ts";
 import { NEW_PER_DAY } from "../srs/settings.ts";
+import type { Screen } from "../ui/NavBar.tsx";
 
-export type Go = (screen: "lessons" | "reviews" | "quick-reviews" | "library" | "sources") => void;
-
-export function Today({ go }: { go: Go }) {
-  const [summary, setSummary] = useState<TodaySummary>();
-  const [error, setError] = useState<string>();
-
-  useEffect(() => {
-    todaySummary(tauriDb, Date.now())
-      .then(setSummary)
-      .catch((e) => setError(String(e)));
-  }, []);
-
-  if (error) return <p className="error">Couldn't load your progress: {error}</p>;
+export function Today({ summary, go }: { summary?: TodaySummary; go: (screen: Screen) => void }) {
   if (!summary) return <p className="muted">Loading…</p>;
 
   return (
@@ -59,20 +46,6 @@ export function Today({ go }: { go: Go }) {
           Start lessons
         </button>
       </section>
-
-      <section className="card row space-between">
-        <div>
-          <h2>Library</h2>
-          <p className="muted">Browse every component, kanji and word, learned or not.</p>
-        </div>
-        <button onClick={() => go("library")}>Open library</button>
-      </section>
-
-      <footer>
-        <button className="link" onClick={() => go("sources")}>
-          Sources &amp; licences
-        </button>
-      </footer>
     </>
   );
 }

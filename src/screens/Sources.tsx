@@ -37,7 +37,7 @@ export function Sources({ onExit }: { onExit: () => void }) {
         ))}
       </ul>
       {builtAt && <p className="muted">Data last updated {new Date(builtAt).toLocaleDateString()}.</p>}
-      <button onClick={onExit}>Back to Today</button>
+      <button onClick={onExit}>← Settings</button>
     </>
   );
 }
