@@ -947,12 +947,9 @@ textarea {
 .as-in-row {
   display: flex;
   align-items: center;
+  justify-content: flex-end;
   gap: 10px;
   margin-bottom: 4px;
-}
-
-.as-in-audio {
-  margin-left: auto;
 }
 
 /* Both pronunciation rows use one text size, so words and symbols line up evenly. */
