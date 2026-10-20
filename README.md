@@ -2,7 +2,7 @@
 
 Koihongo (鯉 *koi* "carp" + 恋 *koi* "love" + 日本語 *nihongo*) is a personal, all-in-one Windows desktop app for learning Japanese. It takes the best methods from existing tools (WaniKani, Anki, Bunpro) and links kanji, vocabulary, grammar and reading together in one place. Where it helps, it can call AI models (for example, to rework a kanji mnemonic you don't like).
 
-Status: **Phase 1, first studyable version.** Lessons, reviews, mnemonics and synonyms work. Remaining for Phase 1: catch-up mode, backup button, settings screen, and whatever daily use turns up.
+Status: **Phases 0–3 done** (lessons and reviews, settings and backups, dictionary, example sentences, AI helpers). Next is daily use, then Phase 4 (grammar). See [docs/04-roadmap.md](docs/04-roadmap.md).
 
 ## Running it
 
@@ -19,7 +19,7 @@ pnpm tauri dev
 
 Checks: `pnpm test` (TypeScript unit tests), `pnpm typecheck` (TypeScript errors), and `cargo test` inside `src-tauri/` (Rust database tests).
 
-Your progress is saved in `%APPDATA%\com.xel.nihongo\user.db`. Copy that file to back it up.
+Your progress is saved in `%APPDATA%\com.xel.nihongo\user.db`, and backed up automatically once a day to `Documents\Koihongo\Backups` (Settings has "Back up now" and restore).
 
 ## Documents
 
