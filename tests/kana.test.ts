@@ -14,7 +14,7 @@ const T0 = new Date("2026-03-02T10:00:00").getTime();
 async function freshDb() {
   const db = openTestDb((content) =>
     content.exec(`
-      INSERT INTO kana VALUES ('あ', 'a', '[]', 'hiragana', 'basic', 'ア', '<svg/>'), ('い', 'i', '[]', 'hiragana', 'basic', 'イ', NULL),
+      INSERT INTO kana (character, romaji, accept, script, grp, counterpart, stroke_svg) VALUES ('あ', 'a', '[]', 'hiragana', 'basic', 'ア', '<svg/>'), ('い', 'i', '[]', 'hiragana', 'basic', 'イ', NULL),
         ('か', 'ka', '[]', 'hiragana', 'basic', 'カ', NULL), ('が', 'ga', '[]', 'hiragana', 'dakuten', 'ガ', NULL),
         ('を', 'wo', '["o"]', 'hiragana', 'basic', 'ヲ', NULL);
       INSERT INTO components VALUES ('木', '木', 'tree', 4);

@@ -10,7 +10,7 @@ import { gunzipSync } from "node:zlib";
 import { DatabaseSync } from "node:sqlite";
 import { strFromU8, unzipSync } from "fflate";
 import { describeComponent } from "./components.ts";
-import { allKana } from "./kana.ts";
+import { allKana, CURATED_EXAMPLES, pickExample, type ExampleCandidate } from "./kana.ts";
 import { buildPath, type PathKanji, type PathWord } from "./path.ts";
 import { NO_PRIORITY, parsePriorities } from "./priority.ts";
 
@@ -271,10 +271,24 @@ async function main() {
   }
 
   const insertKana = db.prepare(
-    "INSERT INTO kana (character, romaji, accept, script, grp, counterpart, stroke_svg) VALUES (?, ?, ?, ?, ?, ?, ?)",
+    "INSERT INTO kana (character, romaji, accept, script, grp, counterpart, stroke_svg, example_word_id, example_form) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
   );
+  const candidates: ExampleCandidate[] = words.map((w) => ({
+    id: w.id,
+    written: w.written,
+    reading: w.reading,
+    otherForms: w.otherForms,
+    priority: w.priority,
+    isNoun: w.senses[0]?.pos.includes("n") ?? false,
+  }));
+  const kanaWithoutExample: string[] = [];
+  const curatedMissing: string[] = [];
   for (const k of kana) {
-    insertKana.run(k.character, k.romaji, JSON.stringify(k.accept), k.script, k.group, k.counterpart, strokeSvg(k.character));
+    const example = pickExample(k, candidates);
+    if (!example) kanaWithoutExample.push(k.character);
+    const curated = CURATED_EXAMPLES[k.character];
+    if (curated && example?.form !== curated[0]) curatedMissing.push(`${k.character}=${curated[0]}`);
+    insertKana.run(k.character, k.romaji, JSON.stringify(k.accept), k.script, k.group, k.counterpart, [...k.character].length === 1 ? strokeSvg(k.character) : null, example?.word.id ?? null, example?.form ?? null);
   }
 
   // Kana track first, then the main (components → kanji → words) track.
@@ -303,6 +317,8 @@ async function main() {
   console.log(`  kanji: ${kanjiChars.length} (${joyo.length} jōyō), words: ${words.length}, components: ${componentGlyphs.size}`);
   console.log(`  kana track: ${kana.length} kana; main path: ${path.length} items (${count("component")} components, ${count("kanji")} kanji, ${count("word")} words)`);
   if (noComponents.length) console.log(`  jōyō kanji without KRADFILE components: ${noComponents.join(" ")}`);
+  if (curatedMissing.length) console.log(`  hand-picked kana examples not found in common words: ${curatedMissing.join(" ")}`);
+  if (kanaWithoutExample.length) console.log(`  kana without an example word: ${kanaWithoutExample.join(" ")}`);
   if (noSvg.length) console.log(`  jōyō kanji without stroke order: ${noSvg.join(" ")}`);
 }
 

@@ -606,7 +606,7 @@ textarea {
 
 .hero-glyph {
   line-height: 1.15;
-  padding: 4px 0;
+  padding: 4px 0 12px;
   overflow-wrap: anywhere;
 }
 
@@ -620,10 +620,18 @@ textarea {
   opacity: 0.9;
 }
 
-.hero .strokes {
-  margin-top: 10px;
-  width: 170px;
-  height: 170px;
+.hero-top {
+  justify-self: stretch;
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 8px;
+}
+
+.hero-corner {
+  font-size: 2.2rem;
+  font-weight: 700;
+  line-height: 1;
 }
 
 @media (max-width: 820px) {
@@ -633,6 +641,81 @@ textarea {
   .hero {
     position: static;
   }
+}
+
+/* Step-by-step stroke order */
+.stroke-steps {
+  list-style: none;
+  margin: 4px 0 0;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.stroke-steps li {
+  position: relative;
+}
+
+.stroke-frame {
+  display: block;
+  width: 68px;
+  height: 68px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--surface-2);
+  fill: none;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.stroke-frame .guide {
+  stroke: var(--border);
+  stroke-width: 1;
+  stroke-dasharray: 3 3;
+}
+
+.stroke-frame .done {
+  stroke: var(--muted);
+  stroke-width: 4;
+  opacity: 0.55;
+}
+
+.stroke-frame .current {
+  stroke: var(--accent);
+  stroke-width: 5;
+}
+
+.stroke-frame .start {
+  fill: var(--accent);
+}
+
+.stroke-num {
+  position: absolute;
+  top: 3px;
+  left: 6px;
+  font-size: 0.65rem;
+  color: var(--muted);
+}
+
+/* Kana cards */
+.as-in {
+  font-size: 1.4rem;
+  margin: 0 0 4px;
+}
+
+.as-in mark {
+  background: none;
+  color: var(--accent);
+  font-weight: 700;
+}
+
+.example-word {
+  margin: 0;
+}
+
+.example-form {
+  font-size: 1.6rem;
 }
 
 /* Detail cards: short facts pair up two per row, long ones span the width. */
@@ -713,13 +796,6 @@ textarea {
   border-radius: 6px;
   padding: 0 8px;
   font-size: 1.2rem;
-}
-
-.strokes {
-  width: 140px;
-  height: 140px;
-  background: #fff;
-  border-radius: 8px;
 }
 
 .senses {

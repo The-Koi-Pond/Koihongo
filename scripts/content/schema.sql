@@ -84,7 +84,9 @@ CREATE TABLE kana (
   script      TEXT NOT NULL CHECK (script IN ('hiragana', 'katakana')),
   grp         TEXT NOT NULL CHECK (grp IN ('basic', 'dakuten', 'combo', 'extended')),
   counterpart TEXT,            -- same sound in the other script
-  stroke_svg  TEXT             -- KanjiVG SVG, single characters only
+  stroke_svg  TEXT,            -- KanjiVG SVG, single characters only
+  example_word_id TEXT REFERENCES words(id),  -- a common word starting with this sound
+  example_form    TEXT                        -- the spelling of it to show (ウナギ rather than 鰻)
 );
 
 -- Default learning order. item_key is "kana:<char>", "component:<glyph>",

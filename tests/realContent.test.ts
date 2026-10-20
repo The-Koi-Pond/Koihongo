@@ -26,7 +26,7 @@ test("every path item loads and accepts its own answers", { skip: !existsSync(CO
       for (const r of readings) {
         if (checkKana(r, item.character, item.romaji, item.accept).result !== "correct") failures.push(`${item_key}: "${r}" not accepted`);
       }
-      if (!item.strokeSvg && [...item.character].length === 1) failures.push(`${item_key}: no stroke order`);
+      if (!item.strokeSvg !== ([...item.character].length > 1)) failures.push(`${item_key}: stroke order should exist only for single kana`);
       continue;
     }
     if (meanings.length === 0 || checkMeaning(meanings[0], meanings, readings).result !== "correct") {
