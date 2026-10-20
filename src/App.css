@@ -1820,6 +1820,7 @@ textarea {
   width: 14px;
   height: 8px;
   border-radius: 2px;
+  box-shadow: 0 0 0 1px var(--panel-border);
 }
 
 .swatch-bar.passed,
@@ -1851,17 +1852,34 @@ textarea {
   font-size: 0.9rem;
 }
 
+/* Retro game gauge: pixel frame with a dark outline, an inset trough, and
+   cells cut by an overlay so the fill and the empty part share one grid. */
 .progress-track {
+  --gauge-gap: #15174a; /* between cells, and the ring inside the frame */
+  position: relative;
   display: flex;
-  gap: 2px;
-  height: 10px;
-  border-radius: 5px;
-  background: var(--surface-2);
+  height: 16px;
+  box-sizing: border-box;
+  padding: 2px;
+  border: 2px solid var(--panel-border);
+  border-radius: 4px;
+  background: #2a2d78; /* unlit cells */
+  box-shadow: 0 0 0 2px #1c1e5c, inset 0 0 0 2px var(--gauge-gap);
   overflow: hidden;
+}
+
+.progress-track::after {
+  content: "";
+  position: absolute;
+  inset: 2px;
+  background: repeating-linear-gradient(90deg, transparent 0 8px, var(--gauge-gap) 8px 10px);
+  pointer-events: none;
 }
 
 .progress-fill {
   min-width: 3px;
+  /* Glossy top highlight and a darker bottom edge, like a lit LCD cell. */
+  box-shadow: inset 0 3px 0 rgb(255 255 255 / 0.4), inset 0 -2px 0 rgb(0 0 0 / 0.25);
 }
 
 .progress-count {
