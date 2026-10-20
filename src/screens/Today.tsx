@@ -239,6 +239,8 @@ function Forecast({ data }: { data: number[] }) {
 }
 
 const KIND_LABEL = { kana: "Kana", component: "Components", kanji: "Kanji", word: "Words" } as const;
+/** JRPG-style stat labels: always four letters, so they line up like HP/MP. */
+const STAT_LABEL = { kana: "KANA", component: "PART", kanji: "KNJI", word: "WORD" } as const;
 
 /** Passed + learning out of the total, per kind. One hue (amount, not identity): rows are labelled by name. */
 function ProgressBars({ rows }: { rows: KindProgress[] }) {
@@ -248,7 +250,14 @@ function ProgressBars({ rows }: { rows: KindProgress[] }) {
         const pct = (n: number) => (r.total ? (n / r.total) * 100 : 0);
         return (
           <li key={r.kind}>
-            <span className="progress-name">{KIND_LABEL[r.kind]}</span>
+            {/* One fixed-width cell per letter, so every label is exactly the same width. */}
+            <span className="stat-label" title={KIND_LABEL[r.kind]} aria-label={KIND_LABEL[r.kind]}>
+              {[...STAT_LABEL[r.kind]].map((ch, i) => (
+                <span key={i} aria-hidden="true">
+                  {ch}
+                </span>
+              ))}
+            </span>
             <div className="progress-track" title={`${r.passed} passed, ${r.learning} learning, of ${r.total.toLocaleString()}`}>
               {r.passed > 0 && <div className="progress-fill passed" style={{ width: `${pct(r.passed)}%` }} />}
               {r.learning > 0 && <div className="progress-fill learning" style={{ width: `${pct(r.learning)}%` }} />}
