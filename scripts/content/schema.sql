@@ -61,17 +61,21 @@ CREATE TABLE word_kanji (
 );
 CREATE INDEX word_kanji_by_kanji ON word_kanji(kanji);
 
--- Tatoeba example sentences, linked to words by JMdict.
+-- Tatoeba example sentences (Tanaka Corpus, scripts/content/sentences.ts).
 CREATE TABLE sentences (
-  id       TEXT PRIMARY KEY,  -- Tatoeba sentence id
-  japanese TEXT NOT NULL,
-  english  TEXT NOT NULL
+  id          TEXT PRIMARY KEY,  -- the pair's id in examples.utf (#ID=x_y: y)
+  japanese    TEXT NOT NULL,
+  english     TEXT NOT NULL,
+  kanji_words TEXT NOT NULL,     -- JSON string[]: word ids in it you'd need to learn (written with kanji)
+  unlisted    INTEGER NOT NULL   -- words with kanji in it that aren't in this dictionary
 );
 
+-- Up to 20 example sentences per word; the app shows the ones you can read best.
 CREATE TABLE word_sentences (
   word_id     TEXT NOT NULL REFERENCES words(id),
   sentence_id TEXT NOT NULL REFERENCES sentences(id),
-  form        TEXT NOT NULL,  -- how the word appears in the sentence
+  form        TEXT NOT NULL,     -- how the word appears in the sentence
+  checked     INTEGER NOT NULL,  -- 1 if checked as a good example of this word
   PRIMARY KEY (word_id, sentence_id)
 );
 CREATE INDEX word_sentences_by_sentence ON word_sentences(sentence_id);

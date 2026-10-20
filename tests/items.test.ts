@@ -15,8 +15,8 @@ async function freshDb() {
       INSERT INTO words VALUES ('1', '休み', 'やすみ', '["やすみ","ヤスミ","休"]',
         '[{"pos":["n"],"glosses":["rest","break"],"misc":[],"info":[]},{"pos":["n"],"glosses":["holiday"],"misc":[],"info":[]}]', 5, 0);
       INSERT INTO word_kanji VALUES ('1', '休');
-      INSERT INTO sentences VALUES ('9', '休みが欲しい。', 'I want a break.');
-      INSERT INTO word_sentences VALUES ('1', '9', '休み');
+      INSERT INTO sentences VALUES ('9', '休みが欲しい。', 'I want a break.', '["1"]', 0);
+      INSERT INTO word_sentences VALUES ('1', '9', '休み', 1);
       INSERT INTO path (position, item_key, kind) VALUES (1, 'component:木', 'component'), (2, 'kanji:木', 'kanji'), (3, 'component:化', 'component'),
         (4, 'kanji:休', 'kanji'), (5, 'word:1', 'word');
       INSERT INTO mnemonics VALUES ('kanji:木', 'meaning', 'A TREE with branches.');
@@ -47,7 +47,7 @@ test("word details include kanji, sentences, and kana alternatives as readings",
   const d = await getItemDetails(await freshDb(), "word:1");
   if (d.kind !== "word") return assert.fail("not a word");
   assert.deepEqual(d.kanji, [{ character: "休", meaning: "rest" }]);
-  assert.deepEqual(d.sentences, [{ japanese: "休みが欲しい。", english: "I want a break." }]);
+  assert.deepEqual(d.sentences, [{ japanese: "休みが欲しい。", english: "I want a break.", form: "休み", newWords: 0 }]);
   assert.deepEqual(acceptedAnswers(d), { meanings: ["rest", "break", "holiday"], readings: ["やすみ", "やすみ", "ヤスミ"] });
 });
 
@@ -82,4 +82,32 @@ test("Koihongo's default mnemonic shows until you save your own", async () => {
   await saveNote(db, "kanji:木", "mnemonic_meaning", "My own tree story.", "you", 5);
   d = await getItemDetails(db, "kanji:木");
   assert.deepEqual(d.notes.mnemonic_meaning, { text: "My own tree story.", author: "you", created_at: 5 });
+});
+
+test("example sentences you can read come first, and change as you learn words", async () => {
+  const db = openTestDb((content) =>
+    content.exec(`
+      INSERT INTO words VALUES ('1', '休み', 'やすみ', '[]', '[{"pos":["n"],"glosses":["rest"],"misc":[],"info":[]}]', 5, 0),
+                               ('2', '今日', 'きょう', '[]', '[{"pos":["n"],"glosses":["today"],"misc":[],"info":[]}]', 5, 0);
+      INSERT INTO sentences VALUES ('a', '今日は休み。', 'Today is a day off.', '["2","1"]', 0),
+                                   ('b', '休みがほしいです。', 'I want a break.', '["1"]', 0),
+                                   ('c', '休みだ。', 'It''s a day off.', '["1"]', 1);
+      INSERT INTO word_sentences VALUES ('1', 'a', '休み', 0), ('1', 'b', '休み', 0), ('1', 'c', '休み', 0);
+    `),
+  );
+  await migrate(db);
+  const order = async () => {
+    const d = await getItemDetails(db, "word:1");
+    return d.kind === "word" ? d.sentences.map((s) => `${s.japanese}:${s.newWords}`) : [];
+  };
+  // b uses only the word itself; a needs 今日; c has a word that isn't in the dictionary (a tie: shorter first).
+  assert.deepEqual(await order(), ["休みがほしいです。:0", "休みだ。:1", "今日は休み。:1"]);
+  await db.batch([
+    {
+      sql: `INSERT INTO srs_cards (item_key, card_type, state, due, stability, difficulty, scheduled_days, learning_steps, reps, lapses, started_at)
+            VALUES ('word:2', 'meaning', 2, 0, 5, 5, 1, 0, 1, 0, 0)`,
+    },
+  ]);
+  // Once 今日 is started, the shorter sentence with it is just as readable.
+  assert.deepEqual(await order(), ["今日は休み。:0", "休みがほしいです。:0", "休みだ。:1"]);
 });

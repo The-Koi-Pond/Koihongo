@@ -110,19 +110,27 @@ function PreviewBody({ preview, canOpen }: { preview: ItemPreview; canOpen: bool
 
 const isKanji = (ch: string) => /\p{Script=Han}/u.test(ch) && ch !== "々";
 
-/** Japanese text where every kanji shows its popover on hover. */
-export function JapaneseText({ text }: { text: string }) {
+/** Japanese text where every kanji shows its popover on hover; `highlight` marks its first occurrence. */
+export function JapaneseText({ text, highlight }: { text: string; highlight?: string }) {
+  const at = highlight ? text.indexOf(highlight) : -1;
+  if (at < 0) return <span lang="ja">{withKanjiHovers(text)}</span>;
   return (
     <span lang="ja">
-      {[...text].map((ch, i) =>
-        isKanji(ch) ? (
-          <ItemHover key={i} itemKey={`kanji:${ch}`}>
-            {ch}
-          </ItemHover>
-        ) : (
-          ch
-        ),
-      )}
+      {withKanjiHovers(text.slice(0, at))}
+      <mark className="jp-highlight">{withKanjiHovers(highlight!)}</mark>
+      {withKanjiHovers(text.slice(at + highlight!.length))}
     </span>
+  );
+}
+
+function withKanjiHovers(text: string) {
+  return [...text].map((ch, i) =>
+    isKanji(ch) ? (
+      <ItemHover key={i} itemKey={`kanji:${ch}`}>
+        {ch}
+      </ItemHover>
+    ) : (
+      ch
+    ),
   );
 }

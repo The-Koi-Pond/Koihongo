@@ -15,6 +15,7 @@ import { allMnemonics } from "./mnemonics/index.ts";
 import { buildPath, type PathKanji, type PathWord } from "./path.ts";
 import { NO_PRIORITY, parsePriorities } from "./priority.ts";
 import { entryTerms } from "../../src/searchTerms.ts";
+import { linkSentences, parseTanaka } from "./sentences.ts";
 
 const ROOT = join(import.meta.dirname, "..", "..");
 const RAW = join(ROOT, "data", "raw");
@@ -28,6 +29,8 @@ const JOYO_GRADES = new Set([1, 2, 3, 4, 5, 6, 8]);
 // Jōyō forms added in 2010 that KRADFILE only lists under their older variant.
 const KRAD_VARIANTS: Record<string, string> = { "𠮟": "叱", 剝: "剥" };
 const MAX_AGE_MS = 7 * 24 * 60 * 60 * 1000;
+// Example sentences kept per word; the app picks the ones whose words you know best.
+const SENTENCES_PER_WORD = 20;
 
 // --- Source data shapes (only the fields we use) ---------------------------
 
@@ -49,7 +52,6 @@ type JmdictWord = {
     misc: string[];
     info: string[];
     gloss: { text: string }[];
-    examples?: { source: { type: string; value: string }; text: string; sentences: { lang: string; text: string }[] }[];
   }[];
 };
 
@@ -103,7 +105,6 @@ type Word = {
   priority: number;
   usuallyKana: boolean;
   kanji: string[];
-  examples: { id: string; form: string; japanese: string; english: string }[];
 };
 
 function toWord(w: JmdictWord, priority: number): Word | null {
@@ -117,14 +118,6 @@ function toWord(w: JmdictWord, priority: number): Word | null {
   const reading = w.kana.find((k) => k.common && fitsForm(k)) ?? w.kana.find(fitsForm) ?? w.kana[0];
   const written = kanjiForm?.text ?? reading.text;
 
-  const examples = w.sense.flatMap((s) =>
-    (s.examples ?? []).flatMap((e) => {
-      const japanese = e.sentences.find((x) => x.lang === "jpn")?.text;
-      const english = e.sentences.find((x) => x.lang === "eng")?.text;
-      return japanese && english ? [{ id: e.source.value, form: e.text, japanese, english }] : [];
-    }),
-  );
-
   return {
     id: w.id,
     written,
@@ -136,7 +129,6 @@ function toWord(w: JmdictWord, priority: number): Word | null {
     priority,
     usuallyKana: w.sense[0]?.misc.includes("uk") ?? false,
     kanji: kanjiForm ? [...new Set([...kanjiForm.text].filter(isKanjiChar))] : [],
-    examples,
   };
 }
 
@@ -151,6 +143,7 @@ async function main() {
     latestAsset("KanjiVG/kanjivg", /^kanjivg-\d+-main\.zip$/),
   ]);
   const jmdictRawUrl = "http://ftp.edrdg.org/pub/Nihongo/JMdict_e.gz";
+  const tanakaUrl = "http://ftp.edrdg.org/pub/Nihongo/examples.utf.gz";
 
   const kanjidic = unzipJson<{ characters: KanjidicChar[] }>(await download(kanjidicAsset.url, kanjidicAsset.name));
   const krad = unzipJson<{ kanji: Record<string, string[]> }>(await download(kradAsset.url, kradAsset.name));
@@ -162,6 +155,8 @@ async function main() {
     gunzipSync(await download(jmdictRawUrl, "JMdict_e.gz", MAX_AGE_MS)).toString("utf8"),
   );
   const kanjivgZip = await download(kanjivgAsset.url, kanjivgAsset.name);
+  const tanaka = parseTanaka(gunzipSync(await download(tanakaUrl, "examples.utf.gz", MAX_AGE_MS)).toString("utf8"));
+  const tanakaVersion = statSync(join(RAW, "examples.utf.gz")).mtime.toISOString().slice(0, 10);
 
   // Kanji: jōyō + jinmeiyō (grades 1–10). Only jōyō go on the path.
   const kanjiChars = kanjidic.characters.filter((c) => c.misc.grade !== null);
@@ -225,7 +220,7 @@ async function main() {
   insertSource.run("JMdict", examplesAsset.version, "CC BY-SA 4.0", "https://www.edrdg.org/wiki/index.php/JMdict-EDICT_Dictionary_Project", `Electronic Dictionary Research and Development Group (EDRDG), licence: ${edrdg}`);
   insertSource.run("KRADFILE/RADKFILE", kradAsset.version, "CC BY-SA 4.0", "https://www.edrdg.org/krad/kradinf.html", `Electronic Dictionary Research and Development Group (EDRDG), licence: ${edrdg}`);
   insertSource.run("KanjiVG", kanjivgAsset.version, "CC BY-SA 3.0", "https://kanjivg.tagaini.net", "Copyright Ulrich Apel");
-  insertSource.run("Tatoeba (via JMdict examples)", examplesAsset.version, "CC BY 2.0 FR", "https://tatoeba.org", "Tatoeba contributors");
+  insertSource.run("Tatoeba (Tanaka Corpus, indexed by EDRDG)", tanakaVersion, "CC BY 2.0 FR", "https://tatoeba.org", "Tatoeba contributors; word index by the Electronic Dictionary Research and Development Group (EDRDG)");
   insertSource.run("jmdict-simplified (JSON conversion)", examplesAsset.version, "CC BY-SA 4.0", "https://github.com/scriptin/jmdict-simplified", "Dmitry Shpika and contributors");
 
   const insertComponent = db.prepare("INSERT INTO components (glyph, display, name, stroke_count) VALUES (?, ?, ?, ?)");
@@ -261,16 +256,15 @@ async function main() {
     `INSERT INTO words (id, written, reading, other_forms, senses, priority, usually_kana) VALUES (?, ?, ?, ?, ?, ?, ?)`,
   );
   const insertWordKanji = db.prepare("INSERT INTO word_kanji (word_id, kanji) VALUES (?, ?)");
-  const insertSentence = db.prepare("INSERT OR IGNORE INTO sentences (id, japanese, english) VALUES (?, ?, ?)");
-  const insertWordSentence = db.prepare("INSERT OR IGNORE INTO word_sentences (word_id, sentence_id, form) VALUES (?, ?, ?)");
+  const insertSentence = db.prepare("INSERT INTO sentences (id, japanese, english, kanji_words, unlisted) VALUES (?, ?, ?, ?, ?)");
+  const insertWordSentence = db.prepare("INSERT INTO word_sentences (word_id, sentence_id, form, checked) VALUES (?, ?, ?, ?)");
   for (const w of words) {
     insertWord.run(w.id, w.written, w.reading, JSON.stringify(w.otherForms), JSON.stringify(w.senses), w.priority, w.usuallyKana ? 1 : 0);
     for (const k of w.kanji) if (kanjiSet.has(k)) insertWordKanji.run(w.id, k);
-    for (const e of w.examples) {
-      insertSentence.run(e.id, e.japanese, e.english);
-      insertWordSentence.run(w.id, e.id, e.form);
-    }
   }
+  const { sentences, links: sentenceLinks } = linkSentences(tanaka, words, SENTENCES_PER_WORD);
+  for (const s of sentences) insertSentence.run(s.id, s.japanese, s.english, JSON.stringify(s.kanjiWords), s.unlisted);
+  for (const l of sentenceLinks) insertWordSentence.run(l.wordId, l.sentenceId, l.form, l.checked ? 1 : 0);
 
   // Dictionary search over every kanji and word.
   const insertSearch = db.prepare("INSERT INTO search (term, field, item_key, weight, rank) VALUES (?, ?, ?, ?, ?)");
@@ -359,6 +353,9 @@ async function main() {
   if (curatedMissing.length) console.log(`  hand-picked kana examples not found in common words: ${curatedMissing.join(" ")}`);
   if (kanaWithoutExample.length) console.log(`  kana without an example word: ${kanaWithoutExample.join(" ")}`);
   if (noSvg.length) console.log(`  jōyō kanji without stroke order: ${noSvg.join(" ")}`);
+  const wordsWithSentences = new Set(sentenceLinks.map((l) => l.wordId));
+  const pathWordsWithout = path.filter((p) => p.kind === "word" && !wordsWithSentences.has(p.key.slice(5))).length;
+  console.log(`  example sentences: ${sentences.length}, for ${wordsWithSentences.size} words (${pathWordsWithout} path words have none)`);
   console.log(`  dictionary search: ${searchRows} terms`);
   console.log(`  default mnemonics: ${Object.keys(mnemonics).length} items`);
 }

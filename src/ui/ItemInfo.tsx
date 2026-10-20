@@ -1,4 +1,4 @@
-import { BookOpen, Ear, Languages, Lightbulb, List, Pencil, PenLine, Quote, Search, Shapes, Sparkles, Tag, Tags, type LucideIcon, Volume2 } from "lucide-react";
+import { BookOpen, CircleCheck, Ear, Languages, Lightbulb, List, Pencil, PenLine, Quote, Search, Shapes, Sparkles, Tag, Tags, type LucideIcon, Volume2 } from "lucide-react";
 import { useState } from "react";
 import { tauriDb } from "../db/tauriDb.ts";
 import { addSynonym, removeSynonym, saveNote, type ItemDetails, type Note, type NoteKind } from "../items.ts";
@@ -138,7 +138,12 @@ export function ItemInfo({ item, onChange }: { item: ItemDetails; onChange: () =
               <ul className="plain">
                 {item.sentences.map((s) => (
                   <li key={s.japanese}>
-                    <JapaneseText text={s.japanese} />
+                    <JapaneseText text={s.japanese} highlight={s.form} />
+                    {s.newWords === 0 && (
+                      <span className="known-words" title="You've started every word in this sentence">
+                        <CircleCheck size={14} strokeWidth={2} aria-hidden="true" /> all words known
+                      </span>
+                    )}
                     <br />
                     <span className="muted">{s.english}</span>
                   </li>

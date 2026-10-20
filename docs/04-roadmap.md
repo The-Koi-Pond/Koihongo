@@ -40,7 +40,7 @@ Each phase ends with something you can **use daily**. Don't start the next phase
 ## Phase 3: Lookup and sentences
 
 - ✅ Dictionary search (English, kana, romaji, kanji) over all 22,647 common JMdict words and 2,974 kanji, on your path or not (`search` table in content.db, `src/dictionary.ts`).
-- Example sentences on every word, preferring words you know.
+- ✅ Example sentences, preferring words you know: up to 20 per word from the Tanaka Corpus; a word page shows the 3 with the fewest words you haven't started. 15,755 words have some; 399 path words (mostly newspaper words like 県立) still have none.
 - "Explain this sentence" AI helper.
 
 ## Phase 4: Grammar
