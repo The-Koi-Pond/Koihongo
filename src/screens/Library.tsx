@@ -166,7 +166,7 @@ function ItemPage({ itemKey, onOpen, onBack }: { itemKey: string; onOpen: (key: 
               ← Library
             </button>
           }
-          above={progress && <ProgressLine progress={progress} onOpen={onOpen} />}
+          below={progress && <ProgressLine progress={progress} onOpen={onOpen} />}
         />
       ) : (
         <p className="muted">Loading…</p>

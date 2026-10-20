@@ -7,26 +7,27 @@ import { itemLabel } from "./useItem.ts";
 const GROUP_NAME = { basic: "basic", dakuten: "゛/゜ marks", combo: "combination", extended: "extended" } as const;
 
 /**
- * Full item page: a full-width scenic banner with the character, then the detail
- * cards. `bannerStart` goes in the banner's top-left corner (e.g. a back button);
- * `above` goes between the banner and the cards.
+ * Full item page, sized to the window: the detail cards anchor to the bottom,
+ * and the scenic banner takes the remaining height, with the character scaled
+ * to fit it. `bannerStart` goes in the banner's top-left corner (e.g. a back
+ * button); `below` goes under the cards.
  */
 export function ItemView({
   item,
   onChange,
-  above,
+  below,
   bannerStart,
 }: {
   item: ItemDetails;
   onChange: () => void;
-  above?: React.ReactNode;
+  below?: React.ReactNode;
   bannerStart?: React.ReactNode;
 }) {
   return (
     <div className="item-view">
       <ItemBanner item={item} start={bannerStart} />
-      {above}
       <ItemInfo item={item} onChange={onChange} />
+      {below}
     </div>
   );
 }
@@ -61,18 +62,14 @@ function bannerFacts(item: ItemDetails): { kicker: string; badge?: string; prima
   }
 }
 
-/** Shrinks long words so they still fit the banner. */
-function glyphSize(label: string): string {
-  const n = [...label].length;
-  return n <= 1 ? "8rem" : n === 2 ? "6rem" : n === 3 ? "4.6rem" : "3.4rem";
-}
-
 function ItemBanner({ item, start }: { item: ItemDetails; start?: React.ReactNode }) {
   const { kicker, badge, primary, secondary, speak } = bannerFacts(item);
   const label = itemLabel(item);
   return (
     <header className={`banner ${item.kind}`}>
       <BannerScene />
+      <CornerBranch side="left" />
+      <CornerBranch side="right" />
       <div className="banner-top">
         <div className="banner-top-start">
           {start}
@@ -83,7 +80,8 @@ function ItemBanner({ item, start }: { item: ItemDetails; start?: React.ReactNod
           {badge && <p className="banner-badge">{badge}</p>}
         </div>
       </div>
-      <div className="banner-glyph" lang="ja" style={{ fontSize: glyphSize(label) }}>
+      {/* Sized in CSS from the banner's height and width (container query units); --chars lets long words shrink. */}
+      <div className="banner-glyph" lang="ja" style={{ "--chars": [...label].length } as React.CSSProperties}>
         {label}
       </div>
       {(primary || secondary) && (
@@ -145,19 +143,34 @@ function BannerScene() {
       <path d="M0 205 L80 172 L150 190 L240 140 L320 182 L400 158 L480 186 L570 132 L660 176 L740 150 L800 170 L800 300 L0 300Z" fill="#000" opacity="0.16" />
       <path d="M0 236 L110 200 L210 222 L300 196 L370 160 L400 150 L430 160 L500 196 L600 222 L700 198 L800 228 L800 300 L0 300Z" fill="#000" opacity="0.26" />
       <path d="M0 268 Q 140 240 290 262 T 560 255 T 800 264 L800 300 L0 300Z" fill="#000" opacity="0.38" />
-      {/* The banner crops the top of the scene, so the branches sit lower, at the sides. */}
-      <g transform="translate(0 85)">
+    </svg>
+  );
+}
+
+const LEFT_BRANCHES = ["M-10 36 Q 40 48 72 66 T 136 104", "M40 52 Q 54 74 44 96", "M86 72 Q 104 70 112 86"];
+const RIGHT_BRANCHES = ["M812 30 Q 770 52 742 74 T 700 102", "M752 66 Q 760 88 778 104"];
+
+/**
+ * A blossom branch pinned to one side of the banner. Separate from the
+ * landscape so it keeps a sensible size and stays in frame at any banner size.
+ */
+function CornerBranch({ side }: { side: "left" | "right" }) {
+  const left = side === "left";
+  return (
+    <svg
+      className={`banner-branch ${side}`}
+      viewBox={left ? "-10 20 160 110" : "650 20 160 110"}
+      preserveAspectRatio={left ? "xMinYMin meet" : "xMaxYMin meet"}
+      aria-hidden="true"
+    >
       <g className="branches">
-        <path d="M-10 36 Q 40 48 72 66 T 136 104" />
-        <path d="M40 52 Q 54 74 44 96" />
-        <path d="M86 72 Q 104 70 112 86" />
-        <path d="M812 30 Q 770 52 742 74 T 700 102" />
-        <path d="M752 66 Q 760 88 778 104" />
+        {(left ? LEFT_BRANCHES : RIGHT_BRANCHES).map((d) => (
+          <path key={d} d={d} />
+        ))}
       </g>
-      {BLOSSOMS.map(([x, y, size], i) => (
+      {BLOSSOMS.filter(([x]) => (x < 400) === left).map(([x, y, size], i) => (
         <Blossom key={i} x={x} y={y} size={size} />
       ))}
-      </g>
     </svg>
   );
 }
