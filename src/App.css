@@ -422,6 +422,73 @@ footer {
   padding-left: 1.2em;
 }
 
+/* Mnemonic workshop */
+
+.workshop {
+  margin-top: 10px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 12px;
+  background: var(--surface-2);
+  display: grid;
+  gap: 10px;
+}
+
+.workshop-head {
+  display: flex;
+  justify-content: space-between;
+}
+
+.chat {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: grid;
+  gap: 8px;
+  max-height: 420px;
+  overflow-y: auto;
+}
+
+.chat li {
+  padding: 8px 12px;
+  border-radius: 10px;
+  max-width: 90%;
+}
+
+.chat li p {
+  margin: 0;
+  white-space: pre-wrap;
+}
+
+.chat .user {
+  justify-self: end;
+  background: var(--accent);
+  color: var(--accent-text);
+}
+
+.chat .assistant {
+  justify-self: start;
+  background: var(--surface);
+  border: 1px solid var(--border);
+}
+
+.option {
+  display: flex;
+  gap: 8px;
+  align-items: flex-start;
+  margin-top: 8px;
+}
+
+.option button {
+  flex-shrink: 0;
+  padding: 2px 10px;
+}
+
+.grow {
+  flex: 1;
+  min-width: 0;
+}
+
 /* Sources */
 
 .sources {

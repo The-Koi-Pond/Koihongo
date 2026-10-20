@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { tauriDb } from "../db/tauriDb.ts";
 import { addSynonym, removeSynonym, saveNote, type ItemDetails, type Note, type NoteKind } from "../items.ts";
+import { MnemonicWorkshop } from "./MnemonicWorkshop.tsx";
 
 const KIND_NAME = { component: "Component", kanji: "Kanji", word: "Word" } as const;
 
@@ -133,6 +134,7 @@ const AUTHOR_NOTE: Record<Note["author"], string> = { you: "", ai: "written by A
 function NoteEditor({ item, kind, label, onSaved }: { item: ItemDetails; kind: NoteKind; label: string; onSaved: () => void }) {
   const note = item.notes[kind];
   const [editing, setEditing] = useState(false);
+  const [workshop, setWorkshop] = useState(false);
   const [text, setText] = useState(note?.text ?? "");
   const [error, setError] = useState<string>();
 
@@ -176,7 +178,23 @@ function NoteEditor({ item, kind, label, onSaved }: { item: ItemDetails; kind: N
           >
             {note ? "Edit" : "Write one"}
           </button>
+          {kind !== "note" && !workshop && (
+            <button type="button" className="link" onClick={() => setWorkshop(true)}>
+              Ask AI
+            </button>
+          )}
         </div>
+      )}
+      {workshop && kind !== "note" && (
+        <MnemonicWorkshop
+          item={item}
+          focus={kind === "mnemonic_meaning" ? "meaning" : "reading"}
+          onUse={async (suggestion) => {
+            await saveNote(tauriDb, item.item_key, kind, suggestion, "ai", Date.now());
+            onSaved();
+          }}
+          onClose={() => setWorkshop(false)}
+        />
       )}
     </Field>
   );

@@ -170,7 +170,7 @@ run from an empty working folder.
 
 - **No spending log or cap** (decided 2026-10-20: not useful for personal use on a subscription).
 - **Model choice per feature:** Haiku for bulk jobs like drafting mnemonics; Sonnet for chat and explanations.
-- **Prompts live in plain text files** in the project, so they're easy to read and tune.
+- **Prompts live in one file**, [`src/ai/prompts.ts`](../src/ai/prompts.ts), so they're easy to read and tune. `LEARNER_PROFILE` there describes you to the AI.
 - **Japanese accuracy:** the AI's facts (readings, meanings) come *from our database* in the prompt, not from the AI's memory. The AI is used for creativity and explanation, not as the source of truth.
 
 ## Testing approach
