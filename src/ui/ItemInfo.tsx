@@ -2,6 +2,7 @@ import { BookOpen, Ear, Languages, Lightbulb, List, Pencil, PenLine, Quote, Sear
 import { useState } from "react";
 import { tauriDb } from "../db/tauriDb.ts";
 import { addSynonym, removeSynonym, saveNote, type ItemDetails, type Note, type NoteKind } from "../items.ts";
+import { Gloss } from "./Gloss.tsx";
 import { MnemonicWorkshop } from "./MnemonicWorkshop.tsx";
 import { soundHint } from "../kanaSounds.ts";
 import { ItemHover, JapaneseText } from "./Popover.tsx";
@@ -33,7 +34,9 @@ export function ItemInfo({ item, onChange }: { item: ItemDetails; onChange: () =
                       {item.example.form}
                     </span>
                   )}
-                  <span>{item.example.meaning}</span>
+                  <span>
+                    <Gloss text={item.example.meaning} />
+                  </span>
                 </div>
               </Field>
             )}
@@ -102,7 +105,9 @@ export function ItemInfo({ item, onChange }: { item: ItemDetails; onChange: () =
                     <span lang="ja" className="muted">
                       {w.reading}
                     </span>
-                    <span>{w.meaning}</span>
+                    <span>
+                      <Gloss text={w.meaning} />
+                    </span>
                   </li>
                 ))}
               </ul>
@@ -116,7 +121,9 @@ export function ItemInfo({ item, onChange }: { item: ItemDetails; onChange: () =
           <Field label="Meanings" icon={BookOpen}>
             <ol className="senses">
               {item.senses.slice(0, 4).map((s, i) => (
-                <li key={i}>{s.glosses.join("; ")}</li>
+                <li key={i}>
+                  <Gloss text={s.glosses.join("; ")} />
+                </li>
               ))}
             </ol>
           </Field>
@@ -218,7 +225,7 @@ function Chips({ items }: { items: { glyph: string; text: string; kind: string; 
             <span lang="ja" className={`chip-glyph ${c.kind}`}>
               {c.glyph}
             </span>
-            {c.text}
+            <Gloss text={c.text} />
           </ItemHover>
         </li>
       ))}

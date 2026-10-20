@@ -1,6 +1,7 @@
 import { createContext, useContext, useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { tauriDb } from "../db/tauriDb.ts";
+import { Gloss } from "./Gloss.tsx";
 import { itemPreview, STATUS_NAME, type ItemPreview } from "../library.ts";
 
 /**
@@ -85,7 +86,9 @@ function PreviewBody({ preview, canOpen }: { preview: ItemPreview; canOpen: bool
         </span>
         <span className="popover-kind">{preview.kind}</span>
       </div>
-      <p>{preview.meanings.slice(0, 5).join(", ")}</p>
+      <p>
+        <Gloss text={preview.meanings.slice(0, 5).join(", ")} />
+      </p>
       {preview.readings.length > 0 && (
         <p lang="ja" className="popover-readings">
           {preview.readings.join("、")}

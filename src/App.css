@@ -1404,6 +1404,12 @@ textarea {
 .chip-link.kanji { background: var(--kanji); }
 .chip-link.word { background: var(--word); }
 
+/* Dictionary notes in meanings, e.g. "dog (Canis (lupus) familiaris)": faded. */
+.gloss-note {
+  opacity: 0.55;
+  font-weight: 400;
+}
+
 /* Popovers */
 
 .hover-target {
