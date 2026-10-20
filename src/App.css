@@ -520,8 +520,42 @@ textarea {
   border-color: var(--text);
 }
 
-.lesson-nav {
+/* Fixed bottom bar for lesson pages (matches the title bar). */
+.bottom-bar {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 40;
+  background: color-mix(in srgb, var(--surface) 92%, transparent);
+  backdrop-filter: blur(10px);
+  border-top: 1px solid var(--border);
+}
+
+.bottom-bar-inner {
+  max-width: 1040px;
+  margin: 0 auto;
+  padding: 10px 16px;
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
   justify-content: space-between;
+  gap: 16px;
+}
+
+.bottom-bar-inner > button {
+  min-width: 120px;
+}
+
+.bottom-bar-center {
+  display: grid;
+  justify-items: center;
+  gap: 4px;
+}
+
+/* Room so the last content can scroll above the bottom bar. */
+.session.with-bottom-bar {
+  padding-bottom: 96px;
 }
 
 /* Item details */
