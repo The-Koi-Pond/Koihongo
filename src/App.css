@@ -1666,6 +1666,18 @@ textarea {
   gap: 12px;
 }
 
+.today .card {
+  padding: 12px 18px 14px;
+}
+
+.today .card p {
+  margin: 0;
+}
+
+.today .card .muted.small {
+  margin-top: 4px;
+}
+
 @media (max-width: 700px) {
   .today-tiles {
     grid-template-columns: 1fr;
@@ -1676,7 +1688,7 @@ textarea {
   display: flex;
   align-items: center;
   gap: 6px;
-  margin: 0 0 6px;
+  margin: 0 0 2px;
 }
 
 .tile-title svg {
@@ -1711,11 +1723,12 @@ textarea {
   display: flex;
   align-items: center;
   gap: 10px;
-  margin-top: 8px;
+  margin-top: 6px;
 }
 
 .track-name {
-  min-width: 72px;
+  flex-shrink: 0;
+  min-width: 64px;
   font-size: 0.8rem;
   color: var(--muted);
 }
@@ -1730,8 +1743,8 @@ textarea {
 }
 
 .mini-glyphs li {
-  min-width: 26px;
-  padding: 1px 5px;
+  min-width: 24px;
+  padding: 0 4px;
   border-radius: 6px;
   color: var(--on-kind);
   font-size: 1rem;
@@ -1746,7 +1759,7 @@ textarea {
 
 /* Review forecast: one series, thin bars with rounded tops on a baseline, 2px gaps. */
 .forecast {
-  margin: 10px 0 0;
+  margin: 6px 0 0;
 }
 
 .forecast-bars {
@@ -1821,10 +1834,10 @@ textarea {
 
 .progress-rows {
   list-style: none;
-  margin: 8px 0 0;
+  margin: 4px 0 0;
   padding: 0;
   display: grid;
-  gap: 8px;
+  gap: 4px 24px;
 }
 
 .progress-rows li {

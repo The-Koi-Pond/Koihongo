@@ -166,7 +166,7 @@ export function Today({
           <p className="muted small">
             {summary.lessonsWaiting > 0
               ? lessonAllowance(summary.reviewsDue, 0) < NEW_PER_DAY
-                ? `${summary.lessonsWaiting} more unlocked, waiting until you've cleared some reviews`
+                ? `${summary.lessonsWaiting} more unlocked · clear some reviews first`
                 : `${summary.lessonsWaiting} more unlocked, saved for tomorrow (daily limits: ${KANA_PER_DAY} kana, ${NEW_PER_DAY} others)`
               : lessons === 0
                 ? "New items unlock as your reviews go well."
@@ -200,7 +200,7 @@ export function Today({
 
 function TrackPreview({ name, lessons }: { name: string; lessons: Lesson[] }) {
   if (lessons.length === 0) return null;
-  const shown = lessons.slice(0, 8);
+  const shown = lessons.slice(0, 6); // one row, even in a narrow window
   return (
     <div className="track-preview">
       <span className="track-name">{name}</span>
