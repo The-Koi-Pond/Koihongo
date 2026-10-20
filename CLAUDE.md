@@ -41,13 +41,14 @@ After `pnpm content:build`, restart the app: content.db is attached when it star
 
 ## Checking UI changes
 
-Headless Edge previews work well for screenshots:
+Use **browser mode** with the Playwright tools: while `pnpm tauri dev` runs, open http://localhost:1420 and click through the real app with real data.
 
-1. Write a temporary `preview.html` and `src/dev/preview.tsx` that fake `window.__TAURI_INTERNALS__` (its `invoke` answers `db_query` with canned rows) and render one screen.
-2. Screenshot it from the running dev server (port 1420): `msedge --headless=new --screenshot=… --window-size=W,H --virtual-time-budget=5000 http://localhost:1420/preview.html`.
-3. Delete both files afterwards.
-
-To get realistic rows, run the real query in Node with `openDbWithContent` from `tests/nodeDb.ts` and record the answers. Virtual time doesn't run CSS transitions or `requestAnimationFrame`, so check animations in the real app. Only screenshot previews or the app, never the desktop.
+- `src/dev/browserBridge.ts` stands in for Tauri's bridge when there's no Tauri window, in dev builds only. It sends calls to the dev server.
+- `scripts/dev/browser-mode.ts` answers them like `src-tauri` does, using a fresh copy of Xel's `user.db`, made per dev-server start, with `content.db` attached. Lessons and reviews you do there never touch real progress.
+- Backups and AI calls only work in the desktop app. In browser mode the startup auto-backup logs a harmless warning.
+- Test at the real window size (`browser_resize`, for example 1100×760). Hover states, animations and layout shifts can all be checked; use `browser_wait_for` before screenshotting.
+- For visual tuning with Xel, prefer a **playground** (the playground skill): the real component with sliders, so Xel picks values directly instead of describing them.
+- Only screenshot the browser or the app, never the desktop.
 
 ## Conventions
 
