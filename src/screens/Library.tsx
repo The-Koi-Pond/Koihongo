@@ -125,12 +125,6 @@ export function Library({ onExit }: { onExit: () => void }) {
                     <span className="tile-glyph" lang="ja">
                       {i.label}
                     </span>
-                    {i.reading && (
-                      <span className="tile-reading" lang="ja">
-                        {i.reading}
-                      </span>
-                    )}
-                    <span className="tile-meaning">{i.meaning}</span>
                   </button>
                 </ItemHover>
               </li>
