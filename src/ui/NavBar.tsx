@@ -29,10 +29,10 @@ export type Screen =
   | "reviews"
   | "quick-reviews";
 
-const SECTIONS: { screen: Screen; icon: LucideIcon; ja: string; en: string; soon?: boolean }[] = [
+const SECTIONS: { screen: Screen; icon: LucideIcon; ja: string; en: string; short?: string; soon?: boolean }[] = [
   { screen: "today", icon: House, ja: "今日", en: "Today" },
   { screen: "library", icon: LibraryBig, ja: "図書館", en: "Library" },
-  { screen: "dictionary", icon: BookA, ja: "辞書", en: "Dictionary", soon: true },
+  { screen: "dictionary", icon: BookA, ja: "辞書", en: "Dictionary", short: "Dict", soon: true },
   { screen: "grammar", icon: Puzzle, ja: "文法", en: "Grammar", soon: true },
   { screen: "reading", icon: BookOpenText, ja: "読書", en: "Reading", soon: true },
 ];
@@ -66,21 +66,20 @@ export function NavBar({
       </button>
 
       <nav className={`nav-group ${locked ? "locked" : ""}`} aria-label="Main" data-tauri-drag-region>
-        {SECTIONS.map(({ screen: s, icon: Icon, ja, en, soon }, i) => (
-          <span key={s} className="nav-slot">
-            {i === 1 && <span className="divider" />}
-            <button
-              className={`icon-btn ${screen === s ? "current" : ""}`}
-              aria-current={screen === s ? "page" : undefined}
-              aria-label={en}
-              title={navTitle(`${ja} ${en}${soon ? " (coming soon)" : ""}`)}
-              onClick={() => go(s)}
-              disabled={locked}
-            >
-              <Icon {...ICON} />
-              {soon && <span className="soon-dot" />}
-            </button>
-          </span>
+        {SECTIONS.map(({ screen: s, icon: Icon, ja, en, short, soon }) => (
+          <button
+            key={s}
+            className={`nav-tab ${screen === s ? "current" : ""}`}
+            aria-current={screen === s ? "page" : undefined}
+            aria-label={en}
+            title={navTitle(`${ja} ${en}${soon ? " (coming soon)" : ""}`)}
+            onClick={() => go(s)}
+            disabled={locked}
+          >
+            <Icon size={16} strokeWidth={2} aria-hidden="true" />
+            <span className="nav-tab-label">{short ?? en}</span>
+            {soon && <span className="soon-dot" />}
+          </button>
         ))}
       </nav>
 

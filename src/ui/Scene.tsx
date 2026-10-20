@@ -1,13 +1,101 @@
-// The dusk landscape behind banners (item pages and Today): sky tinted by the
-// --kind CSS variable, sun, mountain ridges, and blossom branches in the corners.
+// The night scene behind banners (Today and item pages).
+//
+// Visual rule: scenery FRAMES the hero area (greeting, Start, the big character)
+// and never sits behind it. Mountains, moon and blossoms are separate pieces
+// pinned to the left and right edges, each capped in width, so the centre stays
+// clear at any window size. The sky itself is the .banner background in CSS,
+// with the horizon tinted by the item's --kind colour.
 
 import { useId } from "react";
 
-// Blossom clusters: [x, y, size] along the two corner branches.
+/** Everything decorative in a banner: stars, both side sceneries, water, blossoms. */
+export function BannerScene() {
+  return (
+    <>
+      <div className="banner-deco banner-stars" aria-hidden="true" />
+      <SideScenery side="left" />
+      <SideScenery side="right" />
+      <div className="banner-deco banner-water" aria-hidden="true" />
+      <BlossomBranch />
+    </>
+  );
+}
+
+/** A small four-point sparkle centred on (x, y). */
+function Sparkle({ x, y, size = 2 }: { x: number; y: number; size?: number }) {
+  return (
+    <g fill="#fff3c4">
+      <rect x={x} y={y - size} width="1" height={size * 2 + 1}></rect>
+      <rect x={x - size} y={y} width={size * 2 + 1} height="1"></rect>
+    </g>
+  );
+}
+
+/** Mountains for one side. Drawn for the left; the right is the same mountains mirrored, plus the moon. */
+function SideScenery({ side }: { side: "left" | "right" }) {
+  const left = side === "left";
+  const moonMask = useId().replace(/:/g, "");
+  return (
+    <svg
+      className={`banner-deco banner-side ${side}`}
+      viewBox="0 0 240 160"
+      preserveAspectRatio={left ? "xMinYMax meet" : "xMaxYMax meet"}
+      shapeRendering="crispEdges"
+      aria-hidden="true"
+    >
+      <g transform={left ? undefined : "translate(240 0) scale(-1 1)"}>
+        {/* Far ridge */}
+        <polygon points="0,160 0,96 40,80 80,98 120,86 170,112 210,132 240,160" fill="#3d3591" opacity="0.9"></polygon>
+        {/* Main peak, its lit face, and the snow cap */}
+        <polygon points="0,160 0,122 30,98 70,62 84,54 96,52 108,56 122,64 160,98 200,130 232,160" fill="#5a4fb0"></polygon>
+        <polygon points="96,52 108,56 122,64 160,98 200,130 232,160 150,160 120,110 100,70" fill="#6c60c4"></polygon>
+        <polygon points="70,62 84,54 96,52 108,56 122,64 113,70 104,64 96,72 88,64 78,70" fill="#eef0ff"></polygon>
+        {/* Low pink clouds: stepped pixel puffs */}
+        <g fill="#f7b8de" opacity="0.6">
+          <rect x="16" y="102" width="12" height="3"></rect>
+          <rect x="30" y="104" width="8" height="3"></rect>
+          <rect x="10" y="105" width="32" height="3"></rect>
+          <rect x="4" y="108" width="44" height="4"></rect>
+          <rect x="158" y="116" width="10" height="3"></rect>
+          <rect x="152" y="119" width="26" height="3"></rect>
+          <rect x="146" y="122" width="40" height="3"></rect>
+        </g>
+      </g>
+      {left ? (
+        <>
+          {/* Shooting star */}
+          <g fill="#ffffff">
+            <rect x="150" y="18" width="3" height="1"></rect>
+            <rect x="144" y="21" width="4" height="1" opacity="0.7"></rect>
+            <rect x="137" y="24" width="4" height="1" opacity="0.45"></rect>
+            <rect x="130" y="27" width="4" height="1" opacity="0.25"></rect>
+          </g>
+          <Sparkle x={196} y={44} />
+          <Sparkle x={40} y={58} size={1} />
+        </>
+      ) : (
+        <>
+          <defs>
+            <mask id={moonMask}>
+              <rect width="240" height="160" fill="#fff"></rect>
+              <circle cx="186" cy="30" r="12" fill="#000"></circle>
+            </mask>
+          </defs>
+          <circle cx="196" cy="34" r="20" fill="#ffe08a" opacity="0.07"></circle>
+          <circle cx="196" cy="34" r="13" fill="#ffe08a" mask={`url(#${moonMask})`}></circle>
+          <Sparkle x={150} y={22} />
+          <Sparkle x={222} y={70} size={1} />
+        </>
+      )}
+    </svg>
+  );
+}
+
+// Blossom clusters: [x, y, size] along the top-left branch.
 const BLOSSOMS: [number, number, number][] = [
   [30, 58, 9], [52, 46, 7], [70, 66, 10], [92, 58, 7], [110, 84, 9], [128, 100, 7], [46, 84, 6], [16, 92, 7],
-  [770, 58, 9], [748, 44, 7], [726, 70, 10], [752, 86, 7], [706, 96, 8], [784, 104, 6], [732, 116, 6],
 ];
+const BRANCHES = ["M-10 36 Q 40 48 72 66 T 136 104", "M40 52 Q 54 74 44 96", "M86 72 Q 104 70 112 86"];
 
 /** A five-petal blossom. */
 function Blossom({ x, y, size }: { x: number; y: number; size: number }) {
@@ -21,59 +109,16 @@ function Blossom({ x, y, size }: { x: number; y: number; size: number }) {
   );
 }
 
-/**
- * Dusk landscape behind the character: sky in the item's kind colour, a low
- * sun, three mountain ridges and two blossom branches. Pure SVG, tinted via
- * the --kind CSS variable, so it needs no image files.
- */
-export function BannerScene() {
-  // Unique gradient ids, in case two banners are ever on screen at once.
-  const id = useId().replace(/:/g, "");
+/** A cherry-blossom branch reaching in from the top-left corner. */
+function BlossomBranch() {
   return (
-    <svg className="banner-scene" viewBox="0 0 800 300" preserveAspectRatio="xMidYMax slice" aria-hidden="true">
-      <defs>
-        <linearGradient id={`${id}-sky`} x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0" style={{ stopColor: "color-mix(in srgb, var(--kind) 45%, #120a1c)" }} />
-          <stop offset="0.75" style={{ stopColor: "var(--kind)" }} />
-          <stop offset="1" style={{ stopColor: "color-mix(in srgb, var(--kind) 70%, #ffd9a8)" }} />
-        </linearGradient>
-        <radialGradient id={`${id}-sun`}>
-          <stop offset="0" stopColor="#fff" stopOpacity="0.55" />
-          <stop offset="0.35" stopColor="#ffe3c4" stopOpacity="0.25" />
-          <stop offset="1" stopColor="#fff" stopOpacity="0" />
-        </radialGradient>
-      </defs>
-      <rect width="800" height="300" fill={`url(#${id}-sky)`} />
-      <circle cx="400" cy="215" r="150" fill={`url(#${id}-sun)`} />
-      <path d="M0 205 L80 172 L150 190 L240 140 L320 182 L400 158 L480 186 L570 132 L660 176 L740 150 L800 170 L800 300 L0 300Z" fill="#000" opacity="0.16" />
-      <path d="M0 236 L110 200 L210 222 L300 196 L370 160 L400 150 L430 160 L500 196 L600 222 L700 198 L800 228 L800 300 L0 300Z" fill="#000" opacity="0.26" />
-      <path d="M0 268 Q 140 240 290 262 T 560 255 T 800 264 L800 300 L0 300Z" fill="#000" opacity="0.38" />
-    </svg>
-  );
-}
-
-const LEFT_BRANCHES = ["M-10 36 Q 40 48 72 66 T 136 104", "M40 52 Q 54 74 44 96", "M86 72 Q 104 70 112 86"];
-const RIGHT_BRANCHES = ["M812 30 Q 770 52 742 74 T 700 102", "M752 66 Q 760 88 778 104"];
-
-/**
- * A blossom branch pinned to one side of the banner. Separate from the
- * landscape so it keeps a sensible size and stays in frame at any banner size.
- */
-export function CornerBranch({ side }: { side: "left" | "right" }) {
-  const left = side === "left";
-  return (
-    <svg
-      className={`banner-branch ${side}`}
-      viewBox={left ? "-10 20 160 110" : "650 20 160 110"}
-      preserveAspectRatio={left ? "xMinYMin meet" : "xMaxYMin meet"}
-      aria-hidden="true"
-    >
+    <svg className="banner-deco banner-branch left" viewBox="-10 20 160 110" preserveAspectRatio="xMinYMin meet" aria-hidden="true">
       <g className="branches">
-        {(left ? LEFT_BRANCHES : RIGHT_BRANCHES).map((d) => (
+        {BRANCHES.map((d) => (
           <path key={d} d={d} />
         ))}
       </g>
-      {BLOSSOMS.filter(([x]) => (x < 400) === left).map(([x, y, size], i) => (
+      {BLOSSOMS.map(([x, y, size], i) => (
         <Blossom key={i} x={x} y={y} size={size} />
       ))}
     </svg>

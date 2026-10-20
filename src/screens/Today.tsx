@@ -5,7 +5,8 @@ import { progressByKind, type KindProgress } from "../library.ts";
 import { lessonAllowance, reviewForecast, type Lesson, type TodaySummary } from "../srs/progress.ts";
 import { KANA_PER_DAY, NEW_PER_DAY } from "../srs/settings.ts";
 import type { Screen } from "../ui/NavBar.tsx";
-import { BannerScene, CornerBranch } from "../ui/Scene.tsx";
+import { BannerScene } from "../ui/Scene.tsx";
+import { StatusBar } from "../ui/StatusBar.tsx";
 
 export type StudyOrder = "reviews" | "lessons";
 
@@ -88,11 +89,9 @@ export function Today({
   };
 
   return (
-    <div className="fit-page today">
+    <div className="fit-page today with-status-bar">
       <header className="banner bleed today-banner">
         <BannerScene />
-        <CornerBranch side="left" />
-        <CornerBranch side="right" />
         <div className="banner-top">
           <div>
             <p lang="ja" className="greeting-ja">
@@ -109,6 +108,7 @@ export function Today({
             <span>{reviews || lessons ? "Start" : "All caught up"}</span>
             {(reviews > 0 || lessons > 0) && <span className="start-detail">· {startDetail}</span>}
           </button>
+          <div className="start-options">
           {reviews > 0 && lessons > 0 && (
             <div className="order-toggle" role="group" aria-label="What comes first">
               <button aria-pressed={order === "reviews"} onClick={() => pickOrder("reviews")}>
@@ -124,6 +124,7 @@ export function Today({
               Just 5 minutes
             </button>
           )}
+          </div>
         </div>
       </header>
 
@@ -192,6 +193,7 @@ export function Today({
           <ProgressBars rows={progress} />
         </section>
       )}
+      <StatusBar />
     </div>
   );
 }
