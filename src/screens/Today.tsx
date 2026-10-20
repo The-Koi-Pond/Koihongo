@@ -3,7 +3,7 @@ import { tauriDb } from "../db/tauriDb.ts";
 import { lessonAllowance, todaySummary, type TodaySummary } from "../srs/progress.ts";
 import { NEW_PER_DAY } from "../srs/settings.ts";
 
-export type Go = (screen: "lessons" | "reviews" | "quick-reviews" | "sources") => void;
+export type Go = (screen: "lessons" | "reviews" | "quick-reviews" | "library" | "sources") => void;
 
 export function Today({ go }: { go: Go }) {
   const [summary, setSummary] = useState<TodaySummary>();
@@ -58,6 +58,14 @@ export function Today({ go }: { go: Go }) {
         <button className="primary" disabled={summary.lessons.length === 0} onClick={() => go("lessons")}>
           Start lessons
         </button>
+      </section>
+
+      <section className="card row space-between">
+        <div>
+          <h2>Library</h2>
+          <p className="muted">Browse every component, kanji and word, learned or not.</p>
+        </div>
+        <button onClick={() => go("library")}>Open library</button>
       </section>
 
       <footer>

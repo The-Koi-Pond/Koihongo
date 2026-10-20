@@ -489,6 +489,165 @@ footer {
   min-width: 0;
 }
 
+/* Library */
+
+.space-between {
+  justify-content: space-between;
+}
+
+.library-controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: center;
+}
+
+.tabs {
+  display: flex;
+  gap: 4px;
+}
+
+.tab.current {
+  background: var(--text);
+  color: var(--bg);
+  border-color: var(--text);
+}
+
+.status-filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  width: 100%;
+}
+
+.status-chip {
+  padding: 4px 10px;
+  font-size: 0.9rem;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.status-chip.on {
+  border-color: var(--text);
+  font-weight: 600;
+}
+
+/* Status swatches use the kanji colour as a neutral example. */
+.swatch {
+  display: inline-block;
+  width: 12px;
+  height: 12px;
+  border-radius: 3px;
+  vertical-align: -1px;
+}
+
+.swatch.locked { background: var(--surface-2); border: 1px dashed var(--muted); }
+.swatch.available { background: transparent; border: 2px solid var(--kanji); }
+.swatch.learning { background: color-mix(in srgb, var(--kanji) 40%, transparent); }
+.swatch.passed { background: var(--kanji); }
+
+.tiles {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(84px, 1fr));
+  gap: 8px;
+}
+
+.tile {
+  --kind: var(--kanji);
+  width: 100%;
+  height: 84px;
+  padding: 4px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  border-radius: 10px;
+  overflow: hidden;
+}
+
+.tile.component { --kind: var(--component); }
+.tile.word { --kind: var(--word); }
+
+.tile-glyph {
+  font-size: 1.6rem;
+  line-height: 1.2;
+  white-space: nowrap;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.tile.word .tile-glyph {
+  font-size: 1.15rem;
+}
+
+.tile-meaning {
+  font-size: 0.72rem;
+  max-width: 100%;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.tile.locked {
+  background: var(--surface-2);
+  border: 1px dashed var(--border);
+  color: var(--muted);
+  opacity: 0.6;
+}
+
+.tile.available {
+  background: var(--surface);
+  border: 2px solid var(--kind);
+  color: var(--text);
+}
+
+.tile.learning {
+  background: color-mix(in srgb, var(--kind) 35%, var(--surface));
+  border: 1px solid var(--kind);
+  color: var(--text);
+}
+
+.tile.passed {
+  background: var(--kind);
+  border: 1px solid var(--kind);
+  color: #fff;
+}
+
+.tile:hover {
+  opacity: 1;
+  outline: 2px solid var(--kind);
+}
+
+.show-more {
+  justify-self: center;
+}
+
+.glyph.is-locked {
+  opacity: 0.55;
+}
+
+.progress-line p {
+  margin: 0 0 4px;
+}
+
+.chip-link {
+  color: #fff;
+  padding: 0 8px;
+  margin: 0 4px 0 0;
+  font-size: 1.1rem;
+  border: none;
+}
+
+.chip-link.component { background: var(--component); }
+.chip-link.kanji { background: var(--kanji); }
+.chip-link.word { background: var(--word); }
+
 /* Sources */
 
 .sources {

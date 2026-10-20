@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { migrate } from "./db/migrations.ts";
 import { tauriDb } from "./db/tauriDb.ts";
 import { Lessons } from "./screens/Lessons.tsx";
+import { Library } from "./screens/Library.tsx";
 import { Reviews } from "./screens/Reviews.tsx";
 import { Sources } from "./screens/Sources.tsx";
 import { Today } from "./screens/Today.tsx";
@@ -11,7 +12,7 @@ import "./App.css";
 let dbReady: Promise<void> | undefined;
 const openDb = () => (dbReady ??= migrate(tauriDb));
 
-type Screen = "today" | "lessons" | "reviews" | "quick-reviews" | "sources";
+type Screen = "today" | "lessons" | "reviews" | "quick-reviews" | "library" | "sources";
 
 function App() {
   const [ready, setReady] = useState(false);
@@ -37,6 +38,8 @@ function App() {
         <Reviews onExit={home} />
       ) : screen === "quick-reviews" ? (
         <Reviews minutes={5} onExit={home} />
+      ) : screen === "library" ? (
+        <Library onExit={home} />
       ) : screen === "sources" ? (
         <Sources onExit={home} />
       ) : (
