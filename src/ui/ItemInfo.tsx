@@ -1,4 +1,4 @@
-import { BookOpen, Ear, Languages, Lightbulb, List, PenLine, Quote, Search, Shapes, Tag, Tags, Volume2, type LucideIcon } from "lucide-react";
+import { BookOpen, Ear, Languages, Lightbulb, List, Pencil, PenLine, Quote, Search, Shapes, Sparkles, Tag, Tags, Volume2, type LucideIcon } from "lucide-react";
 import { useState } from "react";
 import { tauriDb } from "../db/tauriDb.ts";
 import { addSynonym, removeSynonym, saveNote, type ItemDetails, type Note, type NoteKind } from "../items.ts";
@@ -204,7 +204,7 @@ function Field({
           {action}
         </div>
       )}
-      <div>{children}</div>
+      <div className="field-body">{children}</div>
     </section>
   );
 }
@@ -265,21 +265,26 @@ function NoteEditor({ item, kind, label, onSaved }: { item: ItemDetails; kind: N
         <div className="note">
           {note ? <p>{note.text}</p> : <p className="muted">No mnemonic yet.</p>}
           {note && AUTHOR_NOTE[note.author] && <p className="muted small">{AUTHOR_NOTE[note.author]}</p>}
-          <button
-            type="button"
-            className="link"
-            onClick={() => {
-              setText(note?.text ?? "");
-              setEditing(true);
-            }}
-          >
-            {note ? "Edit" : "Write one"}
-          </button>
-          {kind !== "note" && !workshop && (
-            <button type="button" className="link" onClick={() => setWorkshop(true)}>
-              Ask AI
+          {/* Pinned to the bottom-left of the card. */}
+          <div className="note-actions">
+            <button
+              type="button"
+              className="icon-action"
+              aria-label={note ? "Edit" : "Write one"}
+              title={note ? "Edit" : "Write one"}
+              onClick={() => {
+                setText(note?.text ?? "");
+                setEditing(true);
+              }}
+            >
+              <Pencil size={16} strokeWidth={1.75} />
             </button>
-          )}
+            {kind !== "note" && !workshop && (
+              <button type="button" className="icon-action" aria-label="Ask AI" title="Ask AI" onClick={() => setWorkshop(true)}>
+                <Sparkles size={16} strokeWidth={1.75} />
+              </button>
+            )}
+          </div>
         </div>
       )}
       {workshop && kind !== "note" && (
