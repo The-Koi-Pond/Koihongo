@@ -118,21 +118,21 @@ export function Today({
             </p>
           )}
           <div className="start-options">
-          {reviews > 0 && lessons > 0 && (
-            <div className="order-toggle" role="group" aria-label="What comes first">
-              <button aria-pressed={order === "reviews"} onClick={() => pickOrder("reviews")}>
-                Reviews first
+            {reviews > 0 && (
+              <button className="link-light" onClick={() => go("quick-reviews")}>
+                Just 5 minutes
               </button>
-              <button aria-pressed={order === "lessons"} onClick={() => pickOrder("lessons")}>
-                Lessons first
-              </button>
-            </div>
-          )}
-          {reviews > 0 && (
-            <button className="link-light" onClick={() => go("quick-reviews")}>
-              Just 5 minutes
-            </button>
-          )}
+            )}
+            {reviews > 0 && lessons > 0 && (
+              <div className="order-toggle" role="group" aria-label="What comes first">
+                <button aria-pressed={order === "reviews"} onClick={() => pickOrder("reviews")}>
+                  Reviews first
+                </button>
+                <button aria-pressed={order === "lessons"} onClick={() => pickOrder("lessons")}>
+                  Lessons first
+                </button>
+              </div>
+            )}
           </div>
         </div>
       </header>
