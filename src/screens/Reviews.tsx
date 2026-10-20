@@ -2,7 +2,8 @@ import { useEffect, useState } from "react";
 import { tauriDb } from "../db/tauriDb.ts";
 import { dueCards, recordReview } from "../srs/progress.ts";
 import { answerCurrent, currentQuestion, sessionStats, spreadOutPairs, startSession, type Session } from "../srs/session.ts";
-import { QuestionCard } from "../ui/QuestionCard.tsx";
+import { DoneView } from "../ui/DoneView.tsx";
+import { QuestionCard, SessionGauge } from "../ui/QuestionCard.tsx";
 import { useItem } from "../ui/useItem.ts";
 
 /**
@@ -50,35 +51,36 @@ export function Reviews({ minutes, onExit, exitLabel = "Back to Today" }: { minu
   if (!question) {
     const left = total - stats.answered;
     return (
-      <div className="card done">
-        <h2>{total === 0 ? "No reviews due" : stopped ? "Nice, that's a wrap" : "All reviews done!"}</h2>
+      <DoneView
+        title={total === 0 ? "No reviews due" : stopped ? "Nice, that's a wrap" : "All reviews done!"}
+        actions={
+          <button className="primary" onClick={onExit} autoFocus>
+            {exitLabel}
+          </button>
+        }
+      >
         {stats.answered > 0 && (
-          <p>
+          <p className="done-stat">
             {stats.answered} answered · {Math.round((100 * stats.correctFirstTry) / stats.answered)}% right first try
           </p>
         )}
-        {left > 0 && <p className="muted">{left} still due. They'll keep until next time.</p>}
-        <button className="primary" onClick={onExit} autoFocus>
-          {exitLabel}
-        </button>
-      </div>
+        {left > 0 && <p>{left} still due. They'll keep until next time.</p>}
+      </DoneView>
     );
   }
 
   return (
     <div className="session">
-      <div className="session-bar">
-        <progress max={total} value={stats.answered} />
-        <span className="muted">
-          {stats.answered}/{total}
-          {deadline && " · 5-minute session"}
-        </span>
-        <button className="link" onClick={() => setStopped(true)}>
-          Stop here
-        </button>
-      </div>
       {item ? (
-        <QuestionCard key={turn} item={item} cardType={question.card_type} onReload={reload} onDone={onDone} />
+        <QuestionCard
+          key={turn}
+          item={item}
+          cardType={question.card_type}
+          onReload={reload}
+          onDone={onDone}
+          top={<SessionGauge done={stats.answered} total={total} note={deadline ? "5 minutes" : undefined} />}
+          onStop={() => setStopped(true)}
+        />
       ) : (
         <p className="muted">Loading…</p>
       )}

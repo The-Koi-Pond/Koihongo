@@ -4,6 +4,7 @@ import { cardTypesFor, startLessons, todaySummary, type Lesson } from "../srs/pr
 import { FIRST_REVIEW_DELAY_MS } from "../srs/scheduler.ts";
 import { answerCurrent, currentQuestion, spreadOutPairs, startSession, type Question, type Session } from "../srs/session.ts";
 import { ItemView } from "../ui/ItemView.tsx";
+import { DoneView } from "../ui/DoneView.tsx";
 import { QuestionCard } from "../ui/QuestionCard.tsx";
 import { useItem } from "../ui/useItem.ts";
 import { ErrorView } from "./Reviews.tsx";
@@ -84,32 +85,38 @@ export function Lessons({ onExit, exitLabel = "Back to Today" }: { onExit: () =>
 
   if (batch.length === 0) {
     return (
-      <div className="card done">
-        <h2>No lessons right now</h2>
-        <p className="muted">Either today's lessons are done, or new items unlock as your reviews go well.</p>
-        <button className="primary" onClick={onExit} autoFocus>
-          {exitLabel}
-        </button>
-      </div>
+      <DoneView
+        title="No lessons right now"
+        actions={
+          <button className="primary" onClick={onExit} autoFocus>
+            {exitLabel}
+          </button>
+        }
+      >
+        <p>Either today's lessons are done, or new items unlock as your reviews go well.</p>
+      </DoneView>
     );
   }
 
   if (phase.name === "done") {
     return (
-      <div className="card done">
-        <h2>Learned {batch.length} new items</h2>
-        <p className="muted">Their first review comes in {FIRST_REVIEW_DELAY_MS / 3_600_000} hours.</p>
-        <div className="row">
-          {moreAvailable && (
-            <button className="primary" onClick={loadBatch} autoFocus>
-              Next {BATCH_SIZE} lessons
+      <DoneView
+        title={`Learned ${batch.length} new items!`}
+        actions={
+          <>
+            {moreAvailable && (
+              <button className="primary" onClick={loadBatch} autoFocus>
+                Next {BATCH_SIZE} lessons
+              </button>
+            )}
+            <button onClick={onExit} autoFocus={!moreAvailable}>
+              {exitLabel}
             </button>
-          )}
-          <button onClick={onExit} autoFocus={!moreAvailable}>
-            {exitLabel}
-          </button>
-        </div>
-      </div>
+          </>
+        }
+      >
+        <p>Their first review comes in {FIRST_REVIEW_DELAY_MS / 3_600_000} hours.</p>
+      </DoneView>
     );
   }
 
@@ -117,11 +124,19 @@ export function Lessons({ onExit, exitLabel = "Back to Today" }: { onExit: () =>
     const q = currentQuestion(phase.session)!;
     return (
       <div className="session">
-        <div className="session-bar">
-          <span className="muted">Practice quiz: answer each one right to finish. This doesn't count against you.</span>
-        </div>
         {item ? (
-          <QuestionCard key={phase.turn} item={item} cardType={q.card_type} onReload={reload} onDone={onQuizAnswer} />
+          <QuestionCard
+            key={phase.turn}
+            item={item}
+            cardType={q.card_type}
+            onReload={reload}
+            onDone={onQuizAnswer}
+            top={
+              <p className="quiz-note" title="Answer each one right to finish. This doesn't affect your reviews.">
+                Practice quiz · doesn't count
+              </p>
+            }
+          />
         ) : (
           <p className="muted">Loading…</p>
         )}

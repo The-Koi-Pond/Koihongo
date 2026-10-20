@@ -1,3 +1,4 @@
+import { Check, X } from "lucide-react";
 import { useState } from "react";
 import { toKana } from "wanakana";
 import { tauriDb } from "../db/tauriDb.ts";
@@ -5,16 +6,21 @@ import { acceptedAnswers, addSynonym, type ItemDetails } from "../items.ts";
 import { checkKana, checkMeaning, checkReading, type Verdict } from "../srs/answers.ts";
 import type { CardType } from "../srs/scheduler.ts";
 import { ItemInfo } from "./ItemInfo.tsx";
+import { BannerScene } from "./Scene.tsx";
 import { itemLabel } from "./useItem.ts";
 
-function promptFor(item: ItemDetails, cardType: CardType): string {
-  if (item.kind === "kana") return "Kana reading (romaji)";
-  if (item.kind === "component") return "Component name";
-  return `${item.kind === "kanji" ? "Kanji" : "Word"} ${cardType}`;
+const KIND_NAME = { kana: "Kana", component: "Component", kanji: "Kanji", word: "Word" } as const;
+
+/** What the answer box asks for: "Reading" (sound) or "Meaning" (English/name). */
+function askFor(item: ItemDetails, cardType: CardType): { kind: "reading" | "meaning"; label: string } {
+  if (item.kind === "kana") return { kind: "reading", label: "Kana reading · romaji" };
+  if (item.kind === "component") return { kind: "meaning", label: "Component name" };
+  return { kind: cardType, label: `${KIND_NAME[item.kind]} ${cardType}` };
 }
 
 /**
- * Asks one question. Enter checks the answer, Enter again moves on; the result
+ * Asks one question, as a full page: the item in the night-sky banner, the
+ * answer dock below. Enter checks the answer, Enter again moves on; the result
  * is reported on moving on, so "I was right" can still change it.
  */
 export function QuestionCard({
@@ -22,22 +28,29 @@ export function QuestionCard({
   cardType,
   onReload,
   onDone,
+  top,
+  onStop,
 }: {
   item: ItemDetails;
   cardType: CardType;
   onReload: () => void;
   onDone: (correct: boolean, answer: string) => void;
+  /** Shown top-left in the banner (session progress). */
+  top?: React.ReactNode;
+  /** Adds a "Stop here" button top-right. */
+  onStop?: () => void;
 }) {
   const [answer, setAnswer] = useState("");
   const [verdict, setVerdict] = useState<Verdict>();
   const [showInfo, setShowInfo] = useState(false);
   const [overridden, setOverridden] = useState(false);
   const accepted = acceptedAnswers(item);
-  const prompt = promptFor(item, cardType);
+  const ask = askFor(item, cardType);
   // Kanji/word readings are typed in romaji that turns into kana; kana questions are answered in romaji itself.
   const kanaInput = cardType === "reading" && item.kind !== "kana";
   const graded = verdict && verdict.result !== "retry";
   const correct = overridden || verdict?.result === "correct";
+  const label = itemLabel(item);
 
   function submit(e: React.FormEvent) {
     e.preventDefault();
@@ -66,55 +79,101 @@ export function QuestionCard({
         : accepted.readings.join("、");
 
   return (
-    <div className="question">
-      <div className={`glyph ${item.kind}`} lang="ja">
-        {itemLabel(item)}
-      </div>
-      <form onSubmit={submit} className={`answer-row ${cardType}`}>
-        <label htmlFor="answer">{prompt}</label>
-        <input
-          id="answer"
-          key={`${item.item_key}|${cardType}`}
-          autoFocus
-          autoComplete="off"
-          spellCheck={false}
-          lang={kanaInput ? "ja" : "en"}
-          readOnly={graded}
-          className={graded ? (correct ? "right" : "wrong") : ""}
-          value={answer}
-          placeholder={item.kind === "kana" ? "romaji, e.g. ka" : kanaInput ? "かな (type romaji)" : "English"}
-          onChange={(e) => {
-            setAnswer(kanaInput ? toKana(e.target.value, { IMEMode: true }) : e.target.value);
-            if (verdict?.result === "retry") setVerdict(undefined);
-          }}
-        />
-        <button type="submit" className="primary">
-          {graded ? "Next ⏎" : "Check ⏎"}
-        </button>
-      </form>
-
-      <div className="feedback" aria-live="polite">
-        {verdict?.result === "retry" && <p className="hint">{verdict.message}</p>}
-        {verdict?.result === "correct" && verdict.typo && <p className="hint">Close enough. Watch the spelling: {expected}</p>}
-        {verdict?.result === "wrong" && !overridden && (
-          <p className="miss">
-            Answer: <span lang={kanaInput ? "ja" : "en"}>{expected}</span>
-            {cardType === "meaning" && answer.trim() && (
-              <button type="button" className="link" onClick={acceptMine}>
-                I was right: accept “{answer.trim()}” from now on
+    <div className={`item-view question-page ${item.kind}`}>
+      <header className={`banner bleed ${item.kind}`}>
+        <BannerScene />
+        <div className="banner-top">
+          <div className="banner-top-start">{top}</div>
+          <div className="banner-top-end">
+            {onStop && (
+              <button type="button" className="ghost-light" onClick={onStop}>
+                Stop here
               </button>
             )}
-          </p>
-        )}
-        {overridden && <p className="hint">Added “{answer.trim()}” as a synonym and counted as correct.</p>}
-        {graded && (
-          <button type="button" className="link" onClick={() => setShowInfo((s) => !s)}>
-            {showInfo ? "Hide details" : "Show details"}
-          </button>
-        )}
-      </div>
+          </div>
+        </div>
+        <div className="banner-glyph" lang="ja" style={{ "--chars": [...label].length } as React.CSSProperties}>
+          {label}
+        </div>
+      </header>
 
-      {graded && showInfo && <ItemInfo item={item} onChange={onReload} />}
+      <section className={`answer-dock ${ask.kind} ${graded ? (correct ? "right" : "wrong") : ""}`}>
+        <form onSubmit={submit} className="answer-form">
+          <label htmlFor="answer" className="ask-tag">
+            {ask.label}
+          </label>
+          <div className="answer-field">
+            {graded && (
+              <span className="verdict-icon" aria-label={correct ? "Correct" : "Wrong"}>
+                {correct ? <Check size={22} strokeWidth={3} /> : <X size={22} strokeWidth={3} />}
+              </span>
+            )}
+            <input
+              id="answer"
+              key={`${item.item_key}|${cardType}`}
+              autoFocus
+              autoComplete="off"
+              spellCheck={false}
+              lang={kanaInput ? "ja" : "en"}
+              readOnly={graded}
+              value={answer}
+              placeholder={item.kind === "kana" ? "romaji, e.g. ka" : kanaInput ? "かな (type romaji)" : "English"}
+              onChange={(e) => {
+                setAnswer(kanaInput ? toKana(e.target.value, { IMEMode: true }) : e.target.value);
+                if (verdict?.result === "retry") setVerdict(undefined);
+              }}
+            />
+            <button type="submit" className="check-btn">
+              {graded ? "Next ⏎" : "Check ⏎"}
+            </button>
+          </div>
+        </form>
+
+        <div className="feedback" aria-live="polite">
+          {verdict?.result === "retry" && <p className="hint">{verdict.message}</p>}
+          {verdict?.result === "correct" && !verdict.typo && !overridden && <p className="yay">Correct!</p>}
+          {verdict?.result === "correct" && verdict.typo && <p className="hint">Close enough. Watch the spelling: {expected}</p>}
+          {verdict?.result === "wrong" && !overridden && (
+            <p className="miss">
+              Answer: <strong lang={kanaInput ? "ja" : "en"}>{expected}</strong>
+            </p>
+          )}
+          {overridden && <p className="hint">Added “{answer.trim()}” as a synonym and counted as correct.</p>}
+          {graded && (
+            <p className="feedback-links">
+              {verdict?.result === "wrong" && !overridden && cardType === "meaning" && answer.trim() && (
+                <button type="button" className="link" onClick={acceptMine}>
+                  I was right: accept “{answer.trim()}”
+                </button>
+              )}
+              <button type="button" className="link" onClick={() => setShowInfo((s) => !s)}>
+                {showInfo ? "Hide details" : "Show details"}
+              </button>
+            </p>
+          )}
+        </div>
+      </section>
+
+      {graded && showInfo && (
+        <div className="question-details">
+          <ItemInfo item={item} onChange={onReload} />
+        </div>
+      )}
+    </div>
+  );
+}
+
+/** Session progress for the banner: a retro gauge plus "7 / 20". */
+export function SessionGauge({ done, total, note }: { done: number; total: number; note?: string }) {
+  return (
+    <div className="session-gauge">
+      <div className="progress-track" role="progressbar" aria-valuemin={0} aria-valuemax={total} aria-valuenow={done}>
+        {done > 0 && <div className="progress-fill passed" style={{ width: `${(100 * done) / Math.max(1, total)}%` }} />}
+      </div>
+      <span className="session-count">
+        {done} / {total}
+        {note && <span className="session-note"> · {note}</span>}
+      </span>
     </div>
   );
 }
