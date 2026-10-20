@@ -76,12 +76,25 @@ CREATE TABLE word_sentences (
 );
 CREATE INDEX word_sentences_by_sentence ON word_sentences(sentence_id);
 
--- Default learning order. item_key is "component:<glyph>", "kanji:<char>" or
--- "word:<id>"; user progress refers to items by this key.
+-- Hiragana and katakana (scripts/content/kana.ts).
+CREATE TABLE kana (
+  character   TEXT PRIMARY KEY,
+  romaji      TEXT NOT NULL,   -- Hepburn
+  accept      TEXT NOT NULL,   -- JSON string[]: extra accepted answers (を → "o")
+  script      TEXT NOT NULL CHECK (script IN ('hiragana', 'katakana')),
+  grp         TEXT NOT NULL CHECK (grp IN ('basic', 'dakuten', 'combo', 'extended')),
+  counterpart TEXT,            -- same sound in the other script
+  stroke_svg  TEXT             -- KanjiVG SVG, single characters only
+);
+
+-- Default learning order. item_key is "kana:<char>", "component:<glyph>",
+-- "kanji:<char>" or "word:<id>"; user progress refers to items by this key.
+-- Each track (kana, main) has its own lesson queue and daily limit.
 CREATE TABLE path (
   position INTEGER PRIMARY KEY,
   item_key TEXT NOT NULL UNIQUE,
-  kind     TEXT NOT NULL CHECK (kind IN ('component', 'kanji', 'word'))
+  kind     TEXT NOT NULL CHECK (kind IN ('kana', 'component', 'kanji', 'word')),
+  track    TEXT NOT NULL DEFAULT 'main' CHECK (track IN ('kana', 'main'))
 );
 
 -- An item unlocks once every item it requires is learned.

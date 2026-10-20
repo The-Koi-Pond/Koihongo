@@ -17,6 +17,14 @@ The one place you start every session.
 - **[later]** Simple progress view: items by stage, kanji/words known, forecast of upcoming reviews.
 - **[later]** "Text coverage" estimate: % of common written Japanese you'd recognise.
 
+## A2. Kana (hiragana and katakana)
+
+- **[v1]** Separate kana track with its own lesson queue and daily limit (20/day), running alongside the kanji track: 46 basic hiragana → 25 with ゛/゜ → 33 combinations (きゃ) → the same in katakana → 16 extended katakana (ファ, ティ, ヴ…). 224 in total.
+- **[v1]** が unlocks after か passes; きゃ after き. Lessons come in rows of five.
+- **[v1]** Review: see the kana, type its romaji. Hepburn, other romanisations (si, tu, sya) and sensible extras (を → "o") are accepted.
+- **[v1]** Stroke order, the same sound in the other script, mnemonics and Ask AI (shape → sound).
+- **[later]** "I already know these" button to skip a group; small っ and long vowel ー explained; kana *writing* practice.
+
 ## B. Kanji path (inspired by WaniKani)
 
 - **[v1]** Learning order: components → kanji → vocabulary that uses those kanji. A kanji only unlocks after its components are learned.

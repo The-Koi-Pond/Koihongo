@@ -33,20 +33,22 @@ export async function libraryItems(db: Db, keys?: string[]): Promise<LibraryItem
     `WITH cards AS (SELECT item_key, min(stability) AS stability FROM srs_cards GROUP BY item_key),
           passed AS (SELECT item_key FROM cards WHERE stability >= ?)
      SELECT p.item_key, p.kind, p.position,
-       coalesce(c.display, k.character, w.written) AS label,
-       coalesce(c.name, json_extract(k.meanings, '$[0]'), json_extract(w.senses, '$[0].glosses[0]')) AS meaning,
+       coalesce(ka.character, c.display, k.character, w.written) AS label,
+       coalesce(ka.romaji, c.name, json_extract(k.meanings, '$[0]'), json_extract(w.senses, '$[0].glosses[0]')) AS meaning,
        CASE
          WHEN cards.item_key IS NOT NULL THEN CASE WHEN cards.stability >= ? THEN 'passed' ELSE 'learning' END
          WHEN EXISTS (SELECT 1 FROM content.path_requirements r
                       WHERE r.item_key = p.item_key AND r.requires_key NOT IN (SELECT item_key FROM passed)) THEN 'locked'
          ELSE 'available'
        END AS status,
-       lower(coalesce(c.display || ' ' || c.name,
+       lower(coalesce(ka.character || ' ' || ka.romaji || ' ' || ka.accept || ' ' || ka.script,
+                      c.display || ' ' || c.name,
                       k.character || ' ' || k.meanings || ' ' || k.on_readings || ' ' || k.kun_readings,
                       w.written || ' ' || w.reading || ' ' ||
                         (SELECT group_concat(g.value, ' ') FROM json_each(w.senses) s, json_each(s.value, '$.glosses') g))) AS search
      FROM content.path p
      LEFT JOIN cards ON cards.item_key = p.item_key
+     LEFT JOIN content.kana ka ON p.kind = 'kana' AND ka.character = substr(p.item_key, 6)
      LEFT JOIN content.components c ON p.kind = 'component' AND c.glyph = substr(p.item_key, 11)
      LEFT JOIN content.kanji k ON p.kind = 'kanji' AND k.character = substr(p.item_key, 7)
      LEFT JOIN content.words w ON p.kind = 'word' AND w.id = substr(p.item_key, 6)
@@ -72,6 +74,8 @@ export async function itemPreview(db: Db, itemKey: string): Promise<ItemPreview>
   const [onPath] = await libraryItems(db, [itemKey]);
   const base = { item_key: itemKey, kind: item.kind, status: onPath?.status ?? null };
   switch (item.kind) {
+    case "kana":
+      return { ...base, label: item.character, meanings: [[item.romaji, ...item.accept].join(" / ")], readings: item.counterpart ? [item.counterpart] : [] };
     case "component":
       return { ...base, label: item.display, meanings: [item.name, ...item.synonyms], readings: [] };
     case "kanji":

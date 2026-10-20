@@ -10,6 +10,7 @@ import { gunzipSync } from "node:zlib";
 import { DatabaseSync } from "node:sqlite";
 import { strFromU8, unzipSync } from "fflate";
 import { describeComponent } from "./components.ts";
+import { allKana } from "./kana.ts";
 import { buildPath, type PathKanji, type PathWord } from "./path.ts";
 import { NO_PRIORITY, parsePriorities } from "./priority.ts";
 
@@ -170,7 +171,9 @@ async function main() {
   );
 
   const svgName = (ch: string) => `kanji/${ch.codePointAt(0)!.toString(16).padStart(5, "0")}.svg`;
-  const wantedSvgs = new Set([...kanjiSet].map(svgName));
+  const kana = allKana();
+  const singleKana = kana.filter((k) => [...k.character].length === 1).map((k) => k.character);
+  const wantedSvgs = new Set([...kanjiSet, ...singleKana].map(svgName));
   const svgs = unzipSync(kanjivgZip, { filter: (f) => wantedSvgs.has(f.name) });
   // Drop the XML prolog/DOCTYPE; the KanjiVG credit lives in the sources table.
   const strokeSvg = (ch: string) => {
@@ -267,10 +270,22 @@ async function main() {
     }
   }
 
-  const insertPath = db.prepare("INSERT INTO path (position, item_key, kind) VALUES (?, ?, ?)");
+  const insertKana = db.prepare(
+    "INSERT INTO kana (character, romaji, accept, script, grp, counterpart, stroke_svg) VALUES (?, ?, ?, ?, ?, ?, ?)",
+  );
+  for (const k of kana) {
+    insertKana.run(k.character, k.romaji, JSON.stringify(k.accept), k.script, k.group, k.counterpart, strokeSvg(k.character));
+  }
+
+  // Kana track first, then the main (components → kanji → words) track.
+  const fullPath = [
+    ...kana.map((k) => ({ key: `kana:${k.character}`, kind: "kana", track: "kana", requires: k.requires.map((r) => `kana:${r}`) })),
+    ...path.map((p) => ({ ...p, track: "main" })),
+  ];
+  const insertPath = db.prepare("INSERT INTO path (position, item_key, kind, track) VALUES (?, ?, ?, ?)");
   const insertRequirement = db.prepare("INSERT INTO path_requirements (item_key, requires_key) VALUES (?, ?)");
-  path.forEach((p, i) => insertPath.run(i + 1, p.key, p.kind));
-  for (const p of path) for (const r of p.requires) insertRequirement.run(p.key, r);
+  fullPath.forEach((p, i) => insertPath.run(i + 1, p.key, p.kind, p.track));
+  for (const p of fullPath) for (const r of p.requires) insertRequirement.run(p.key, r);
 
   db.exec("COMMIT");
   const brokenRefs = db.prepare("PRAGMA foreign_key_check").all();
@@ -286,7 +301,7 @@ async function main() {
   const noSvg = joyo.filter((c) => !svgs[svgName(c.literal)]).map((c) => c.literal);
   console.log(`Wrote ${OUT}`);
   console.log(`  kanji: ${kanjiChars.length} (${joyo.length} jōyō), words: ${words.length}, components: ${componentGlyphs.size}`);
-  console.log(`  path: ${path.length} items (${count("component")} components, ${count("kanji")} kanji, ${count("word")} words)`);
+  console.log(`  kana track: ${kana.length} kana; main path: ${path.length} items (${count("component")} components, ${count("kanji")} kanji, ${count("word")} words)`);
   if (noComponents.length) console.log(`  jōyō kanji without KRADFILE components: ${noComponents.join(" ")}`);
   if (noSvg.length) console.log(`  jōyō kanji without stroke order: ${noSvg.join(" ")}`);
 }

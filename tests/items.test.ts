@@ -17,7 +17,7 @@ async function freshDb() {
       INSERT INTO word_kanji VALUES ('1', '休');
       INSERT INTO sentences VALUES ('9', '休みが欲しい。', 'I want a break.');
       INSERT INTO word_sentences VALUES ('1', '9', '休み');
-      INSERT INTO path VALUES (1, 'component:木', 'component'), (2, 'kanji:木', 'kanji'), (3, 'component:化', 'component'),
+      INSERT INTO path (position, item_key, kind) VALUES (1, 'component:木', 'component'), (2, 'kanji:木', 'kanji'), (3, 'component:化', 'component'),
         (4, 'kanji:休', 'kanji'), (5, 'word:1', 'word');
     `),
   );

@@ -7,7 +7,7 @@ import { join } from "node:path";
 import { test } from "node:test";
 import { migrate } from "../src/db/migrations.ts";
 import { acceptedAnswers, getItemDetails } from "../src/items.ts";
-import { checkMeaning, checkReading, readingKeys } from "../src/srs/answers.ts";
+import { checkKana, checkMeaning, checkReading, readingKeys } from "../src/srs/answers.ts";
 import { availableLessons } from "../src/srs/progress.ts";
 import { openDbWithContent } from "./nodeDb.ts";
 
@@ -22,6 +22,13 @@ test("every path item loads and accepts its own answers", { skip: !existsSync(CO
   for (const { item_key, kind } of path) {
     const item = await getItemDetails(db, item_key);
     const { meanings, readings } = acceptedAnswers(item);
+    if (item.kind === "kana") {
+      for (const r of readings) {
+        if (checkKana(r, item.character, item.romaji, item.accept).result !== "correct") failures.push(`${item_key}: "${r}" not accepted`);
+      }
+      if (!item.strokeSvg && [...item.character].length === 1) failures.push(`${item_key}: no stroke order`);
+      continue;
+    }
     if (meanings.length === 0 || checkMeaning(meanings[0], meanings, readings).result !== "correct") {
       failures.push(`${item_key}: meaning "${meanings[0]}" not accepted`);
     }
@@ -35,10 +42,12 @@ test("every path item loads and accepts its own answers", { skip: !existsSync(CO
   assert.ok(path.length > 7000);
 });
 
-test("a brand-new learner gets components first", { skip: !existsSync(CONTENT) && "content.db not built" }, async () => {
+test("a brand-new learner starts with あ on the kana track and components on the main track", { skip: !existsSync(CONTENT) && "content.db not built" }, async () => {
   const db = openDbWithContent(CONTENT);
   await migrate(db);
   const lessons = await availableLessons(db);
-  assert.ok(lessons.length > 0);
-  assert.ok(lessons.every((l) => l.kind === "component"));
+  const kana = lessons.filter((l) => l.track === "kana");
+  const main = lessons.filter((l) => l.track === "main");
+  assert.deepEqual(kana.slice(0, 5).map((l) => l.label), ["あ", "い", "う", "え", "お"]);
+  assert.ok(main.length > 0 && main.every((l) => l.kind === "component"));
 });

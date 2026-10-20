@@ -4,13 +4,20 @@ import type { ItemDetails } from "../items.ts";
 
 /** Who the AI is talking to. Edit freely; it shapes the style of every mnemonic. */
 export const LEARNER_PROFILE =
-  "A beginner who knows kana and is learning kanji. Loves anime, games and koi fish, and enjoys silly or vivid humour.";
+  "A beginner relearning kana and learning kanji. Loves anime, games and koi fish, and enjoys silly or vivid humour.";
 
 export type MnemonicFocus = "meaning" | "reading";
 
 /** Facts from our database, so the AI never has to recall readings or meanings itself. */
 export function describeItem(item: ItemDetails): string {
   switch (item.kind) {
+    case "kana":
+      return [
+        `Item: the ${item.script} character ${item.character}, read "${item.romaji}".`,
+        item.counterpart && `The same sound in ${item.script === "hiragana" ? "katakana" : "hiragana"} is ${item.counterpart}.`,
+      ]
+        .filter(Boolean)
+        .join("\n");
     case "component":
       return [
         `Item: the kanji component ${item.display}, named "${item.name}".`,
@@ -45,7 +52,9 @@ export function describeItem(item: ItemDetails): string {
 export function mnemonicSystemPrompt(item: ItemDetails, focus: MnemonicFocus): string {
   const current = item.notes[focus === "meaning" ? "mnemonic_meaning" : "mnemonic_reading"]?.text;
   const goal =
-    focus === "meaning"
+    item.kind === "kana"
+      ? "the character's shape to its sound (describe what the shape looks like, and tie that image to the sound)"
+      : focus === "meaning"
       ? item.kind === "word"
         ? "the word's look (its kanji) to its meaning"
         : "the shape (its components) to its meaning"

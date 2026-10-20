@@ -9,9 +9,10 @@ import { itemLabel, useItem } from "../ui/useItem.ts";
 import { ErrorView } from "./Reviews.tsx";
 
 const PAGE = 300;
-const KIND_NAME: Record<ItemKind, string> = { component: "component", kanji: "kanji", word: "word" };
+const KIND_NAME: Record<ItemKind, string> = { kana: "kana", component: "component", kanji: "kanji", word: "word" };
 const KIND_TABS: { kind: ItemKind | "all"; name: string }[] = [
   { kind: "all", name: "All" },
+  { kind: "kana", name: "Kana" },
   { kind: "component", name: "Components" },
   { kind: "kanji", name: "Kanji" },
   { kind: "word", name: "Words" },
@@ -119,7 +120,7 @@ export function Library() {
                 <ItemHover itemKey={i.item_key} openOnClick={false}>
                   <button className={`tile ${i.kind} ${i.status}`} onClick={() => setSelected(i.item_key)}>
                     <span className="tile-kind">{KIND_NAME[i.kind]}</span>
-                    <span className="tile-glyph" lang="ja">
+                    <span className={`tile-glyph ${[...i.label].length > 1 ? "multi" : ""}`} lang="ja">
                       {i.label}
                     </span>
                   </button>

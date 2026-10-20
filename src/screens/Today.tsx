@@ -1,5 +1,5 @@
 import { lessonAllowance, type TodaySummary } from "../srs/progress.ts";
-import { NEW_PER_DAY } from "../srs/settings.ts";
+import { KANA_PER_DAY, NEW_PER_DAY } from "../srs/settings.ts";
 import type { Screen } from "../ui/NavBar.tsx";
 
 export function Today({ summary, go }: { summary?: TodaySummary; go: (screen: Screen) => void }) {
@@ -33,7 +33,7 @@ export function Today({ summary, go }: { summary?: TodaySummary; go: (screen: Sc
           {summary.lessonsWaiting > 0 &&
             (lessonAllowance(summary.reviewsDue, 0) < NEW_PER_DAY
               ? ` · ${summary.lessonsWaiting} more unlocked, waiting until you've cleared some reviews`
-              : ` · ${summary.lessonsWaiting} more unlocked, saved for another day (limit: ${NEW_PER_DAY} a day)`)}
+              : ` · ${summary.lessonsWaiting} more unlocked, saved for another day (daily limits: ${KANA_PER_DAY} kana, ${NEW_PER_DAY} others)`)}
         </p>
         {summary.lessons.length > 0 && (
           <ul className="lesson-preview">

@@ -91,6 +91,10 @@ path                position, item_key, kind                    (7,869 items)
 path_requirements   item_key → requires_key   (an item unlocks when these are learned)
 ```
 
+### Tracks
+
+`content.path` has a `track` column. The **kana** track (positions 1–224, built from [`scripts/content/kana.ts`](../scripts/content/kana.ts)) and the **main** track (components → kanji → words) each have their own lesson window and daily limit, so kana and kanji can be learned in parallel. Kana item keys are `kana:<character>`; kana have one card (`reading`, answered in romaji).
+
 ### How the default path is built
 
 Code: [`scripts/content/path.ts`](../scripts/content/path.ts), tested in `path.test.ts`.
