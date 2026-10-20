@@ -39,6 +39,7 @@
 body {
   margin: 0;
   background: var(--bg);
+  overflow-x: clip; /* full-width banners use 100vw, which includes the scrollbar */
 }
 
 [lang="ja"] {
@@ -673,13 +674,99 @@ textarea {
   opacity: 0.9;
 }
 
-.banner .banner-speak {
-  position: absolute;
-  right: 16px;
-  bottom: 16px;
+.banner-top-start,
+.banner-top-end {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.banner .banner-speak,
+.banner .banner-back {
   color: #fff;
   background: rgb(0 0 0 / 0.25);
-  border-color: rgb(255 255 255 / 0.25);
+  border: 1px solid rgb(255 255 255 / 0.25);
+  backdrop-filter: blur(4px);
+}
+
+.banner .banner-back {
+  padding: 4px 12px;
+  border-radius: 999px;
+  font-size: 0.85rem;
+}
+
+/* On item pages the banner spans the window, flush under the title bar, with
+   its content lined up with the 1040px page column and a fade into the page. */
+.item-view > .banner {
+  margin: -28px calc(50% - 50vw) 0;
+  padding: 18px max(22px, calc(50vw - 498px)) 84px;
+  min-height: 300px;
+  border-radius: 0;
+  box-shadow: none;
+}
+
+.item-view > .banner::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 110px;
+  background: linear-gradient(to bottom, transparent, var(--bg));
+  z-index: 0;
+  pointer-events: none;
+}
+
+/* The first card floats over the bottom of the banner, frosted. */
+.banner + .item-info > .overlap {
+  margin-top: -72px;
+  position: relative;
+  z-index: 2;
+  background: color-mix(in srgb, var(--surface) 70%, transparent);
+  backdrop-filter: blur(14px);
+  border-color: rgb(255 255 255 / 0.12);
+  box-shadow: 0 10px 30px rgb(0 0 0 / 0.25);
+}
+
+/* Two or more cards joined into one, split by dividers. */
+.split-card {
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: minmax(0, 1fr);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  overflow: hidden;
+}
+
+.split-card.wide {
+  grid-column: 1 / -1;
+}
+
+/* A "wide" card inside a split card is just one of its halves (beats .field.wide, defined later). */
+.split-card > .field.wide {
+  grid-column: auto;
+}
+
+.split-card > .field {
+  border: none;
+  border-radius: 0;
+  background: transparent;
+  padding: 14px 18px 16px;
+}
+
+.split-card > .field + .field {
+  border-left: 1px solid var(--border);
+}
+
+@media (max-width: 700px) {
+  .split-card {
+    grid-auto-flow: row;
+  }
+  .split-card > .field + .field {
+    border-left: none;
+    border-top: 1px solid var(--border);
+  }
 }
 
 /* Small round speaker button (hidden when Windows has no Japanese voice). */

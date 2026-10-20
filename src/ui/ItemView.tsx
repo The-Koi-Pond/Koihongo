@@ -6,11 +6,25 @@ import { itemLabel } from "./useItem.ts";
 
 const GROUP_NAME = { basic: "basic", dakuten: "゛/゜ marks", combo: "combination", extended: "extended" } as const;
 
-/** Full item page: a scenic banner with the character, then the detail cards. */
-export function ItemView({ item, onChange, above }: { item: ItemDetails; onChange: () => void; above?: React.ReactNode }) {
+/**
+ * Full item page: a full-width scenic banner with the character, then the detail
+ * cards. `bannerStart` goes in the banner's top-left corner (e.g. a back button);
+ * `above` goes between the banner and the cards.
+ */
+export function ItemView({
+  item,
+  onChange,
+  above,
+  bannerStart,
+}: {
+  item: ItemDetails;
+  onChange: () => void;
+  above?: React.ReactNode;
+  bannerStart?: React.ReactNode;
+}) {
   return (
     <div className="item-view">
-      <ItemBanner item={item} />
+      <ItemBanner item={item} start={bannerStart} />
       {above}
       <ItemInfo item={item} onChange={onChange} />
     </div>
@@ -53,15 +67,21 @@ function glyphSize(label: string): string {
   return n <= 1 ? "8rem" : n === 2 ? "6rem" : n === 3 ? "4.6rem" : "3.4rem";
 }
 
-function ItemBanner({ item }: { item: ItemDetails }) {
+function ItemBanner({ item, start }: { item: ItemDetails; start?: React.ReactNode }) {
   const { kicker, badge, primary, secondary, speak } = bannerFacts(item);
   const label = itemLabel(item);
   return (
     <header className={`banner ${item.kind}`}>
       <BannerScene />
       <div className="banner-top">
-        <p className="banner-kind">{kicker}</p>
-        {badge && <p className="banner-badge">{badge}</p>}
+        <div className="banner-top-start">
+          {start}
+          <p className="banner-kind">{kicker}</p>
+        </div>
+        <div className="banner-top-end">
+          {speak && <SpeakButton text={speak} className="banner-speak" />}
+          {badge && <p className="banner-badge">{badge}</p>}
+        </div>
       </div>
       <div className="banner-glyph" lang="ja" style={{ fontSize: glyphSize(label) }}>
         {label}
@@ -76,7 +96,6 @@ function ItemBanner({ item }: { item: ItemDetails }) {
           )}
         </div>
       )}
-      {speak && <SpeakButton text={speak} className="banner-speak" />}
     </header>
   );
 }

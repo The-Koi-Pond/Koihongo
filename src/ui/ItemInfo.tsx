@@ -16,33 +16,39 @@ export function ItemInfo({ item, onChange }: { item: ItemDetails; onChange: () =
     <div className="item-info">
       {item.kind === "kana" && (
         <>
-          <SoundsLike kana={item.character} romaji={item.romaji} accept={item.accept} wide={!item.example} />
-          {item.example && (
-            <Field label="Example word" icon={Quote} action={<SpeakButton text={item.example.reading} />}>
-              <p className="example-word">
-                {/* Show what a kana learner can read: the kana spelling, kanji only as an aside. */}
-                <span lang="ja" className="example-form">
-                  {KANA_ONLY.test(item.example.form) ? item.example.form : item.example.reading}
-                </span>
-                <span className="muted"> {item.example.romaji}</span>
-              </p>
-              <p>
-                {item.example.meaning}
-                {!KANA_ONLY.test(item.example.form) && (
-                  <span lang="ja" className="muted">
-                    {" "}
-                    · {item.example.form}
+          {/* Pronunciation strip: one card, two halves (overlaps the banner on item pages). */}
+          <div className="split-card wide overlap">
+            <SoundsLike kana={item.character} romaji={item.romaji} accept={item.accept} />
+            {item.example && (
+              <Field label="Example word" icon={Quote} action={<SpeakButton text={item.example.reading} />}>
+                <p className="example-word">
+                  {/* Show what a kana learner can read: the kana spelling, kanji only as an aside. */}
+                  <span lang="ja" className="example-form">
+                    {KANA_ONLY.test(item.example.form) ? item.example.form : item.example.reading}
                   </span>
-                )}
-              </p>
-            </Field>
-          )}
-          {item.strokeSvg && (
-            <Field label="Stroke order" icon={PenLine} wide>
-              <StrokeOrder svg={item.strokeSvg} label={item.character} />
-            </Field>
-          )}
-          <NoteEditor item={item} kind="mnemonic_reading" label="Mnemonic" onSaved={onChange} />
+                  <span className="muted"> {item.example.romaji}</span>
+                </p>
+                <p>
+                  {item.example.meaning}
+                  {!KANA_ONLY.test(item.example.form) && (
+                    <span lang="ja" className="muted">
+                      {" "}
+                      · {item.example.form}
+                    </span>
+                  )}
+                </p>
+              </Field>
+            )}
+          </div>
+          {/* Stroke order and mnemonic share one panel. */}
+          <div className="split-card wide">
+            {item.strokeSvg && (
+              <Field label="Stroke order" icon={PenLine}>
+                <StrokeOrder svg={item.strokeSvg} label={item.character} />
+              </Field>
+            )}
+            <NoteEditor item={item} kind="mnemonic_reading" label="Mnemonic" onSaved={onChange} />
+          </div>
         </>
       )}
 
@@ -142,10 +148,10 @@ export function ItemInfo({ item, onChange }: { item: ItemDetails; onChange: () =
   );
 }
 
-function SoundsLike({ kana, romaji, accept, wide }: { kana: string; romaji: string; accept: string[]; wide?: boolean }) {
+function SoundsLike({ kana, romaji, accept }: { kana: string; romaji: string; accept: string[] }) {
   const hint = soundHint(romaji);
   return (
-    <Field label="Sounds like" icon={Ear} action={<SpeakButton text={kana} />} wide={wide}>
+    <Field label="Sounds like" icon={Ear} action={<SpeakButton text={kana} />}>
       {hint.asIn && (
         <p className="as-in">
           <span className="muted small">as in</span> {hint.asIn[0]}

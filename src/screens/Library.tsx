@@ -157,11 +157,17 @@ function ItemPage({ itemKey, onOpen, onBack }: { itemKey: string; onOpen: (key: 
 
   return (
     <div className="item-body">
-      <div className="row">
-        <button onClick={onBack}>← Library</button>
-      </div>
       {item ? (
-        <ItemView item={item} onChange={reload} above={progress && <ProgressLine progress={progress} onOpen={onOpen} />} />
+        <ItemView
+          item={item}
+          onChange={reload}
+          bannerStart={
+            <button className="banner-back" onClick={onBack}>
+              ← Library
+            </button>
+          }
+          above={progress && <ProgressLine progress={progress} onOpen={onOpen} />}
+        />
       ) : (
         <p className="muted">Loading…</p>
       )}
