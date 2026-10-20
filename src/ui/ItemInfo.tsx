@@ -20,23 +20,21 @@ export function ItemInfo({ item, onChange }: { item: ItemDetails; onChange: () =
           <div className="split-card wide overlap">
             <SoundsLike romaji={item.romaji} accept={item.accept} />
             {item.example && (
-              <Field label="Example word" icon={Quote} action={<SpeakButton text={item.example.reading} />}>
-                <p className="example-word">
-                  {/* Show what a kana learner can read: the kana spelling, kanji only as an aside. */}
+              <Field>
+                {/* One row: speaker, the word in kana (what a kana learner can read), romaji, meaning, kanji as an aside. */}
+                <div className="example-row">
+                  <SpeakButton text={item.example.reading} fallback={<AudioPlaceholder />} />
                   <span lang="ja" className="example-form">
                     {KANA_ONLY.test(item.example.form) ? item.example.form : item.example.reading}
                   </span>
-                  <span className="muted"> {item.example.romaji}</span>
-                </p>
-                <p>
-                  {item.example.meaning}
+                  <span className="muted">{item.example.romaji}</span>
+                  <span className="example-meaning">{item.example.meaning}</span>
                   {!KANA_ONLY.test(item.example.form) && (
                     <span lang="ja" className="muted">
-                      {" "}
-                      · {item.example.form}
+                      {item.example.form}
                     </span>
                   )}
-                </p>
+                </div>
               </Field>
             )}
           </div>
