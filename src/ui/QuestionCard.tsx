@@ -79,82 +79,81 @@ export function QuestionCard({
         : accepted.readings.join("、");
 
   return (
-    <div className="question-page">
-      {/* The first screen (banner + answer dock) keeps a fixed layout; details open below it. */}
-      <div className={`item-view question-main ${item.kind}`}>
-        <header className={`banner bleed ${item.kind}`}>
-          <BannerScene />
-          <div className="banner-top">
-            <div className="banner-top-start">{top}</div>
-            <div className="banner-top-end">
-              {onStop && (
-                <button type="button" className="ghost-light" onClick={onStop}>
-                  Stop here
+    // One window-high column. Opening details animates the banner down to a compact
+    // height so banner, answer and details all fit (details scroll inside if needed).
+    <div className={`item-view question-page ${item.kind} ${graded && showInfo ? "details-open" : ""}`}>
+      <header className={`banner bleed ${item.kind}`}>
+        <BannerScene />
+        <div className="banner-top">
+          <div className="banner-top-start">{top}</div>
+          <div className="banner-top-end">
+            {onStop && (
+              <button type="button" className="ghost-light" onClick={onStop}>
+                Stop here
+              </button>
+            )}
+          </div>
+        </div>
+        <div className="banner-glyph" lang="ja" style={{ "--chars": [...label].length } as React.CSSProperties}>
+          {label}
+        </div>
+      </header>
+
+      <section className={`answer-dock ${ask.kind} ${graded ? (correct ? "right" : "wrong") : ""}`}>
+        <form onSubmit={submit} className="answer-form">
+          <label htmlFor="answer" className="ask-tag">
+            {ask.label}
+          </label>
+          <div className="answer-field">
+            {/* Always takes its space, so the typed answer doesn't shift when it appears. */}
+            <span className="verdict-icon" aria-label={graded ? (correct ? "Correct" : "Wrong") : undefined}>
+              {graded && (correct ? <Check size={22} strokeWidth={3} /> : <X size={22} strokeWidth={3} />)}
+            </span>
+            <input
+              id="answer"
+              key={`${item.item_key}|${cardType}`}
+              autoFocus
+              autoComplete="off"
+              spellCheck={false}
+              lang={kanaInput ? "ja" : "en"}
+              readOnly={graded}
+              value={answer}
+              placeholder={item.kind === "kana" ? "romaji, e.g. ka" : kanaInput ? "かな (type romaji)" : "English"}
+              onChange={(e) => {
+                setAnswer(kanaInput ? toKana(e.target.value, { IMEMode: true }) : e.target.value);
+                if (verdict?.result === "retry") setVerdict(undefined);
+              }}
+            />
+            <button type="submit" className="check-btn">
+              {graded ? "Next ⏎" : "Check ⏎"}
+            </button>
+          </div>
+        </form>
+
+        <div className="feedback" aria-live="polite">
+          {verdict?.result === "retry" && <p className="hint">{verdict.message}</p>}
+          {verdict?.result === "correct" && !verdict.typo && !overridden && <p className="yay">Correct!</p>}
+          {verdict?.result === "correct" && verdict.typo && <p className="hint">Close enough. Watch the spelling: {expected}</p>}
+          {verdict?.result === "wrong" && !overridden && (
+            <p className="miss">
+              Answer: <strong lang={kanaInput ? "ja" : "en"}>{expected}</strong>
+            </p>
+          )}
+          {overridden && <p className="hint">Added “{answer.trim()}” as a synonym and counted as correct.</p>}
+          {graded && (
+            <p className="feedback-links">
+              {verdict?.result === "wrong" && !overridden && cardType === "meaning" && answer.trim() && (
+                <button type="button" className="link" onClick={acceptMine}>
+                  I was right: accept “{answer.trim()}”
                 </button>
               )}
-            </div>
-          </div>
-          <div className="banner-glyph" lang="ja" style={{ "--chars": [...label].length } as React.CSSProperties}>
-            {label}
-          </div>
-        </header>
-
-        <section className={`answer-dock ${ask.kind} ${graded ? (correct ? "right" : "wrong") : ""}`}>
-          <form onSubmit={submit} className="answer-form">
-            <label htmlFor="answer" className="ask-tag">
-              {ask.label}
-            </label>
-            <div className="answer-field">
-              {/* Always takes its space, so the typed answer doesn't shift when it appears. */}
-              <span className="verdict-icon" aria-label={graded ? (correct ? "Correct" : "Wrong") : undefined}>
-                {graded && (correct ? <Check size={22} strokeWidth={3} /> : <X size={22} strokeWidth={3} />)}
-              </span>
-              <input
-                id="answer"
-                key={`${item.item_key}|${cardType}`}
-                autoFocus
-                autoComplete="off"
-                spellCheck={false}
-                lang={kanaInput ? "ja" : "en"}
-                readOnly={graded}
-                value={answer}
-                placeholder={item.kind === "kana" ? "romaji, e.g. ka" : kanaInput ? "かな (type romaji)" : "English"}
-                onChange={(e) => {
-                  setAnswer(kanaInput ? toKana(e.target.value, { IMEMode: true }) : e.target.value);
-                  if (verdict?.result === "retry") setVerdict(undefined);
-                }}
-              />
-              <button type="submit" className="check-btn">
-                {graded ? "Next ⏎" : "Check ⏎"}
+              <button type="button" className="link" onClick={() => setShowInfo((s) => !s)}>
+                {showInfo ? "Hide details" : "Show details"}
               </button>
-            </div>
-          </form>
-
-          <div className="feedback" aria-live="polite">
-            {verdict?.result === "retry" && <p className="hint">{verdict.message}</p>}
-            {verdict?.result === "correct" && !verdict.typo && !overridden && <p className="yay">Correct!</p>}
-            {verdict?.result === "correct" && verdict.typo && <p className="hint">Close enough. Watch the spelling: {expected}</p>}
-            {verdict?.result === "wrong" && !overridden && (
-              <p className="miss">
-                Answer: <strong lang={kanaInput ? "ja" : "en"}>{expected}</strong>
-              </p>
-            )}
-            {overridden && <p className="hint">Added “{answer.trim()}” as a synonym and counted as correct.</p>}
-            {graded && (
-              <p className="feedback-links">
-                {verdict?.result === "wrong" && !overridden && cardType === "meaning" && answer.trim() && (
-                  <button type="button" className="link" onClick={acceptMine}>
-                    I was right: accept “{answer.trim()}”
-                  </button>
-                )}
-                <button type="button" className="link" onClick={() => setShowInfo((s) => !s)}>
-                  {showInfo ? "Hide details" : "Show details"}
-                </button>
-              </p>
-            )}
-          </div>
-        </section>
-      </div>
+            </p>
+          )}
+        </div>
+      </section>
 
       {graded && showInfo && (
         <div className="question-details">

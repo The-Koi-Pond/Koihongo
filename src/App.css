@@ -587,28 +587,53 @@ textarea {
   color: var(--text);
 }
 
-.question-details {
-  margin-top: 16px;
+/* Question page (QuestionCard.tsx): exactly one window high. The banner takes
+   the leftover space; with details open it eases down to a compact height and the
+   details panel fills the rest, scrolling inside if it must. A definite height also
+   keeps the character's container-query size (cqh) working. */
+.item-view.question-page {
+  height: calc(100vh - var(--titlebar-h) - 28px - var(--page-pad-bottom));
+  min-height: 0;
 }
 
-/* A grid, like .session: in a plain block the banner's height isn't definite,
-   and the character's container-query size (cqh) would resolve to 0. */
-.question-page {
-  display: grid;
+.item-view.question-page > .banner {
+  flex: 1 1 0;
+  min-height: 0;
+  transition: flex-grow 380ms cubic-bezier(0.22, 1, 0.36, 1), flex-basis 380ms cubic-bezier(0.22, 1, 0.36, 1);
 }
 
-.item-view.question-main > .banner {
-  min-height: 320px; /* the character stays readable while details are open */
+.item-view.question-page.details-open > .banner {
+  flex: 0 0 clamp(190px, 30vh, 260px);
 }
 
 /* No facts row under the character here, so it can use more of the height. */
-.question-main .banner-glyph {
+.question-page .banner-glyph {
   font-size: clamp(2.5rem, min(calc((100cqh - 150px) / 1.1), calc(36cqw / var(--chars, 1))), 18rem);
 }
 
-@media (max-height: 580px) {
-  .item-view.question-main > .banner {
-    min-height: 230px;
+.question-details {
+  flex: 1 1 0;
+  min-height: 0;
+  overflow-y: auto;
+  scrollbar-width: thin; /* not inherited from html */
+  padding: 4px 2px 2px;
+  animation: details-in 380ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+@keyframes details-in {
+  from {
+    opacity: 0;
+    transform: translateY(24px);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .item-view.question-page > .banner {
+    transition: none;
+  }
+
+  .question-details {
+    animation: none;
   }
 }
 
