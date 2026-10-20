@@ -9,6 +9,7 @@
     "preview": "vite preview",
     "tauri": "tauri",
     "content:build": "node scripts/content/build.ts",
+    "mnemonics:kanji": "node scripts/content/mnemonics/list-kanji.ts",
     "test": "node --test \"scripts/**/*.test.ts\" \"tests/**/*.test.ts\"",
     "typecheck": "tsc --noEmit -p tsconfig.json && tsc -p tsconfig.tools.json"
   },
