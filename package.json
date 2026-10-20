@@ -9,14 +9,15 @@
     "preview": "vite preview",
     "tauri": "tauri",
     "content:build": "node scripts/content/build.ts",
-    "test": "node --test \"scripts/**/*.test.ts\"",
-    "typecheck": "tsc --noEmit -p tsconfig.json && tsc -p scripts"
+    "test": "node --test \"scripts/**/*.test.ts\" \"tests/**/*.test.ts\"",
+    "typecheck": "tsc --noEmit -p tsconfig.json && tsc -p tsconfig.tools.json"
   },
   "dependencies": {
     "@tauri-apps/api": "^2",
     "@tauri-apps/plugin-opener": "^2",
     "react": "^19.1.0",
-    "react-dom": "^19.1.0"
+    "react-dom": "^19.1.0",
+    "ts-fsrs": "^5.4.2"
   },
   "devDependencies": {
     "@tauri-apps/cli": "^2",

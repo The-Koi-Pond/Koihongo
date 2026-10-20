@@ -1,49 +1,62 @@
-import { useState } from "react";
-import reactLogo from "./assets/react.svg";
-import { invoke } from "@tauri-apps/api/core";
+import { useEffect, useState } from "react";
+import { migrate } from "./db/migrations.ts";
+import { tauriDb } from "./db/tauriDb.ts";
+import { lessonAllowance, todaySummary, type TodaySummary } from "./srs/progress.ts";
+import { NEW_PER_DAY } from "./srs/settings.ts";
 import "./App.css";
 
-function App() {
-  const [greetMsg, setGreetMsg] = useState("");
-  const [name, setName] = useState("");
+// Shared so React's double-run of effects in dev can't migrate twice at once.
+let dbReady: Promise<void> | undefined;
+const openDb = () => (dbReady ??= migrate(tauriDb));
 
-  async function greet() {
-    // Learn more about Tauri commands at https://tauri.app/develop/calling-rust/
-    setGreetMsg(await invoke("greet", { name }));
-  }
+const KIND_LABEL = { component: "component", kanji: "kanji", word: "word" } as const;
+
+function App() {
+  const [summary, setSummary] = useState<TodaySummary>();
+  const [error, setError] = useState<string>();
+
+  useEffect(() => {
+    openDb()
+      .then(() => todaySummary(tauriDb, Date.now()))
+      .then(setSummary)
+      .catch((e) => setError(String(e)));
+  }, []);
+
+  if (error) return <main className="today"><p className="error">Couldn't load your progress: {error}</p></main>;
+  if (!summary) return <main className="today"><p className="muted">Loading…</p></main>;
 
   return (
-    <main className="container">
-      <h1>Welcome to Tauri + React</h1>
+    <main className="today">
+      <h1>
+        <span lang="ja">今日</span> Today
+      </h1>
 
-      <div className="row">
-        <a href="https://vite.dev" target="_blank">
-          <img src="/vite.svg" className="logo vite" alt="Vite logo" />
-        </a>
-        <a href="https://tauri.app" target="_blank">
-          <img src="/tauri.svg" className="logo tauri" alt="Tauri logo" />
-        </a>
-        <a href="https://react.dev" target="_blank">
-          <img src={reactLogo} className="logo react" alt="React logo" />
-        </a>
-      </div>
-      <p>Click on the Tauri, Vite, and React logos to learn more.</p>
+      <section className="card">
+        <h2>Reviews</h2>
+        <p className="big">{summary.reviewsDue}</p>
+        <p className="muted">due now · {summary.reviewsNext24h} more in the next 24 hours</p>
+        <button disabled>Start reviews (coming next)</button>
+      </section>
 
-      <form
-        className="row"
-        onSubmit={(e) => {
-          e.preventDefault();
-          greet();
-        }}
-      >
-        <input
-          id="greet-input"
-          onChange={(e) => setName(e.currentTarget.value)}
-          placeholder="Enter a name..."
-        />
-        <button type="submit">Greet</button>
-      </form>
-      <p>{greetMsg}</p>
+      <section className="card">
+        <h2>Lessons</h2>
+        <p className="big">{summary.lessons.length}</p>
+        <p className="muted">
+          available today · {summary.lessonsDoneToday} done today
+          {summary.lessonsWaiting > 0 &&
+            (lessonAllowance(summary.reviewsDue, 0) < NEW_PER_DAY
+              ? ` · ${summary.lessonsWaiting} more unlocked, waiting until you've cleared some reviews`
+              : ` · ${summary.lessonsWaiting} more unlocked, saved for another day (limit: ${NEW_PER_DAY} a day)`)}
+        </p>
+        <ul className="lesson-preview">
+          {summary.lessons.map((l) => (
+            <li key={l.item_key} className={l.kind} title={KIND_LABEL[l.kind]} lang="ja">
+              {l.label}
+            </li>
+          ))}
+        </ul>
+        <button disabled>Start lessons (coming next)</button>
+      </section>
     </main>
   );
 }

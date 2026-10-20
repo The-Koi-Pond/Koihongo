@@ -14,10 +14,11 @@ Each phase ends with something you can **use daily**. Don't start the next phase
 
 - ✅ Import script: KANJIDIC2, KRADFILE, a JMdict subset, KanjiVG, a Tatoeba subset → SQLite (`pnpm content:build`).
 - ✅ Generate the learning path (components → kanji → vocabulary).
-- Progress database (`user.db`) and loading both databases in the app.
-- Lesson screen and review screen (typed answers, romaji → kana).
-- FSRS scheduling, backlog-aware new-item limit, "5 minutes" mode.
-- Today screen.
+- ✅ Progress database (`user.db`) and loading both databases in the app.
+- ✅ FSRS scheduling, unlocking, backlog-aware new-item limit (logic + tests; no screens yet).
+- ✅ Today screen, first version: shows due reviews and available lessons.
+- Lesson screen and review screen (typed answers, romaji → kana, answer checking).
+- "5 minutes" mode and catch-up mode.
 - Manual mnemonic editing with history.
 - Backup button.
 
