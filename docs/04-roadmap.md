@@ -56,7 +56,7 @@ Each phase ends with something you can **use daily**. Don't start the next phase
 ## After that (unordered)
 
 - **UI:** splash page on launch (the nav bar and placeholder pages for Dictionary/Grammar/Reading/Settings are done).
-Audio/text-to-speech, pitch accent, progress charts, similar-kanji drills, Anki import, handwriting, conversation practice, maybe mobile.
+- **Features:** audio/text-to-speech, pitch accent, progress charts, similar-kanji drills, Anki import, handwriting, conversation practice, maybe mobile.
 
 ---
 
