@@ -24,12 +24,11 @@ Rule of thumb: boring, well-supported tools; as few moving parts as possible.
 │   └─ talks to ↓                                   │
 │  Backend (Rust, kept thin)                        │
 │   ├─ SQLite database (your progress + content)    │
-│   ├─ API key in Windows Credential Manager        │
-│   └─ AI requests → Claude API (internet)          │
+│   └─ AI requests → `claude -p` (Claude Code CLI)  │
 └───────────────────────────────────────────────────┘
 ```
 
-AI requests go through the backend, not the UI, so the API key never sits in UI code.
+AI requests go through the backend, which runs the Claude Code CLI with your existing login (see "AI integration").
 
 ## Content sources and licenses
 
@@ -115,7 +114,7 @@ notes        item_key, kind (mnemonic_meaning|mnemonic_reading|note), text,
 synonyms     item_key, text                               (extra meanings you accept)
 ```
 
-`ai_usage` gets added by a migration in Phase 2. Unlock state isn't stored; it's worked out from `srs_cards` + `content.path_requirements`.
+Unlock state isn't stored; it's worked out from `srs_cards` + `content.path_requirements`.
 
 ### How the app reaches the databases
 
@@ -147,14 +146,30 @@ Code: [`src/srs/`](../src/srs/). Pacing numbers: [`src/srs/settings.ts`](../src/
 
 1. You click "Rework mnemonic" on 森 (forest).
 2. The app builds a request containing: the kanji, its meanings and readings, its components and their names, your current mnemonic, and a short instruction ("help the learner make a vivid, memorable mnemonic; keep it short; use the component names").
-3. The backend sends it to the Claude API with your key and streams the reply into a chat panel.
+3. The backend sends it to Claude and shows the reply in a chat panel.
 4. You chat back and forth. When you like one, "Use this" saves it as a new `notes` version marked `ai` (or `ai_edited` if you tweak it).
+
+### Backend: Claude Code CLI (decided 2026-10-20)
+
+Requests run through the **Claude Code CLI** with your existing Claude login, so there's no API key to manage. They count toward your Claude plan's usage limits. Tested command shape:
+
+```
+claude -p "<conversation>" --system-prompt "<instructions>" --tools "" --setting-sources ""
+       --no-session-persistence --output-format json --model <haiku|sonnet>
+```
+
+run from an empty working folder.
+
+- `--tools ""`: the model can only reply with text; it can't read or change files.
+- `--setting-sources ""` + empty folder: your personal CLAUDE.md and settings aren't loaded, so they don't steer the output or cost tokens. `--bare` would also do this, but it skips the login, so it fails.
+- Each request sends the whole chat so far, so nothing is stored by Claude Code between turns. That keeps the app's AI interface a plain "messages in, text out" call.
+- About 5 seconds per reply (measured).
+- **Limitation:** this is fine for a personal tool on your own PC. If the app is ever shared with other people, add an API-key backend behind the same interface, since each person needs their own access.
 
 ### Rules
 
-- **API key** is stored in Windows Credential Manager, never in the database or config files.
-- **Costs are visible:** each call is logged in `ai_usage`; settings show the monthly total; an optional cap blocks calls over the limit.
-- **Model choice per feature:** a cheap, fast model (e.g. Claude Haiku) for bulk jobs like drafting mnemonics; a stronger model (e.g. Claude Sonnet) for chat and explanations. Configurable in settings.
+- **No spending log or cap** (decided 2026-10-20: not useful for personal use on a subscription).
+- **Model choice per feature:** Haiku for bulk jobs like drafting mnemonics; Sonnet for chat and explanations.
 - **Prompts live in plain text files** in the project, so they're easy to read and tune.
 - **Japanese accuracy:** the AI's facts (readings, meanings) come *from our database* in the prompt, not from the AI's memory. The AI is used for creativity and explanation, not as the source of truth.
 

@@ -58,7 +58,7 @@ The one place you start every session.
 
 ## G. AI helpers
 
-All optional, all need your own API key, all marked as AI-generated, none change content without approval.
+All optional, all run through your Claude Code login, all marked as AI-generated, none change content without approval.
 
 - **[v1 stretch / first AI feature]** **Mnemonic workshop:** from any kanji or word, open a chat. The AI sees the item's meaning, readings, components and your current mnemonic. You talk through alternatives; one click saves the one you like (previous version kept).
 - **[later]** **Explain this:** select a sentence or grammar point and ask "why is it は and not が here?"
@@ -71,6 +71,6 @@ All optional, all need your own API key, all marked as AI-generated, none change
 
 - **[v1]** Daily new-item limit and maximum review load.
 - **[v1]** Backup: one-click export of your database file.
-- **[later]** AI settings: API key, model choice, monthly spending cap, usage log.
+- **[maybe]** AI settings: model choice per feature. (No API key or spending log: AI runs through Claude Code.)
 - **[later]** Import Anki decks.
 - **[maybe]** Import your own progress from WaniKani via its API (needs a check of WaniKani's API terms first).

@@ -30,7 +30,7 @@ Each phase ends with something you can **use daily**. Don't start the next phase
 
 ## Phase 2: AI mnemonic workshop
 
-- Settings: API key (stored safely), model choice, spending cap, usage log.
+- AI backend: run the Claude Code CLI with your existing login (no API key, no spending log; see 03-architecture "AI integration").
 - Mnemonic workshop chat on any item.
 - Bulk-draft mnemonics for upcoming items (marked AI, editable).
 
