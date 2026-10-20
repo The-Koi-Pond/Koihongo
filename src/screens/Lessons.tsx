@@ -171,7 +171,6 @@ export function Lessons({ onExit, exitLabel = "Back to Today" }: { onExit: () =>
                 </li>
               ))}
             </ol>
-            <span className="muted small">← → keys flip pages</span>
           </div>
           {last ? (
             <button className="primary" onClick={startQuiz}>
