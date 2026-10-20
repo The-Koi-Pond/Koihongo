@@ -2282,10 +2282,6 @@ textarea {
     padding: 6px 14px;
   }
 
-  .bottom-bar-center .muted.small {
-    display: none; /* the "← → keys" hint */
-  }
-
   .today-banner {
     min-height: 150px;
   }
