@@ -15,3 +15,4 @@ When the feature is built, these move into the content build as curated data, an
 | 鹿 (kanji) | Trip | In Nara Park, hundreds of deer (鹿, しか) roam free, and vendors sell 鹿せんべい (deer crackers) to feed them. Many of the deer bob their heads when you bow to them. |
 | 鬼 (kanji) | Trip + media | On 節分 (Setsubun, early February), people throw roasted soybeans while shouting 鬼は外！福は内！ ("Demons out! Luck in!"). 鬼 (oni) are the horned demons you see all over anime and folklore. |
 | 青 (kanji) | Trip | 青 covers more than English "blue": the green traffic light is called 青信号 (blue signal), and fresh green vegetables can be 青い too. |
+| 四 (kanji) | Trip | し (four) sounds like 死 (death), so some hospitals and hotels skip room numbers with 4, and people usually say よん when counting. Gift sets come in threes or fives rather than fours for the same reason. |
