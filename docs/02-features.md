@@ -62,6 +62,13 @@ The one place you start every session. Fits the window without scrolling.
 - **[v1]** Hover any kanji in Japanese text (example sentences, word lists) or any component/kanji/word chip or library tile for a popover: meanings, readings, your status. In the library, clicking opens the item; in lessons and reviews it only previews (leaving would end the session).
 - **[later]** Hover whole *words* inside sentences (needs a word splitter; see F).
 
+## E2. "Did you know?" trivia
+
+- **[v1 stretch]** Some items carry a short cultural fact that ties the item to something you would meet on a trip to Japan (signs, stations, food, money, etiquette) or in anime and manga (honorifics, common phrases, tropes). It shows as a small "Did you know?" button on the item page and after a review. It opens a popover only when clicked, so it never slows you down.
+- Only where it's a quality fit: most items have none. Facts must be accurate and short (one to three sentences), and use the item itself. The rules are in `CLAUDE.md`. Candidates are collected in `docs/trivia-backlog.md`.
+- Data: curated by hand in the content build, like the kana example words, into a `trivia` table in content.db (item_key, text, angle: trip | media, source note).
+- **[later]** AI-drafted candidates for review, never shown until approved.
+
 ## E. Dictionary and lookup
 
 - **[v1]** Search kanji/words by English, kana, romaji or kanji.
