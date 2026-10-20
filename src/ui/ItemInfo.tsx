@@ -93,7 +93,7 @@ export function ItemInfo({ item, onChange }: { item: ItemDetails; onChange: () =
             </Field>
           )}
           <NoteEditor item={item} kind="mnemonic_meaning" label="Meaning mnemonic" onSaved={onChange} />
-          <NoteEditor item={item} kind="mnemonic_reading" label="Reading mnemonic" onSaved={onChange} />
+          <NoteEditor item={item} kind="mnemonic_reading" label="Reading note" onSaved={onChange} />
           {item.words.length > 0 && (
             <Field label="Words" icon={List} wide>
               <ul className="word-list">
@@ -133,7 +133,7 @@ export function ItemInfo({ item, onChange }: { item: ItemDetails; onChange: () =
             <Chips items={item.kanji.map((k) => ({ glyph: k.character, text: k.meaning, kind: "kanji", itemKey: `kanji:${k.character}` }))} />
           </Field>
           <NoteEditor item={item} kind="mnemonic_meaning" label="Meaning mnemonic" onSaved={onChange} />
-          <NoteEditor item={item} kind="mnemonic_reading" label="Reading mnemonic" onSaved={onChange} />
+          <NoteEditor item={item} kind="mnemonic_reading" label="Reading note" onSaved={onChange} />
           {item.sentences.length > 0 && (
             <Field label="Examples" icon={Quote} wide>
               <Examples item={item} />
@@ -276,7 +276,7 @@ function NoteEditor({ item, kind, label, onSaved }: { item: ItemDetails; kind: N
         </div>
       ) : (
         <div className="note">
-          {note ? <p>{note.text}</p> : <p className="muted">No mnemonic yet.</p>}
+          {note ? <p>{note.text}</p> : <p className="muted">No {label.toLowerCase()} yet.</p>}
           {note && AUTHOR_NOTE[note.author] && <p className="muted small">{AUTHOR_NOTE[note.author]}</p>}
           {/* Pinned to the bottom-left of the card. */}
           <div className="note-actions">
