@@ -1,18 +1,99 @@
-# Koihongo: project instructions
+# Koihongo: guide for agents
 
-Design docs live in `docs/` (vision, features, architecture, roadmap). Read the relevant one before changing a feature.
+Koihongo is Xel's personal Windows desktop app for learning Japanese from zero: WaniKani's components → kanji → words path, Anki-style FSRS reviews, Bunpro-style grammar later, plus optional AI help through the Claude Code CLI. The internal identifier is still `com.xel.nihongo` (the folder is `nihongo`) so `user.db` stays put.
+
+## Working with Xel
+
+- Xel (they/them) is a beginner learner and a hands-on vibe-coder. Claude writes and explains the code; Xel test-drives in the app and gives feedback, often from screenshots.
+- Explain changes in plain words, keep reports short, and say what was and wasn't checked (preview vs. the real app window).
+- Design docs: `docs/01-vision.md` (design rules: above all, easy to stick with), `02-features.md`, `03-architecture.md`, `04-roadmap.md`. Read the relevant one before changing a feature, and tick the roadmap when something ships.
+- Copy methods, never content, from WaniKani or Bunpro. Dataset licences are listed in `03-architecture.md` and credited in the app (Settings → Sources).
+
+## Where things are
+
+| Path | What |
+|---|---|
+| `src/screens/` | Today, Lessons, Reviews, Library, Dictionary, Settings, Sources, ComingSoon (grammar, reading) |
+| `src/ui/` | Shared UI: ItemView/ItemInfo (item pages), QuestionCard (quiz), Scene (banner scenery), AiChat, Examples, InfoTip… |
+| `src/srs/` | Scheduling (FSRS via ts-fsrs), sessions, answer checking, pacing settings |
+| `src/items.ts`, `library.ts`, `dictionary.ts`, `backup.ts` | Item details, statuses, dictionary search, backups |
+| `src/ai/` | Claude CLI backend and all prompts (`prompts.ts`) |
+| `src/App.css` | All styles; theme tokens on `:root` at the top |
+| `src-tauri/src/` | Rust: `db.rs` (SQL bridge), `ai.rs` (Claude CLI), `backup.rs` |
+| `scripts/content/` | Content build: datasets → `src-tauri/resources/content.db` (schema in `schema.sql`) |
+| `scripts/content/mnemonics/` | Koihongo's default mnemonics, one file per batch, registered in `index.ts` |
+| `tests/` | Node tests (`tests/nodeDb.ts` mirrors the Rust DB setup) |
+
+Data: `content.db` is generated and gitignored. `user.db` (progress, notes, settings) lives in `%APPDATA%\com.xel.nihongo\`, and is backed up daily to `Documents\Koihongo\Backups`.
+
+## Commands
+
+```
+pnpm tauri dev          # run the app (live reload for src/; Rust changes rebuild automatically)
+pnpm test               # all Node tests
+pnpm typecheck          # TypeScript, app and scripts
+cd src-tauri && cargo test
+pnpm content:build      # rebuild content.db (~10 s; datasets cached in data/raw/)
+pnpm mnemonics:kanji 151 50   # list the next kanji to write mnemonics for
+```
+
+After `pnpm content:build`, restart the app: content.db is attached when it starts.
+
+## Checking UI changes
+
+Headless Edge previews work well for screenshots:
+
+1. Write a temporary `preview.html` and `src/dev/preview.tsx` that fake `window.__TAURI_INTERNALS__` (its `invoke` answers `db_query` with canned rows) and render one screen.
+2. Screenshot it from the running dev server (port 1420): `msedge --headless=new --screenshot=… --window-size=W,H --virtual-time-budget=5000 http://localhost:1420/preview.html`.
+3. Delete both files afterwards.
+
+To get realistic rows, run the real query in Node with `openDbWithContent` from `tests/nodeDb.ts` and record the answers. Virtual time doesn't run CSS transitions or `requestAnimationFrame`, so check animations in the real app. Only screenshot previews or the app, never the desktop.
+
+## Conventions
+
+- **Git:** commit locally with a clear message, ending with the `Co-Authored-By` trailer. Never push, publish, or open issues or PRs unless Xel asks. The repo has Xel's identity in its local git config.
+- **Visual style, "Starry night":**
+  - twilight indigo with pastel pink, cyan and butter glows, pixel fonts, glowing panels;
+  - colours come from tokens on `:root`, and each kind has its own: kana pink, component cyan, kanji purple, word butter;
+  - scenery frames the hero (the Start button, the big character) and never sits behind it;
+  - no city or skyline elements.
+- **Fonts:** Pixelify Sans for headings and labels. The pixel font misreads digits (150 looks like 180) and capital C, so numbers, counts and buttons like Check use M PLUS Rounded.
+- **Layout:** answering, opening details and similar actions must not shift the page.
+- **Editing strings with backslashes or `\t`:** use the Edit tool. Shell heredocs and `node -e` mangle them.
+
+## Status (2026-10-21)
+
+- Phases 0–3 of the roadmap are done:
+  - lessons and reviews, catch-up mode, Settings (pacing), daily backups with restore;
+  - dictionary search, example sentences ranked by known words, "Explain this sentence" AI.
+- The roadmap says to use the app daily for a while before phase 4 (grammar).
+- **Default mnemonics** (`scripts/content/mnemonics/`):
+  - every kana and every component is done;
+  - kanji are done up to #150 of 2,136 (`kanji-1.ts` … `kanji-3.ts`). Continue with `kanji-4.ts` from #151, 50 per batch, adding each batch to `BATCHES` in `index.ts`.
+- **Open ideas:**
+  - 399 path words have no example sentence (possibly AI-drafted, marked AI);
+  - the "Did you know?" popovers (feature E2);
+  - audio;
+  - colour-blind-safe kind colours;
+  - a subtle home for the arrow-key hint in lessons.
+
+## Writing mnemonics
+
+- **Kana:** link the shape to the sound, with the sound in CAPITALS: (KA). Katakana reuse their hiragana's image where the shapes match. Combos and dakuten state their rule.
+- **Components:** link the shape to the component's name (as stored in `components.name`) in CAPITALS.
+- **Kanji meaning:** a short story built only from the kanji's component names, with the meaning in CAPITALS. A kanji that is a single component says so.
+- **Kanji reading:** a *note*, not a story (the UI calls it "Reading note"). Either name a sound part that predicts the reading, with other kanji that share it (語 ← 五, 主 → 注 柱 駐), or point to common words, preferring words on the path. Skip it if neither helps.
+- **Facts:** only claim what's solid. Keep stories clearly stories ("a farmhouse where the pig sleeps indoors", not "in old farmhouses…"). Proofread every batch before committing.
+- Keys are path item keys: `kana:か`, `component:<KRADFILE glyph>` (sometimes a stand-in, like `刈` for 刂), `kanji:日`. The build fails on unknown keys or duplicates.
 
 ## Standing directive: "Did you know?" trivia
 
-While working on content or any item-facing screen, watch for good chances to add a **"Did you know?"** fact to an item (kana, component, kanji or word). The learner can open it optionally. Its job is to tie the item to Japanese culture in a way that's useful and helps the item stick.
+While working on content or any item-facing screen, watch for chances to add a **"Did you know?"** fact to an item. The learner opens it optionally. Its job is to tie the item to Japanese culture in a way that helps it stick.
 
-- **Quality over coverage.** Most items get none. Add one only when the link is genuinely interesting and helps you remember *this* item.
-- **Focus areas:**
-  - things you'd meet on a trip to Japan: signs, stations, shops, food, money, etiquette;
-  - things you'd see in anime, manga and games: honorifics, common phrases, recurring visual or cultural tropes.
-- **Accurate or nothing.** Never invent or embellish. If a fact isn't solid, leave it out. Folk etymologies must be labelled as such.
-- **Short:** one to three sentences, plain English, with any Japanese written as it actually appears (for example 出口 on a station sign).
-- **Tied to the item:** the fact has to use or show the item itself, not just the general topic.
-- **Media references** describe common tropes. Don't quote or reproduce copyrighted material.
+- **Quality over coverage.** Most items get none.
+- **Focus:** things you'd meet on a trip to Japan (signs, stations, shops, food, money, etiquette), and things from anime, manga and games (honorifics, common phrases, recurring tropes).
+- **Accurate or nothing.** Never invent or embellish. Label folk etymologies as such.
+- **One to three sentences,** plain English, with Japanese written as it actually appears (出口 on a station sign).
+- **Tied to the item itself,** not just the general topic. Media references describe tropes and never quote copyrighted material.
 
-Until the feature is built, add candidates to `docs/trivia-backlog.md`, and mention any new ones in your final report. The planned feature is section E2 in `docs/02-features.md`.
+Until feature E2 (`docs/02-features.md`) is built, add candidates to `docs/trivia-backlog.md` and mention new ones in your final report.
