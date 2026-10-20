@@ -55,6 +55,7 @@ Each phase ends with something you can **use daily**. Don't start the next phase
 
 ## After that (unordered)
 
+- **Content:** "Did you know?" trivia popovers (feature E2). Collect candidates in `docs/trivia-backlog.md` until then.
 - **UI:** a separate launch splash, if still wanted (Today now serves as the landing page).
 - **Features:** audio/text-to-speech, pitch accent, progress charts, similar-kanji drills, Anki import, handwriting, conversation practice, maybe mobile.
 
