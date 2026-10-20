@@ -1,0 +1,176 @@
+// Everything shown about one study item, plus your notes and synonyms for it.
+
+import type { Db } from "./db/db.ts";
+import type { ItemKind } from "./srs/progress.ts";
+
+export type NoteKind = "mnemonic_meaning" | "mnemonic_reading" | "note";
+export type NoteAuthor = "you" | "ai" | "ai_edited";
+export type Note = { text: string; author: NoteAuthor; created_at: number };
+
+type Common = {
+  item_key: string;
+  /** Current (newest) note of each kind. */
+  notes: Partial<Record<NoteKind, Note>>;
+  synonyms: string[];
+};
+
+export type ComponentDetails = Common & {
+  kind: "component";
+  display: string;
+  name: string;
+  usedIn: { character: string; meaning: string }[];
+};
+
+export type KanjiDetails = Common & {
+  kind: "kanji";
+  character: string;
+  meanings: string[];
+  onReadings: string[];
+  kunReadings: string[];
+  components: { display: string; name: string }[];
+  strokeSvg: string | null;
+  words: { written: string; reading: string; meaning: string }[];
+};
+
+export type WordDetails = Common & {
+  kind: "word";
+  written: string;
+  reading: string;
+  otherForms: string[];
+  senses: { pos: string[]; glosses: string[] }[];
+  kanji: { character: string; meaning: string }[];
+  sentences: { japanese: string; english: string }[];
+};
+
+export type ItemDetails = ComponentDetails | KanjiDetails | WordDetails;
+
+export function parseItemKey(itemKey: string): { kind: ItemKind; id: string } {
+  const i = itemKey.indexOf(":");
+  const kind = itemKey.slice(0, i);
+  if (kind !== "component" && kind !== "kanji" && kind !== "word") throw new Error(`Bad item key: ${itemKey}`);
+  return { kind, id: itemKey.slice(i + 1) };
+}
+
+const first = <T>(json: string): T => JSON.parse(json)[0];
+
+export async function getItemDetails(db: Db, itemKey: string): Promise<ItemDetails> {
+  const { kind, id } = parseItemKey(itemKey);
+  const notes = await db.all<Note & { kind: NoteKind }>(
+    `SELECT kind, text, author, created_at FROM notes n
+     WHERE item_key = ? AND id = (SELECT max(id) FROM notes WHERE item_key = n.item_key AND kind = n.kind)`,
+    [itemKey],
+  );
+  const synonyms = await db.all<{ text: string }>("SELECT text FROM synonyms WHERE item_key = ? ORDER BY created_at", [itemKey]);
+  const common: Common = {
+    item_key: itemKey,
+    notes: Object.fromEntries(notes.map(({ kind, ...note }) => [kind, note])),
+    synonyms: synonyms.map((s) => s.text),
+  };
+
+  if (kind === "component") {
+    const [c] = await db.all<{ display: string; name: string }>("SELECT display, name FROM content.components WHERE glyph = ?", [id]);
+    if (!c) throw new Error(`Unknown component ${id}`);
+    const usedIn = await db.all<{ character: string; meanings: string }>(
+      `SELECT k.character, k.meanings FROM content.kanji_components kc
+       JOIN content.kanji k ON k.character = kc.kanji
+       JOIN content.path p ON p.item_key = 'kanji:' || k.character
+       WHERE kc.component = ? ORDER BY p.position LIMIT 6`,
+      [id],
+    );
+    return { ...common, kind, ...c, usedIn: usedIn.map((k) => ({ character: k.character, meaning: first(k.meanings) })) };
+  }
+
+  if (kind === "kanji") {
+    const [k] = await db.all<{ meanings: string; on_readings: string; kun_readings: string; stroke_svg: string | null }>(
+      "SELECT meanings, on_readings, kun_readings, stroke_svg FROM content.kanji WHERE character = ?",
+      [id],
+    );
+    if (!k) throw new Error(`Unknown kanji ${id}`);
+    const components = await db.all<{ display: string; name: string }>(
+      `SELECT c.display, c.name FROM content.kanji_components kc JOIN content.components c ON c.glyph = kc.component
+       WHERE kc.kanji = ? ORDER BY c.stroke_count`,
+      [id],
+    );
+    const words = await db.all<{ written: string; reading: string; senses: string }>(
+      `SELECT w.written, w.reading, w.senses FROM content.word_kanji wk
+       JOIN content.words w ON w.id = wk.word_id
+       JOIN content.path p ON p.item_key = 'word:' || w.id
+       WHERE wk.kanji = ? ORDER BY p.position LIMIT 5`,
+      [id],
+    );
+    return {
+      ...common,
+      kind,
+      character: id,
+      meanings: JSON.parse(k.meanings),
+      onReadings: JSON.parse(k.on_readings),
+      kunReadings: JSON.parse(k.kun_readings),
+      components,
+      strokeSvg: k.stroke_svg,
+      words: words.map((w) => ({ written: w.written, reading: w.reading, meaning: first<{ glosses: string[] }>(w.senses).glosses[0] })),
+    };
+  }
+
+  const [w] = await db.all<{ written: string; reading: string; other_forms: string; senses: string }>(
+    "SELECT written, reading, other_forms, senses FROM content.words WHERE id = ?",
+    [id],
+  );
+  if (!w) throw new Error(`Unknown word ${id}`);
+  const kanji = await db.all<{ character: string; meanings: string }>(
+    `SELECT k.character, k.meanings FROM content.word_kanji wk JOIN content.kanji k ON k.character = wk.kanji
+     WHERE wk.word_id = ? ORDER BY instr(?, k.character)`,
+    [id, w.written],
+  );
+  const sentences = await db.all<{ japanese: string; english: string }>(
+    `SELECT s.japanese, s.english FROM content.word_sentences ws JOIN content.sentences s ON s.id = ws.sentence_id
+     WHERE ws.word_id = ? ORDER BY length(s.japanese) LIMIT 3`,
+    [id],
+  );
+  return {
+    ...common,
+    kind,
+    written: w.written,
+    reading: w.reading,
+    otherForms: JSON.parse(w.other_forms),
+    senses: (JSON.parse(w.senses) as { pos: string[]; glosses: string[] }[]).map(({ pos, glosses }) => ({ pos, glosses })),
+    kanji: kanji.map((k) => ({ character: k.character, meaning: first(k.meanings) })),
+    sentences,
+  };
+}
+
+const KANA_ONLY = /^[\p{Script=Hiragana}\p{Script=Katakana}ー]+$/u;
+
+/** What counts as a right answer for this item's meaning and reading cards. */
+export function acceptedAnswers(d: ItemDetails): { meanings: string[]; readings: string[] } {
+  switch (d.kind) {
+    case "component":
+      return { meanings: [d.name, ...d.synonyms], readings: [] };
+    case "kanji":
+      return { meanings: [...d.meanings, ...d.synonyms], readings: [...d.onReadings, ...d.kunReadings] };
+    case "word":
+      return {
+        meanings: [...d.senses.flatMap((s) => s.glosses), ...d.synonyms],
+        readings: [d.reading, ...d.otherForms.filter((f) => KANA_ONLY.test(f))],
+      };
+  }
+}
+
+/** Saves a new version of a note; older versions are kept. */
+export async function saveNote(db: Db, itemKey: string, kind: NoteKind, text: string, author: NoteAuthor, now: number) {
+  await db.batch([
+    {
+      sql: "INSERT INTO notes (item_key, kind, text, author, created_at) VALUES (?, ?, ?, ?, ?)",
+      params: [itemKey, kind, text.trim(), author, now],
+    },
+  ]);
+}
+
+export async function addSynonym(db: Db, itemKey: string, text: string, now: number) {
+  const clean = text.trim();
+  if (!clean) return;
+  await db.batch([{ sql: "INSERT OR IGNORE INTO synonyms (item_key, text, created_at) VALUES (?, ?, ?)", params: [itemKey, clean, now] }]);
+}
+
+export async function removeSynonym(db: Db, itemKey: string, text: string) {
+  await db.batch([{ sql: "DELETE FROM synonyms WHERE item_key = ? AND text = ?", params: [itemKey, text] }]);
+}

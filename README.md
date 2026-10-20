@@ -2,7 +2,7 @@
 
 A personal, all-in-one Windows desktop app for learning Japanese. It takes the best methods from existing tools (WaniKani, Anki, Bunpro) and links kanji, vocabulary, grammar and reading together in one place. Where it helps, it can call AI models (for example, to rework a kanji mnemonic you don't like).
 
-Status: **Phase 1 in progress**. The content database, your progress database, scheduling/unlocking logic and a first Today screen work. Next: the lesson and review screens.
+Status: **Phase 1, first studyable version.** Lessons, reviews, mnemonics and synonyms work. Remaining for Phase 1: catch-up mode, backup button, settings screen, and whatever daily use turns up.
 
 ## Running it
 

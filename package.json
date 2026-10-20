@@ -17,7 +17,8 @@
     "@tauri-apps/plugin-opener": "^2",
     "react": "^19.1.0",
     "react-dom": "^19.1.0",
-    "ts-fsrs": "^5.4.2"
+    "ts-fsrs": "^5.4.2",
+    "wanakana": "^5.3.1"
   },
   "devDependencies": {
     "@tauri-apps/cli": "^2",
