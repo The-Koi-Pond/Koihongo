@@ -560,13 +560,11 @@ footer {
   --kind: var(--kanji);
   width: 100%;
   height: 104px;
-  padding: 4px;
-  /* Kind stripe: visible in every status, so a 日 component, kanji and word never look alike. */
-  box-shadow: inset 0 5px 0 var(--kind);
+  padding: 0 4px 4px;
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: center;
+  justify-content: flex-start;
   gap: 2px;
   border-radius: 10px;
   overflow: hidden;
@@ -576,6 +574,7 @@ footer {
 .tile.word { --kind: var(--word); }
 
 .tile-glyph {
+  margin-top: auto; /* with .tile-meaning's margin-bottom: centre the content below the band */
   font-size: 1.6rem;
   line-height: 1.2;
   white-space: nowrap;
@@ -588,24 +587,24 @@ footer {
   font-size: 1.15rem;
 }
 
-/* Kind chip: a pill in the kind's colour, set apart from the tile's contents. */
+/* Kind band across the top: shown in every status, so a 日 component, kanji
+   and word never look alike. Content is centred in the space below it. */
 .tile-kind {
+  align-self: stretch;
+  margin: 0 -4px;
+  padding: 3px 0;
   font-size: 0.58rem;
   font-weight: 700;
   letter-spacing: 0.06em;
   text-transform: uppercase;
   line-height: 1;
-  padding: 3px 7px;
-  margin-bottom: 2px;
-  border-radius: 999px;
   background: var(--kind);
   color: #fff;
 }
 
-/* Passed tiles are already filled with the kind colour: invert the chip. */
+/* Passed tiles are already filled with the kind colour: darken the band. */
 .tile.passed .tile-kind {
-  background: #fff;
-  color: var(--kind);
+  background: color-mix(in srgb, var(--kind) 65%, #000);
 }
 
 .tile-reading {
@@ -614,6 +613,7 @@ footer {
 }
 
 .tile-meaning {
+  margin-bottom: auto;
   font-size: 0.72rem;
   max-width: 100%;
   white-space: nowrap;
