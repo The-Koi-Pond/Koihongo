@@ -1,12 +1,13 @@
-import { BookOpen, CircleCheck, Ear, Languages, Lightbulb, List, Pencil, PenLine, Quote, Search, Shapes, Sparkles, Tag, Tags, type LucideIcon, Volume2 } from "lucide-react";
+import { BookOpen, Ear, Languages, Lightbulb, List, Pencil, PenLine, Quote, Search, Shapes, Sparkles, Tag, Tags, type LucideIcon, Volume2 } from "lucide-react";
 import { useState } from "react";
 import { tauriDb } from "../db/tauriDb.ts";
 import { addSynonym, removeSynonym, saveNote, type ItemDetails, type Note, type NoteKind } from "../items.ts";
+import { Examples } from "./Examples.tsx";
 import { Gloss } from "./Gloss.tsx";
 import { InfoTip } from "./InfoTip.tsx";
 import { MnemonicWorkshop } from "./MnemonicWorkshop.tsx";
 import { soundHint } from "../kanaSounds.ts";
-import { ItemHover, JapaneseText } from "./Popover.tsx";
+import { ItemHover } from "./Popover.tsx";
 import { SpeakButton } from "./SpeakButton.tsx";
 import { StrokeOrder } from "./StrokeOrder.tsx";
 
@@ -135,20 +136,7 @@ export function ItemInfo({ item, onChange }: { item: ItemDetails; onChange: () =
           <NoteEditor item={item} kind="mnemonic_reading" label="Reading mnemonic" onSaved={onChange} />
           {item.sentences.length > 0 && (
             <Field label="Examples" icon={Quote} wide>
-              <ul className="plain">
-                {item.sentences.map((s) => (
-                  <li key={s.japanese}>
-                    <JapaneseText text={s.japanese} highlight={s.form} />
-                    {s.newWords === 0 && (
-                      <span className="known-words" title="You've started every word in this sentence">
-                        <CircleCheck size={14} strokeWidth={2} aria-hidden="true" /> all words known
-                      </span>
-                    )}
-                    <br />
-                    <span className="muted">{s.english}</span>
-                  </li>
-                ))}
-              </ul>
+              <Examples item={item} />
             </Field>
           )}
         </>

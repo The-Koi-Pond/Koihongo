@@ -1531,6 +1531,34 @@ textarea {
   font-weight: 700;
 }
 
+/* Example sentence on the left, its Explain button on the right; the chat opens below. */
+.examples {
+  gap: 10px;
+}
+
+.example {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.explain-btn {
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 3px 10px;
+  border-radius: 999px;
+  font-size: 0.8rem;
+  color: var(--muted);
+}
+
+.explain-btn:hover {
+  color: var(--accent);
+  border-color: var(--accent);
+}
+
 .known-words {
   margin-left: 8px;
   display: inline-flex;
