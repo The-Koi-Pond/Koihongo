@@ -63,6 +63,15 @@ export function checkMeaning(answer: string, meanings: string[], readings: strin
   return { result: "wrong" };
 }
 
+/** Kana are answered in romaji: Hepburn, any spelling wanakana maps to the same kana (si, tu, sya…), or a listed extra (を → "o"). */
+export function checkKana(answer: string, kana: string, romaji: string, accept: string[]): Verdict {
+  const typed = answer.trim().toLowerCase();
+  if (!typed) return { result: "retry", message: "Type how it's read, in romaji." };
+  if (!isRomaji(typed)) return { result: "retry", message: "Type the reading in romaji (e.g. ka)." };
+  const ok = typed === romaji || accept.includes(typed) || toHiragana(typed) === toHiragana(kana);
+  return ok ? { result: "correct", typo: false } : { result: "wrong" };
+}
+
 export function checkReading(answer: string, readings: string[]): Verdict {
   const typed = toHiragana(toKana(answer.trim()), { passRomaji: true });
   if (!typed) return { result: "retry", message: "Type the reading." };

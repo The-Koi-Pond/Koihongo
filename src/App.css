@@ -7,6 +7,7 @@
   --border: #e2e0da;
   --accent: #d9572b;
   --accent-text: #ffffff;
+  --kana: #c2417a;
   --component: #1f8a8a;
   --kanji: #d9572b;
   --word: #4b5bb5;
@@ -367,6 +368,14 @@ textarea {
   text-align: center;
 }
 
+.lesson-preview .kana,
+.glyph.kana,
+.chip-glyph.kana,
+.dot.kana,
+.kind-tag.kana {
+  background: var(--kana);
+}
+
 .lesson-preview .component,
 .glyph.component,
 .chip-glyph.component,
@@ -590,6 +599,11 @@ textarea {
   padding-left: 1.2em;
 }
 
+.big-reading {
+  font-size: 1.4rem;
+  font-weight: 700;
+}
+
 /* Mnemonic workshop */
 
 .workshop {
@@ -739,6 +753,7 @@ textarea {
   overflow: hidden;
 }
 
+.tile.kana { --kind: var(--kana); }
 .tile.component { --kind: var(--component); }
 .tile.word { --kind: var(--word); }
 
@@ -751,7 +766,8 @@ textarea {
   overflow-wrap: anywhere;
 }
 
-.tile.word .tile-glyph {
+/* Words and kana combos (きゃ): smaller so two characters fit a column. */
+.tile-glyph.multi {
   font-size: 1.6rem;
 }
 
@@ -827,6 +843,7 @@ textarea {
   border: none;
 }
 
+.chip-link.kana { background: var(--kana); }
 .chip-link.component { background: var(--component); }
 .chip-link.kanji { background: var(--kanji); }
 .chip-link.word { background: var(--word); }
@@ -892,6 +909,7 @@ textarea {
   padding: 2px 10px;
 }
 
+.popover-head.kana { background: var(--kana); }
 .popover-head.component { background: var(--component); }
 .popover-head.kanji { background: var(--kanji); }
 .popover-head.word { background: var(--word); }

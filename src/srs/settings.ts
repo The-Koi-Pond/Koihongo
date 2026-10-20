@@ -1,7 +1,10 @@
 // Study pacing. Fixed for now; a settings screen comes later in Phase 1.
 
-/** New lessons per study day (components, kanji and words all count as one). */
+/** New lessons per study day on the main track (components, kanji and words each count as one). */
 export const NEW_PER_DAY = 10;
+
+/** New kana per study day, on top of NEW_PER_DAY: kana are quick, so four rows a day. */
+export const KANA_PER_DAY = 20;
 
 /**
  * Lessons shrink as reviews pile up, reaching zero at this many due reviews,

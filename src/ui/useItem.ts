@@ -26,6 +26,8 @@ export function useItem(itemKey: string | undefined): { item?: ItemDetails; erro
 
 export function itemLabel(item: ItemDetails): string {
   switch (item.kind) {
+    case "kana":
+      return item.character;
     case "component":
       return item.display;
     case "kanji":

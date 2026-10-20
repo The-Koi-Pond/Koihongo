@@ -2,16 +2,16 @@ import { useState } from "react";
 import { toKana } from "wanakana";
 import { tauriDb } from "../db/tauriDb.ts";
 import { acceptedAnswers, addSynonym, type ItemDetails } from "../items.ts";
-import { checkMeaning, checkReading, type Verdict } from "../srs/answers.ts";
+import { checkKana, checkMeaning, checkReading, type Verdict } from "../srs/answers.ts";
 import type { CardType } from "../srs/scheduler.ts";
 import { ItemInfo } from "./ItemInfo.tsx";
 import { itemLabel } from "./useItem.ts";
 
-const PROMPT = {
-  component: { meaning: "Component name" },
-  kanji: { meaning: "Kanji meaning", reading: "Kanji reading" },
-  word: { meaning: "Word meaning", reading: "Word reading" },
-} as const;
+function promptFor(item: ItemDetails, cardType: CardType): string {
+  if (item.kind === "kana") return "Kana reading (romaji)";
+  if (item.kind === "component") return "Component name";
+  return `${item.kind === "kanji" ? "Kanji" : "Word"} ${cardType}`;
+}
 
 /**
  * Asks one question. Enter checks the answer, Enter again moves on; the result
@@ -33,14 +33,21 @@ export function QuestionCard({
   const [showInfo, setShowInfo] = useState(false);
   const [overridden, setOverridden] = useState(false);
   const accepted = acceptedAnswers(item);
-  const prompt = cardType === "reading" && item.kind !== "component" ? PROMPT[item.kind].reading : PROMPT[item.kind].meaning;
+  const prompt = promptFor(item, cardType);
+  // Kanji/word readings are typed in romaji that turns into kana; kana questions are answered in romaji itself.
+  const kanaInput = cardType === "reading" && item.kind !== "kana";
   const graded = verdict && verdict.result !== "retry";
   const correct = overridden || verdict?.result === "correct";
 
   function submit(e: React.FormEvent) {
     e.preventDefault();
     if (graded) return onDone(correct, answer);
-    const v = cardType === "meaning" ? checkMeaning(answer, accepted.meanings, accepted.readings) : checkReading(answer, accepted.readings);
+    const v =
+      item.kind === "kana"
+        ? checkKana(answer, item.character, item.romaji, item.accept)
+        : cardType === "meaning"
+          ? checkMeaning(answer, accepted.meanings, accepted.readings)
+          : checkReading(answer, accepted.readings);
     setVerdict(v);
     if (v.result === "wrong") setShowInfo(true);
   }
@@ -51,7 +58,12 @@ export function QuestionCard({
     onReload();
   }
 
-  const expected = cardType === "meaning" ? accepted.meanings.slice(0, 4).join(", ") : accepted.readings.join("、");
+  const expected =
+    item.kind === "kana"
+      ? accepted.readings.join(" / ")
+      : cardType === "meaning"
+        ? accepted.meanings.slice(0, 4).join(", ")
+        : accepted.readings.join("、");
 
   return (
     <div className="question">
@@ -66,13 +78,13 @@ export function QuestionCard({
           autoFocus
           autoComplete="off"
           spellCheck={false}
-          lang={cardType === "reading" ? "ja" : "en"}
+          lang={kanaInput ? "ja" : "en"}
           readOnly={graded}
           className={graded ? (correct ? "right" : "wrong") : ""}
           value={answer}
-          placeholder={cardType === "reading" ? "かな (type romaji)" : "English"}
+          placeholder={item.kind === "kana" ? "romaji, e.g. ka" : kanaInput ? "かな (type romaji)" : "English"}
           onChange={(e) => {
-            setAnswer(cardType === "reading" ? toKana(e.target.value, { IMEMode: true }) : e.target.value);
+            setAnswer(kanaInput ? toKana(e.target.value, { IMEMode: true }) : e.target.value);
             if (verdict?.result === "retry") setVerdict(undefined);
           }}
         />
@@ -86,7 +98,7 @@ export function QuestionCard({
         {verdict?.result === "correct" && verdict.typo && <p className="hint">Close enough. Watch the spelling: {expected}</p>}
         {verdict?.result === "wrong" && !overridden && (
           <p className="miss">
-            Answer: <span lang={cardType === "reading" ? "ja" : "en"}>{expected}</span>
+            Answer: <span lang={kanaInput ? "ja" : "en"}>{expected}</span>
             {cardType === "meaning" && answer.trim() && (
               <button type="button" className="link" onClick={acceptMine}>
                 I was right: accept “{answer.trim()}” from now on

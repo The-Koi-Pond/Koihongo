@@ -15,7 +15,7 @@ async function freshDb() {
       INSERT INTO kanji (character, meanings, on_readings, kun_readings, nanori, stroke_count)
         VALUES ('木', '["tree","wood"]', '["モク"]', '["き"]', '[]', 4), ('休', '["rest"]', '["キュウ"]', '["やす.む"]', '[]', 6);
       INSERT INTO words VALUES ('1', '休み', 'やすみ', '[]', '[{"pos":["n"],"glosses":["rest","holiday"],"misc":[],"info":[]}]', 5, 0);
-      INSERT INTO path VALUES (1, 'component:木', 'component'), (2, 'kanji:木', 'kanji'),
+      INSERT INTO path (position, item_key, kind) VALUES (1, 'component:木', 'component'), (2, 'kanji:木', 'kanji'),
         (3, 'component:化', 'component'), (4, 'kanji:休', 'kanji'), (5, 'word:1', 'word');
       INSERT INTO path_requirements VALUES ('kanji:木', 'component:木'),
         ('kanji:休', 'component:化'), ('kanji:休', 'component:木'), ('word:1', 'kanji:休');

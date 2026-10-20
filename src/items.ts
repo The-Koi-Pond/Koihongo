@@ -14,6 +14,18 @@ type Common = {
   synonyms: string[];
 };
 
+export type KanaDetails = Common & {
+  kind: "kana";
+  character: string;
+  /** Hepburn romaji, plus other answers accepted (を → "o"). */
+  romaji: string;
+  accept: string[];
+  script: "hiragana" | "katakana";
+  group: "basic" | "dakuten" | "combo" | "extended";
+  counterpart: string | null;
+  strokeSvg: string | null;
+};
+
 export type ComponentDetails = Common & {
   kind: "component";
   display: string;
@@ -42,12 +54,12 @@ export type WordDetails = Common & {
   sentences: { japanese: string; english: string }[];
 };
 
-export type ItemDetails = ComponentDetails | KanjiDetails | WordDetails;
+export type ItemDetails = KanaDetails | ComponentDetails | KanjiDetails | WordDetails;
 
 export function parseItemKey(itemKey: string): { kind: ItemKind; id: string } {
   const i = itemKey.indexOf(":");
   const kind = itemKey.slice(0, i);
-  if (kind !== "component" && kind !== "kanji" && kind !== "word") throw new Error(`Bad item key: ${itemKey}`);
+  if (kind !== "kana" && kind !== "component" && kind !== "kanji" && kind !== "word") throw new Error(`Bad item key: ${itemKey}`);
   return { kind, id: itemKey.slice(i + 1) };
 }
 
@@ -66,6 +78,25 @@ export async function getItemDetails(db: Db, itemKey: string): Promise<ItemDetai
     notes: Object.fromEntries(notes.map(({ kind, ...note }) => [kind, note])),
     synonyms: synonyms.map((s) => s.text),
   };
+
+  if (kind === "kana") {
+    const [k] = await db.all<{ romaji: string; accept: string; script: KanaDetails["script"]; grp: KanaDetails["group"]; counterpart: string | null; stroke_svg: string | null }>(
+      "SELECT romaji, accept, script, grp, counterpart, stroke_svg FROM content.kana WHERE character = ?",
+      [id],
+    );
+    if (!k) throw new Error(`Unknown kana ${id}`);
+    return {
+      ...common,
+      kind,
+      character: id,
+      romaji: k.romaji,
+      accept: JSON.parse(k.accept),
+      script: k.script,
+      group: k.grp,
+      counterpart: k.counterpart,
+      strokeSvg: k.stroke_svg,
+    };
+  }
 
   if (kind === "component") {
     const [c] = await db.all<{ display: string; name: string }>("SELECT display, name FROM content.components WHERE glyph = ?", [id]);
@@ -143,6 +174,8 @@ const KANA_ONLY = /^[\p{Script=Hiragana}\p{Script=Katakana}ー]+$/u;
 /** What counts as a right answer for this item's meaning and reading cards. */
 export function acceptedAnswers(d: ItemDetails): { meanings: string[]; readings: string[] } {
   switch (d.kind) {
+    case "kana":
+      return { meanings: [], readings: [d.romaji, ...d.accept] };
     case "component":
       return { meanings: [d.name, ...d.synonyms], readings: [] };
     case "kanji":

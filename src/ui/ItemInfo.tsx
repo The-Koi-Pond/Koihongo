@@ -4,13 +4,41 @@ import { addSynonym, removeSynonym, saveNote, type ItemDetails, type Note, type 
 import { MnemonicWorkshop } from "./MnemonicWorkshop.tsx";
 import { ItemHover, JapaneseText } from "./Popover.tsx";
 
-const KIND_NAME = { component: "Component", kanji: "Kanji", word: "Word" } as const;
+const KIND_NAME = { kana: "Kana", component: "Component", kanji: "Kanji", word: "Word" } as const;
+const GROUP_NAME = { basic: "basic", dakuten: "with ゛ or ゜ marks", combo: "combination (small ゃゅょ)", extended: "extended (loanword sounds)" } as const;
 
 /** Everything about an item: meanings, readings, parts, mnemonics, examples. */
 export function ItemInfo({ item, onChange }: { item: ItemDetails; onChange: () => void }) {
   return (
     <div className="item-info">
       <p className={`kind-tag ${item.kind}`}>{KIND_NAME[item.kind]}</p>
+
+      {item.kind === "kana" && (
+        <>
+          <Field label="Reading">
+            <span className="big-reading">{item.romaji}</span>
+            {item.accept.length > 0 && <span className="muted"> (also accepted: {item.accept.join(", ")})</span>}
+          </Field>
+          <Field label="Script">
+            {item.script === "hiragana" ? "Hiragana" : "Katakana"}, {GROUP_NAME[item.group]}
+          </Field>
+          {item.counterpart && (
+            <Field label={item.script === "hiragana" ? "Same sound in katakana" : "Same sound in hiragana"}>
+              <Chips items={[{ glyph: item.counterpart, text: item.romaji, kind: "kana", itemKey: `kana:${item.counterpart}` }]} />
+            </Field>
+          )}
+          <NoteEditor item={item} kind="mnemonic_reading" label="Mnemonic" onSaved={onChange} />
+          {item.strokeSvg && (
+            <Field label="Stroke order">
+              <img
+                className="strokes"
+                alt={`Stroke order for ${item.character}`}
+                src={`data:image/svg+xml;charset=utf-8,${encodeURIComponent(item.strokeSvg)}`}
+              />
+            </Field>
+          )}
+        </>
+      )}
 
       {item.kind === "component" && (
         <>
@@ -101,7 +129,7 @@ export function ItemInfo({ item, onChange }: { item: ItemDetails; onChange: () =
         </>
       )}
 
-      <SynonymEditor item={item} onChange={onChange} />
+      {item.kind !== "kana" && <SynonymEditor item={item} onChange={onChange} />}
     </div>
   );
 }
