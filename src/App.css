@@ -951,6 +951,10 @@ textarea {
   margin-bottom: 4px;
 }
 
+.as-in-audio {
+  margin-left: auto;
+}
+
 /* Both pronunciation rows use one text size, so words and symbols line up evenly. */
 .as-in,
 .example-row {
