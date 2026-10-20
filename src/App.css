@@ -15,6 +15,10 @@
   --wrong: #b3261e;
   --hint: #8a6a00;
 
+  /* Fixed chrome heights, used to size pages to the window. */
+  --titlebar-h: 44px;
+  --bottombar-h: 80px;
+
   font-family: "Segoe UI", "Yu Gothic UI", "Meiryo", system-ui, sans-serif;
   font-size: 16px;
   line-height: 1.5;
@@ -188,7 +192,8 @@ textarea {
   position: sticky;
   top: 0;
   z-index: 50;
-  height: 44px;
+  height: var(--titlebar-h);
+  box-sizing: border-box;
   padding: 0 4px 0 8px;
   display: flex;
   align-items: center;
@@ -528,12 +533,17 @@ textarea {
   right: 0;
   bottom: 0;
   z-index: 40;
+  height: var(--bottombar-h);
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
   background: color-mix(in srgb, var(--surface) 92%, transparent);
   backdrop-filter: blur(10px);
   border-top: 1px solid var(--border);
 }
 
 .bottom-bar-inner {
+  width: 100%;
   max-width: 1040px;
   margin: 0 auto;
   padding: 10px 16px;
@@ -554,17 +564,32 @@ textarea {
   gap: 4px;
 }
 
-/* Room so the last content can scroll above the bottom bar. */
+/* Room so the last content can scroll above the bottom bar; with the page sized
+   to the window, nothing scrolls unless the cards need more room. */
 .session.with-bottom-bar {
-  padding-bottom: 96px;
+  padding-bottom: var(--bottombar-h);
+}
+
+.app:has(.with-bottom-bar) {
+  padding-bottom: 0;
 }
 
 /* Item details */
 
-/* Item page: scenic banner on top, detail cards below (ItemView.tsx). */
+/* Item page, sized to the window (ItemView.tsx): cards anchor to the bottom and
+   the banner flexes to fill what's left. The 28px is .app's top padding, which
+   the banner pulls back up so it sits flush under the title bar. */
 .item-view {
-  display: grid;
+  display: flex;
+  flex-direction: column;
   gap: 12px;
+  min-height: calc(100vh - var(--titlebar-h) - 28px - 48px);
+}
+
+.with-bottom-bar .item-view {
+  min-height: calc(100vh - var(--titlebar-h) - 28px - var(--bottombar-h));
+  padding-bottom: 12px;
+  box-sizing: border-box;
 }
 
 .banner {
@@ -593,6 +618,17 @@ textarea {
   z-index: 0;
 }
 
+.banner-branch {
+  position: absolute;
+  top: 24%;
+  width: clamp(130px, 16vw, 230px);
+  z-index: 0;
+}
+
+.banner-branch.left { left: 0; }
+.banner-branch.right { right: 0; }
+
+.banner-branch .branches path,
 .banner-scene .branches path {
   fill: none;
   stroke: #2b1520;
@@ -601,16 +637,18 @@ textarea {
   opacity: 0.7;
 }
 
+.banner-branch .petal,
 .banner-scene .petal {
   fill: #ffd8e6;
   opacity: 0.85;
 }
 
+.banner-branch .blossom-centre,
 .banner-scene .blossom-centre {
   fill: #f28fb3;
 }
 
-.banner > :not(.banner-scene) {
+.banner > :not(.banner-scene, .banner-branch) {
   position: relative;
   z-index: 1;
 }
@@ -648,6 +686,9 @@ textarea {
 
 .banner-glyph {
   align-self: center;
+  /* As big as the banner allows: its height minus the label row, info pill and
+     overlap padding (~185px), and its width split across the characters. */
+  font-size: clamp(2.5rem, min(calc((100cqh - 185px) / 1.1), calc(80cqw / var(--chars, 1))), 18rem);
   line-height: 1.1;
   padding: 6px 0 10px;
   text-shadow: 0 6px 24px rgb(0 0 0 / 0.35);
@@ -698,9 +739,11 @@ textarea {
 /* On item pages the banner spans the window, flush under the title bar, with
    its content lined up with the 1040px page column and a fade into the page. */
 .item-view > .banner {
+  flex: 1 1 auto;
+  container-type: size; /* lets the character size itself from the banner (cqh/cqw) */
   margin: -28px calc(50% - 50vw) 0;
   padding: 18px max(22px, calc(50vw - 498px)) 84px;
-  min-height: 300px;
+  min-height: 240px;
   border-radius: 0;
   box-shadow: none;
 }
@@ -726,6 +769,19 @@ textarea {
   backdrop-filter: blur(14px);
   border-color: rgb(255 255 255 / 0.12);
   box-shadow: 0 10px 30px rgb(0 0 0 / 0.25);
+}
+
+/* The overlapping strip and the panel under it read as one card. */
+.item-info > .overlap + .split-card {
+  margin-top: -12px; /* cancel the grid gap */
+  border-top: none;
+  border-top-left-radius: 0;
+  border-top-right-radius: 0;
+}
+
+.item-info > .overlap:has(+ .split-card) {
+  border-bottom-left-radius: 0;
+  border-bottom-right-radius: 0;
 }
 
 /* Two or more cards joined into one, split by dividers. */
