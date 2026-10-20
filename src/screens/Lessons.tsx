@@ -131,38 +131,43 @@ export function Lessons({ onExit }: { onExit: () => void }) {
   const page = phase.page;
   const last = page === batch.length - 1;
   return (
-    <div className="session">
-      <div className="session-bar">
-        <ol className="lesson-dots">
-          {batch.map((l, i) => (
-            <li key={l.item_key}>
-              <button className={`dot ${l.kind} ${i === page ? "current" : ""}`} lang="ja" onClick={() => setPhase({ name: "learn", page: i })}>
-                {l.label}
-              </button>
-            </li>
-          ))}
-        </ol>
-      </div>
-      {item ? (
-        <ItemView item={item} onChange={reload} />
-      ) : (
-        <p className="muted">Loading…</p>
-      )}
-      <div className="row lesson-nav">
-        <button disabled={page === 0} onClick={() => setPhase({ name: "learn", page: page - 1 })}>
-          ← Back
-        </button>
-        <span className="muted small">Tip: ← → keys flip pages</span>
-        {last ? (
-          <button className="primary" onClick={startQuiz}>
-            Start quiz →
+    <div className="session with-bottom-bar">
+      {item ? <ItemView item={item} onChange={reload} /> : <p className="muted">Loading…</p>}
+
+      {/* Pinned to the bottom of the window, so Back/Next never move. */}
+      <nav className="bottom-bar" aria-label="Lesson pages">
+        <div className="bottom-bar-inner">
+          <button disabled={page === 0} onClick={() => setPhase({ name: "learn", page: page - 1 })}>
+            ← Back
           </button>
-        ) : (
-          <button className="primary" onClick={() => setPhase({ name: "learn", page: page + 1 })}>
-            Next →
-          </button>
-        )}
-      </div>
+          <div className="bottom-bar-center">
+            <ol className="lesson-dots">
+              {batch.map((l, i) => (
+                <li key={l.item_key}>
+                  <button
+                    className={`dot ${l.kind} ${i === page ? "current" : ""}`}
+                    lang="ja"
+                    aria-current={i === page ? "step" : undefined}
+                    onClick={() => setPhase({ name: "learn", page: i })}
+                  >
+                    {l.label}
+                  </button>
+                </li>
+              ))}
+            </ol>
+            <span className="muted small">← → keys flip pages</span>
+          </div>
+          {last ? (
+            <button className="primary" onClick={startQuiz}>
+              Start quiz →
+            </button>
+          ) : (
+            <button className="primary" onClick={() => setPhase({ name: "learn", page: page + 1 })}>
+              Next →
+            </button>
+          )}
+        </div>
+      </nav>
     </div>
   );
 }
