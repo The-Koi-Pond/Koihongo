@@ -3,9 +3,9 @@ import { tauriDb } from "../db/tauriDb.ts";
 import { cardTypesFor, startLessons, todaySummary, type Lesson } from "../srs/progress.ts";
 import { FIRST_REVIEW_DELAY_MS } from "../srs/scheduler.ts";
 import { answerCurrent, currentQuestion, spreadOutPairs, startSession, type Question, type Session } from "../srs/session.ts";
-import { ItemInfo } from "../ui/ItemInfo.tsx";
+import { ItemView } from "../ui/ItemView.tsx";
 import { QuestionCard } from "../ui/QuestionCard.tsx";
-import { itemLabel, useItem } from "../ui/useItem.ts";
+import { useItem } from "../ui/useItem.ts";
 import { ErrorView } from "./Reviews.tsx";
 
 /** Items per lesson round: read them, then a practice quiz that doesn't affect scheduling. */
@@ -38,6 +38,22 @@ export function Lessons({ onExit }: { onExit: () => void }) {
       .catch((e) => setError(String(e)));
   }, []);
   useEffect(loadBatch, [loadBatch]);
+
+  // ← / → flip lesson pages (→ on the last page starts the quiz), except while typing.
+  useEffect(() => {
+    if (phase.name !== "learn") return;
+    const onKey = (e: KeyboardEvent) => {
+      if ((e.target as HTMLElement).closest("input, textarea")) return;
+      if (e.key === "ArrowRight") {
+        if (phase.page < batch.length - 1) setPhase({ name: "learn", page: phase.page + 1 });
+        else startQuiz();
+      } else if (e.key === "ArrowLeft" && phase.page > 0) {
+        setPhase({ name: "learn", page: phase.page - 1 });
+      }
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [phase, batch]);
 
   const currentKey =
     phase.name === "learn" ? batch[phase.page]?.item_key : phase.name === "quiz" ? currentQuestion(phase.session)?.item_key : undefined;
@@ -128,12 +144,7 @@ export function Lessons({ onExit }: { onExit: () => void }) {
         </ol>
       </div>
       {item ? (
-        <div className="lesson">
-          <div className={`glyph ${item.kind}`} lang="ja">
-            {itemLabel(item)}
-          </div>
-          <ItemInfo item={item} onChange={reload} />
-        </div>
+        <ItemView item={item} onChange={reload} />
       ) : (
         <p className="muted">Loading…</p>
       )}
@@ -141,6 +152,7 @@ export function Lessons({ onExit }: { onExit: () => void }) {
         <button disabled={page === 0} onClick={() => setPhase({ name: "learn", page: page - 1 })}>
           ← Back
         </button>
+        <span className="muted small">Tip: ← → keys flip pages</span>
         {last ? (
           <button className="primary" onClick={startQuiz}>
             Start quiz →
