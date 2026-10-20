@@ -537,8 +537,8 @@ textarea {
   box-sizing: border-box;
   display: flex;
   align-items: center;
-  background: color-mix(in srgb, var(--surface) 92%, transparent);
-  backdrop-filter: blur(10px);
+  /* Solid, so the lesson card above can merge into it seamlessly. */
+  background: var(--surface);
   border-top: 1px solid var(--border);
 }
 
@@ -588,8 +588,18 @@ textarea {
 
 .with-bottom-bar .item-view {
   min-height: calc(100vh - var(--titlebar-h) - 28px - var(--bottombar-h));
-  padding-bottom: 12px;
-  box-sizing: border-box;
+}
+
+/* On lesson pages the bottom card grows out of the bottom bar like a raised tab:
+   no gap, square bottom corners, same colour, covering the bar's top line. */
+.with-bottom-bar .item-info > .split-card:last-child {
+  position: relative;
+  z-index: 41; /* above the fixed bottom bar (40) */
+  margin-bottom: -1px;
+  border-bottom: none;
+  border-bottom-left-radius: 0;
+  border-bottom-right-radius: 0;
+  background: var(--surface);
 }
 
 .banner {
