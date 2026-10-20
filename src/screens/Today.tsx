@@ -65,9 +65,10 @@ export function Today({
     progressByKind(tauriDb).then(setProgress);
   }, []);
 
-  if (!summary) return <p className="muted">Loading…</p>;
-
   const now = new Date();
+  // Until everything has loaded, draw the page with blank values so it doesn't flash or shift.
+  if (!summary || !forecast || !progress) return <TodayShell now={now} />;
+
   const hello = greeting(now);
   // During catch-up, only today's share counts as "to do".
   const reviews = summary.reviewsToday;
@@ -76,13 +77,13 @@ export function Today({
   const startDetail =
     reviews && lessons
       ? order === "reviews"
-        ? `${plural(reviews, "review")}, then ${lessons} new`
-        : `${lessons} new, then ${plural(reviews, "review")}`
+        ? `${plural(reviews, "review")}, then ${plural(lessons, "new item")}`
+        : `${plural(lessons, "new item")}, then ${plural(reviews, "review")}`
       : reviews
         ? plural(reviews, "review")
         : lessons
-          ? `${plural(lessons, "new item")}`
-          : "all caught up";
+          ? plural(lessons, "new item")
+          : "";
 
   const pickOrder = (o: StudyOrder) => {
     setOrder(o);
@@ -104,11 +105,18 @@ export function Today({
         </div>
 
         <div className="start-stack">
-          <button className="start-btn" disabled={!reviews && !lessons} onClick={() => onStart(order)}>
-            <Play size={20} strokeWidth={2} aria-hidden="true" />
-            <span>{reviews || lessons ? "Start" : catchUp ? "Done for today" : "All caught up"}</span>
-            {(reviews > 0 || lessons > 0) && <span className="start-detail">· {startDetail}</span>}
-          </button>
+          {reviews || lessons ? (
+            <button className="start-btn" onClick={() => onStart(order)}>
+              <Play size={20} strokeWidth={2} aria-hidden="true" />
+              <span>Start</span>
+              <span className="start-detail">· {startDetail}</span>
+            </button>
+          ) : (
+            <p className="start-rest">
+              <span>{catchUp ? "Today's share is done" : "All caught up"}</span>
+              {summary.nextReviewAt && <span className="start-detail">· next review {fromNow(summary.nextReviewAt, now.getTime())}</span>}
+            </p>
+          )}
           <div className="start-options">
           {reviews > 0 && lessons > 0 && (
             <div className="order-toggle" role="group" aria-label="What comes first">
@@ -134,74 +142,34 @@ export function Today({
           <h2 className="tile-title">
             <RotateCcw size={16} aria-hidden="true" /> Reviews
           </h2>
-          {reviews > 0 ? (
-            <p className="tile-big">
-              {reviews} <span className="tile-unit">{catchUp ? "today's share" : "due now"}</span>
-            </p>
-          ) : (
-            <p className="tile-big done">{catchUp ? "Today's share done ✓" : "All caught up ✓"}</p>
-          )}
+          <p className="tile-big">
+            {reviews} <span className="tile-unit">{catchUp ? "left in today's share" : "due now"}</span>
+          </p>
           {catchUp && (
             <p className="catch-up small">
-              Catch-up: {summary.reviewsDue} piled up. The rest comes over about {plural(catchUp.moreDays, "more day")}, most at risk first.{" "}
+              Catch-up mode: the rest is spread over about {plural(catchUp.moreDays, "more day")}.{" "}
               <button className="link" onClick={() => go("extra-reviews")}>
-                Do extra anyway
+                Do a few more
               </button>
             </p>
           )}
-          <p className="muted small">
-            {summary.reviewsNext24h > 0
-              ? `${summary.reviewsNext24h} more in the next 24 hours${!reviews && summary.nextReviewAt ? ` · next ${fromNow(summary.nextReviewAt, now.getTime())}` : ""}`
-              : summary.nextReviewAt
-                ? `Next review ${fromNow(summary.nextReviewAt, now.getTime())}`
-                : "No reviews scheduled yet. They start after your first lessons."}
-          </p>
-          {forecast && <Forecast data={forecast} />}
+          <Upcoming summary={summary} forecast={forecast} now={now.getTime()} />
         </section>
 
         <section className="card">
           <h2 className="tile-title">
             <GraduationCap size={16} aria-hidden="true" /> Lessons
           </h2>
-          {lessons > 0 ? (
-            <p className="tile-big">
-              {lessons} <span className="tile-unit">available today</span>
-            </p>
-          ) : (
-            <p className="tile-big done">{summary.lessonsWaiting > 0 ? "Done for today ✓" : "Nothing new yet"}</p>
-          )}
+          <p className="tile-big">
+            {lessons} <span className="tile-unit">new today</span>
+          </p>
           <TrackPreview name="Kana" lessons={summary.lessons.filter((l) => l.track === "kana")} />
           <TrackPreview name="Kanji path" lessons={summary.lessons.filter((l) => l.track === "main")} />
-          <p className="muted small">
-            {summary.lessonsWaiting > 0
-              ? lessonAllowance(summary.reviewsDue, 0, summary.pacing.newPerDay, summary.pacing.pauseLessonsAtDue) < summary.pacing.newPerDay
-                ? `${summary.lessonsWaiting} more unlocked · clear some reviews first`
-                : `${summary.lessonsWaiting} more unlocked, saved for tomorrow (daily limits: ${summary.pacing.kanaPerDay} kana, ${summary.pacing.newPerDay} others)`
-              : lessons === 0
-                ? "New items unlock as your reviews go well."
-                : ""}
-          </p>
+          <p className="muted small">{lessonNote(summary)}</p>
         </section>
       </div>
 
-      {progress && (
-        <section className="card">
-          <div className="tile-head">
-            <h2 className="tile-title">
-              <TrendingUp size={16} aria-hidden="true" /> Progress
-            </h2>
-            <ul className="legend" aria-label="Legend">
-              <li>
-                <span className="swatch-bar passed" /> passed
-              </li>
-              <li>
-                <span className="swatch-bar learning" /> learning
-              </li>
-            </ul>
-          </div>
-          <ProgressBars rows={progress} />
-        </section>
-      )}
+      <ProgressCard rows={progress} />
       <StatusBar />
     </div>
   );
@@ -209,7 +177,7 @@ export function Today({
 
 function TrackPreview({ name, lessons }: { name: string; lessons: Lesson[] }) {
   if (lessons.length === 0) return null;
-  const shown = lessons.slice(0, 6); // one row, even in a narrow window
+  const shown = lessons.slice(0, 4); // one row, even in the smallest window
   return (
     <div className="track-preview">
       <span className="track-name">{name}</span>
@@ -225,10 +193,48 @@ function TrackPreview({ name, lessons }: { name: string; lessons: Lesson[] }) {
   );
 }
 
+/** Why there are no (more) lessons today, without backlog numbers or settings jargon. */
+function lessonNote(summary: TodaySummary): string {
+  if (summary.lessonsWaiting === 0) return summary.lessons.length ? "" : "New items unlock as your reviews go well.";
+  const throttled =
+    lessonAllowance(summary.reviewsDue, 0, summary.pacing.newPerDay, summary.pacing.pauseLessonsAtDue) < summary.pacing.newPerDay;
+  return throttled ? "More once your reviews are lighter." : "More tomorrow.";
+}
+
+/** Hours with reviews before the forecast is worth a chart rather than a sentence. */
+const CHART_MIN_HOURS = 3;
+
+/**
+ * What's coming next: a sentence ("10 more around 2 AM"), or the 24-hour
+ * chart when reviews are spread over several hours.
+ */
+function Upcoming({ summary, forecast, now }: { summary: TodaySummary; forecast: number[]; now: number }) {
+  const busyHours = forecast.flatMap((n, h) => (n > 0 ? [{ h, n }] : []));
+  if (busyHours.length >= CHART_MIN_HOURS) {
+    return (
+      <>
+        <p className="muted small">{summary.reviewsNext24h} more in the next 24 hours</p>
+        <Forecast data={forecast} />
+      </>
+    );
+  }
+  // In catch-up the waiting reviews are already due; the catch-up line covers them.
+  if (summary.catchUp && busyHours.length === 0) return null;
+  const around = (h: number) => new Date(now + (h + 0.5) * 3_600_000).toLocaleTimeString(undefined, { hour: "numeric" });
+  const text =
+    busyHours.length > 0
+      ? `${busyHours.map(({ h, n }) => `${n} more around ${around(h)}`).join(", ")}. That's all for the next 24 hours.`
+      : summary.reviewsToday > 0
+        ? "No more coming in the next 24 hours."
+        : summary.nextReviewAt
+          ? `Next review ${fromNow(summary.nextReviewAt, now)}.`
+          : "No reviews yet. They start after your first lessons.";
+  return <p className="muted small">{text}</p>;
+}
+
 /** Reviews coming up per hour over the next 24 hours: one series, so no legend; hover a bar for its count. */
 function Forecast({ data }: { data: number[] }) {
   const max = Math.max(...data);
-  if (max === 0) return <p className="muted small forecast-empty">Nothing coming up in the next 24 hours.</p>;
   return (
     <figure className="forecast" aria-label="Reviews coming up per hour, next 24 hours">
       <div className="forecast-bars">
@@ -244,6 +250,72 @@ function Forecast({ data }: { data: number[] }) {
         <span>+24h</span>
       </figcaption>
     </figure>
+  );
+}
+
+/** The page while it loads: same layout, blank values, nothing clickable. */
+function TodayShell({ now }: { now: Date }) {
+  const hello = greeting(now);
+  return (
+    <div className="fit-page today with-status-bar" aria-busy="true">
+      <header className="banner bleed today-banner">
+        <BannerScene />
+        <div className="banner-top">
+          <div>
+            <p lang="ja" className="greeting-ja">
+              {hello.ja}
+            </p>
+            <p className="greeting-en">{hello.en}</p>
+          </div>
+          <p className="today-date">{now.toLocaleDateString(undefined, { weekday: "short", day: "numeric", month: "short" })}</p>
+        </div>
+        <div className="start-stack">
+          <p className="start-rest placeholder">&nbsp;</p>
+        </div>
+      </header>
+      <div className="today-tiles">
+        <section className="card">
+          <h2 className="tile-title">
+            <RotateCcw size={16} aria-hidden="true" /> Reviews
+          </h2>
+          <p className="tile-big">&nbsp;</p>
+          <p className="muted small">&nbsp;</p>
+        </section>
+        <section className="card">
+          <h2 className="tile-title">
+            <GraduationCap size={16} aria-hidden="true" /> Lessons
+          </h2>
+          <p className="tile-big">&nbsp;</p>
+          <p className="muted small">&nbsp;</p>
+        </section>
+      </div>
+      <ProgressCard />
+      <StatusBar />
+    </div>
+  );
+}
+
+const KINDS = ["kana", "component", "kanji", "word"] as const;
+
+/** Passed and learning per kind; without rows (while loading) the bars are drawn empty. */
+function ProgressCard({ rows }: { rows?: KindProgress[] }) {
+  return (
+    <section className="card">
+      <div className="tile-head">
+        <h2 className="tile-title">
+          <TrendingUp size={16} aria-hidden="true" /> Progress
+        </h2>
+        <ul className="legend" aria-label="Legend">
+          <li>
+            <span className="swatch-bar passed" /> passed
+          </li>
+          <li>
+            <span className="swatch-bar learning" /> learning
+          </li>
+        </ul>
+      </div>
+      <ProgressBars rows={rows ?? KINDS.map((kind) => ({ kind, passed: 0, learning: 0, total: 0 }))} />
+    </section>
   );
 }
 
@@ -272,7 +344,13 @@ function ProgressBars({ rows }: { rows: KindProgress[] }) {
               {r.learning > 0 && <div className="progress-fill learning" style={{ width: `${pct(r.learning)}%` }} />}
             </div>
             <span className="progress-count">
-              {(r.passed + r.learning).toLocaleString()} <span className="muted">/ {r.total.toLocaleString()}</span>
+              {r.total ? (
+                <>
+                  {(r.passed + r.learning).toLocaleString()} <span className="muted">/ {r.total.toLocaleString()}</span>
+                </>
+              ) : (
+                <>&nbsp;</>
+              )}
             </span>
           </li>
         );

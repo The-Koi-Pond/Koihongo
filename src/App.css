@@ -2313,10 +2313,25 @@ select {
   transform: translateY(-1px) scale(1.02);
 }
 
-.start-btn:disabled {
-  background: rgb(255 255 255 / 0.25);
+/* Shown instead of Start when nothing is due: a calm note, not a dead button. */
+.start-rest {
+  margin: 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 24px;
+  border-radius: 999px;
+  background: rgb(0 0 0 / 0.28);
+  border: 1px solid rgb(255 255 255 / 0.25);
   color: #fff;
-  box-shadow: none;
+  font-family: var(--font-pixel);
+  font-size: 1.1rem;
+  font-weight: 600;
+}
+
+/* Holds the hero's space while Today loads. */
+.start-rest.placeholder {
+  visibility: hidden;
 }
 
 /* Rounded font: pixel digits misread (150 looks like 180). */
@@ -2409,10 +2424,6 @@ select {
   line-height: 1.15;
 }
 
-.tile-big.done {
-  font-size: 1.4rem;
-}
-
 .tile-unit {
   font-size: 1rem;
   font-weight: 500;
@@ -2493,10 +2504,6 @@ select {
   font-size: 0.7rem;
   color: var(--muted);
   margin-top: 3px;
-}
-
-.forecast-empty {
-  margin-top: 10px;
 }
 
 /* Progress: amount per kind in one hue (rows are labelled, so colour doesn't carry identity). */
