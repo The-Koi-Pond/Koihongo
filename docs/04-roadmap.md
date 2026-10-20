@@ -30,8 +30,9 @@ Each phase ends with something you can **use daily**. Don't start the next phase
 
 ## Phase 2: AI mnemonic workshop
 
-- AI backend: run the Claude Code CLI with your existing login (no API key, no spending log; see 03-architecture "AI integration").
-- Mnemonic workshop chat on any item.
+- ✅ AI backend: run the Claude Code CLI with your existing login (no API key, no spending log; see 03-architecture "AI integration").
+- ✅ Mnemonic workshop chat on any item ("Ask AI" next to each mnemonic; prompts in `src/ai/prompts.ts`).
+- Tune the prompt after real use (e.g. which reading a reading mnemonic should target).
 - Bulk-draft mnemonics for upcoming items (marked AI, editable).
 
 **Done when:** you reworked a mnemonic through chat and saved it, and upcoming lessons have draft mnemonics.
