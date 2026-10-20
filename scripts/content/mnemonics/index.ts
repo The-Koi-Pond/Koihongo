@@ -1,12 +1,13 @@
 // Koihongo's own default mnemonics, written in batches. Learners see these
 // until they write or pick their own. Keys are path item keys.
 
+import { DAKUTEN } from "./dakuten.ts";
 import { HIRAGANA_BASIC } from "./hiragana-basic.ts";
 import { KATAKANA_BASIC } from "./katakana-basic.ts";
 
 export type MnemonicBatch = Record<string, { meaning?: string; reading?: string }>;
 
-const BATCHES: MnemonicBatch[] = [HIRAGANA_BASIC, KATAKANA_BASIC];
+const BATCHES: MnemonicBatch[] = [HIRAGANA_BASIC, KATAKANA_BASIC, DAKUTEN];
 
 /** All batches merged; a key appearing in two batches is a mistake. */
 export function allMnemonics(): MnemonicBatch {
