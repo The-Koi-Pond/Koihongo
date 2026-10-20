@@ -4,23 +4,15 @@ import { addSynonym, removeSynonym, saveNote, type ItemDetails, type Note, type 
 import { MnemonicWorkshop } from "./MnemonicWorkshop.tsx";
 import { ItemHover, JapaneseText } from "./Popover.tsx";
 
-const KIND_NAME = { kana: "Kana", component: "Component", kanji: "Kanji", word: "Word" } as const;
-const GROUP_NAME = { basic: "basic", dakuten: "with ゛ or ゜ marks", combo: "combination (small ゃゅょ)", extended: "extended (loanword sounds)" } as const;
-
-/** Everything about an item: meanings, readings, parts, mnemonics, examples. */
+/** An item's details as a grid of cards. ItemView adds the hero panel for full pages. */
 export function ItemInfo({ item, onChange }: { item: ItemDetails; onChange: () => void }) {
   return (
     <div className="item-info">
-      <p className={`kind-tag ${item.kind}`}>{KIND_NAME[item.kind]}</p>
-
       {item.kind === "kana" && (
         <>
           <Field label="Reading">
             <span className="big-reading">{item.romaji}</span>
-            {item.accept.length > 0 && <span className="muted"> (also accepted: {item.accept.join(", ")})</span>}
-          </Field>
-          <Field label="Script">
-            {item.script === "hiragana" ? "Hiragana" : "Katakana"}, {GROUP_NAME[item.group]}
+            {item.accept.length > 0 && <p className="muted small">Also accepted: {item.accept.join(", ")}</p>}
           </Field>
           {item.counterpart && (
             <Field label={item.script === "hiragana" ? "Same sound in katakana" : "Same sound in hiragana"}>
@@ -28,27 +20,20 @@ export function ItemInfo({ item, onChange }: { item: ItemDetails; onChange: () =
             </Field>
           )}
           <NoteEditor item={item} kind="mnemonic_reading" label="Mnemonic" onSaved={onChange} />
-          {item.strokeSvg && (
-            <Field label="Stroke order">
-              <img
-                className="strokes"
-                alt={`Stroke order for ${item.character}`}
-                src={`data:image/svg+xml;charset=utf-8,${encodeURIComponent(item.strokeSvg)}`}
-              />
-            </Field>
-          )}
         </>
       )}
 
       {item.kind === "component" && (
         <>
-          <Field label="Name">{item.name}</Field>
-          <NoteEditor item={item} kind="mnemonic_meaning" label="Mnemonic" onSaved={onChange} />
+          <Field label="Name">
+            <span className="big-reading">{item.name}</span>
+          </Field>
           {item.usedIn.length > 0 && (
             <Field label="Found in">
               <Chips items={item.usedIn.map((k) => ({ glyph: k.character, text: k.meaning, kind: "kanji", itemKey: `kanji:${k.character}` }))} />
             </Field>
           )}
+          <NoteEditor item={item} kind="mnemonic_meaning" label="Mnemonic" onSaved={onChange} />
         </>
       )}
 
@@ -57,15 +42,14 @@ export function ItemInfo({ item, onChange }: { item: ItemDetails; onChange: () =
           <Field label="Meanings">{item.meanings.join(", ")}</Field>
           <Field label="Readings">
             {item.onReadings.length > 0 && (
-              <span>
-                on'yomi <span lang="ja">{item.onReadings.join("、")}</span>
-              </span>
+              <p className="reading-line">
+                <span className="reading-kind">on'yomi</span> <span lang="ja">{item.onReadings.join("、")}</span>
+              </p>
             )}
-            {item.onReadings.length > 0 && item.kunReadings.length > 0 && " · "}
             {item.kunReadings.length > 0 && (
-              <span>
-                kun'yomi <span lang="ja">{item.kunReadings.join("、")}</span>
-              </span>
+              <p className="reading-line">
+                <span className="reading-kind">kun'yomi</span> <span lang="ja">{item.kunReadings.join("、")}</span>
+              </p>
             )}
           </Field>
           <Field label="Components">
@@ -73,21 +57,20 @@ export function ItemInfo({ item, onChange }: { item: ItemDetails; onChange: () =
           </Field>
           <NoteEditor item={item} kind="mnemonic_meaning" label="Meaning mnemonic" onSaved={onChange} />
           <NoteEditor item={item} kind="mnemonic_reading" label="Reading mnemonic" onSaved={onChange} />
-          {item.strokeSvg && (
-            <Field label="Stroke order">
-              <img
-                className="strokes"
-                alt={`Stroke order for ${item.character}`}
-                src={`data:image/svg+xml;charset=utf-8,${encodeURIComponent(item.strokeSvg)}`}
-              />
-            </Field>
-          )}
           {item.words.length > 0 && (
-            <Field label="Words">
-              <ul className="plain">
+            <Field label="Words" wide>
+              <ul className="word-list">
                 {item.words.map((w) => (
                   <li key={w.written}>
-                    <ItemHover itemKey={`word:${w.id}`}><span lang="ja">{w.written}</span></ItemHover> <span lang="ja" className="muted">【{w.reading}】</span> {w.meaning}
+                    <ItemHover itemKey={`word:${w.id}`}>
+                      <span lang="ja" className="word-written">
+                        {w.written}
+                      </span>
+                    </ItemHover>
+                    <span lang="ja" className="muted">
+                      {w.reading}
+                    </span>
+                    <span>{w.meaning}</span>
                   </li>
                 ))}
               </ul>
@@ -105,16 +88,13 @@ export function ItemInfo({ item, onChange }: { item: ItemDetails; onChange: () =
               ))}
             </ol>
           </Field>
-          <Field label="Reading">
-            <span lang="ja">{item.reading}</span>
-          </Field>
           <Field label="Kanji">
             <Chips items={item.kanji.map((k) => ({ glyph: k.character, text: k.meaning, kind: "kanji", itemKey: `kanji:${k.character}` }))} />
           </Field>
           <NoteEditor item={item} kind="mnemonic_meaning" label="Meaning mnemonic" onSaved={onChange} />
           <NoteEditor item={item} kind="mnemonic_reading" label="Reading mnemonic" onSaved={onChange} />
           {item.sentences.length > 0 && (
-            <Field label="Examples">
+            <Field label="Examples" wide>
               <ul className="plain">
                 {item.sentences.map((s) => (
                   <li key={s.japanese}>
@@ -134,9 +114,9 @@ export function ItemInfo({ item, onChange }: { item: ItemDetails; onChange: () =
   );
 }
 
-function Field({ label, children }: { label: string; children: React.ReactNode }) {
+function Field({ label, wide, children }: { label: string; wide?: boolean; children: React.ReactNode }) {
   return (
-    <section className="field">
+    <section className={`field ${wide ? "wide" : ""}`}>
       <h3>{label}</h3>
       <div>{children}</div>
     </section>
@@ -181,7 +161,7 @@ function NoteEditor({ item, kind, label, onSaved }: { item: ItemDetails; kind: N
   }
 
   return (
-    <Field label={label}>
+    <Field label={label} wide>
       {editing ? (
         <div className="note-edit">
           <textarea value={text} onChange={(e) => setText(e.target.value)} rows={3} autoFocus />
@@ -257,7 +237,7 @@ function SynonymEditor({ item, onChange }: { item: ItemDetails; onChange: () => 
           });
         }}
       >
-        <input value={text} onChange={(e) => setText(e.target.value)} placeholder="Another meaning you'd accept" />
+        <input className="grow" value={text} onChange={(e) => setText(e.target.value)} placeholder="Another meaning you'd accept" />
         <button type="submit" disabled={!text.trim()}>
           Add
         </button>

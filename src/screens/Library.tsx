@@ -3,9 +3,9 @@ import { isRomaji, toHiragana } from "wanakana";
 import { tauriDb } from "../db/tauriDb.ts";
 import { itemProgress, libraryItems, STATUS_NAME, type ItemProgress, type ItemStatus, type LibraryItem } from "../library.ts";
 import type { ItemKind } from "../srs/progress.ts";
-import { ItemInfo } from "../ui/ItemInfo.tsx";
+import { ItemView } from "../ui/ItemView.tsx";
 import { ItemHover, OpenItemContext } from "../ui/Popover.tsx";
-import { itemLabel, useItem } from "../ui/useItem.ts";
+import { useItem } from "../ui/useItem.ts";
 import { ErrorView } from "./Reviews.tsx";
 
 const PAGE = 300;
@@ -156,17 +156,15 @@ function ItemPage({ itemKey, onOpen, onBack }: { itemKey: string; onOpen: (key: 
   if (error) return <ErrorView message={error} onExit={onBack} />;
 
   return (
-    <div className="lesson">
+    <div className="item-body">
       <div className="row">
         <button onClick={onBack}>← Library</button>
       </div>
-      {item && (
-        <div className={`glyph ${item.kind} ${progress?.status === "locked" ? "is-locked" : ""}`} lang="ja">
-          {itemLabel(item)}
-        </div>
+      {item ? (
+        <ItemView item={item} onChange={reload} above={progress && <ProgressLine progress={progress} onOpen={onOpen} />} />
+      ) : (
+        <p className="muted">Loading…</p>
       )}
-      {progress && <ProgressLine progress={progress} onOpen={onOpen} />}
-      {item ? <ItemInfo item={item} onChange={reload} /> : <p className="muted">Loading…</p>}
     </div>
   );
 }

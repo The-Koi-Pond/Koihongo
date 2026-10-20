@@ -16,6 +16,8 @@ let dbReady: Promise<void> | undefined;
 const openDb = () => (dbReady ??= migrate(tauriDb));
 
 const SESSIONS: Screen[] = ["lessons", "reviews", "quick-reviews"];
+/** Screens that use the full width (item pages, the library grid). */
+const WIDE: Screen[] = [...SESSIONS, "library"];
 
 function App() {
   const [ready, setReady] = useState(false);
@@ -41,7 +43,7 @@ function App() {
   return (
     <>
       <NavBar screen={screen} go={setScreen} summary={summary} locked={SESSIONS.includes(screen)} />
-      <main className="app">
+      <main className={`app ${WIDE.includes(screen) ? "wide" : ""}`}>
         {error ? (
           <p className="error">Couldn't open your progress database: {error}</p>
         ) : !ready ? (
