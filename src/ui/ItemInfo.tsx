@@ -29,11 +29,11 @@ export function ItemInfo({ item, onChange }: { item: ItemDetails; onChange: () =
                   </span>
                   <span className="muted">{item.example.romaji}</span>
                   {!KANA_ONLY.test(item.example.form) && (
-                    <span lang="ja" className="muted">
+                    <span lang="ja" className="example-kanji">
                       {item.example.form}
                     </span>
                   )}
-                  <span className="example-meaning">{item.example.meaning}</span>
+                  <span>{item.example.meaning}</span>
                 </div>
               </Field>
             )}
