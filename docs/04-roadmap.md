@@ -20,7 +20,7 @@ Each phase ends with something you can **use daily**. Don't start the next phase
 - ✅ Lesson screen (5 items per round, then a practice quiz) and review screen (typed answers, romaji → kana, typo-tolerant meanings, exact readings, "I was right" → adds a synonym).
 - ✅ "Just 5 minutes" mode, and "Stop here" any time without losing progress.
 - ✅ Manual mnemonic editing with history; synonyms; Sources & licences screen.
-- Catch-up mode after a break (today: overdue reviews come most-at-risk first and you can stop any time, but nothing spreads them over several days yet).
+- ✅ Catch-up mode after a break: when more is due than the daily catch-up share (Settings, default 150), you get that share a day, most at risk first; "Do extra anyway" skips the limit. Lessons pause meanwhile (backlog pause).
 - ✅ Backups: automatic once a day (last 14 kept), "Back up now", and restore from a list, in `Documents\Koihongo\Backups` (`src/backup.ts`, `src-tauri/src/backup.rs`).
 - ✅ Settings screen for pacing numbers (lessons and kana per day, backlog pause, day start), saved in user.db `settings`.
 

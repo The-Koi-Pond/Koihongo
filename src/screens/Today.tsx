@@ -69,7 +69,9 @@ export function Today({
 
   const now = new Date();
   const hello = greeting(now);
-  const reviews = summary.reviewsDue;
+  // During catch-up, only today's share counts as "to do".
+  const reviews = summary.reviewsToday;
+  const catchUp = summary.catchUp;
   const lessons = summary.lessons.length;
   const startDetail =
     reviews && lessons
@@ -104,7 +106,7 @@ export function Today({
         <div className="start-stack">
           <button className="start-btn" disabled={!reviews && !lessons} onClick={() => onStart(order)}>
             <Play size={20} strokeWidth={2} aria-hidden="true" />
-            <span>{reviews || lessons ? "Start" : "All caught up"}</span>
+            <span>{reviews || lessons ? "Start" : catchUp ? "Done for today" : "All caught up"}</span>
             {(reviews > 0 || lessons > 0) && <span className="start-detail">· {startDetail}</span>}
           </button>
           <div className="start-options">
@@ -134,10 +136,18 @@ export function Today({
           </h2>
           {reviews > 0 ? (
             <p className="tile-big">
-              {reviews} <span className="tile-unit">due now</span>
+              {reviews} <span className="tile-unit">{catchUp ? "today's share" : "due now"}</span>
             </p>
           ) : (
-            <p className="tile-big done">All caught up ✓</p>
+            <p className="tile-big done">{catchUp ? "Today's share done ✓" : "All caught up ✓"}</p>
+          )}
+          {catchUp && (
+            <p className="catch-up small">
+              Catch-up: {summary.reviewsDue} piled up. The rest comes over about {plural(catchUp.moreDays, "more day")}, most at risk first.{" "}
+              <button className="link" onClick={() => go("extra-reviews")}>
+                Do extra anyway
+              </button>
+            </p>
           )}
           <p className="muted small">
             {summary.reviewsNext24h > 0

@@ -118,8 +118,30 @@ export async function recordReview(
   return card;
 }
 
+/** Catch-up after a break: today's share of a pile of due reviews, and the rest. */
+export type CatchUp = {
+  /** Reviews left in today's share (0 once it's done). */
+  todayLeft: number;
+  /** Due reviews beyond today's share. */
+  waiting: number;
+  /** Rough days after today to clear them, one share a day (new reviews keep arriving too). */
+  moreDays: number;
+};
+
+/** A catch-up plan when more is due than what's left of today's share, else null. */
+export function catchUpPlan(due: number, reviewedToday: number, perDay: number): CatchUp | null {
+  const todayLeft = Math.max(0, perDay - reviewedToday);
+  if (due <= todayLeft) return null;
+  const waiting = due - todayLeft;
+  return { todayLeft, waiting, moreDays: Math.ceil(waiting / perDay) };
+}
+
 export type TodaySummary = {
   reviewsDue: number;
+  /** Reviews a session gives you today: all that are due, or today's catch-up share. */
+  reviewsToday: number;
+  /** Set when a pile of reviews is being spread over several days. */
+  catchUp: CatchUp | null;
   reviewsNext24h: number;
   lessonsDoneToday: number;
   /** Lessons you may still do today (after the backlog throttle). */
@@ -135,14 +157,15 @@ export type TodaySummary = {
 export async function todaySummary(db: Db, now: number): Promise<TodaySummary> {
   const pacing = await loadPacing(db);
   const dayStart = studyDayStart(now, pacing.dayStartsAtHour);
-  const [counts] = await db.all<{ due: number; next_day: number; kana_today: number; main_today: number; next_due: number | null }>(
+  const [counts] = await db.all<{ due: number; next_day: number; kana_today: number; main_today: number; reviewed_today: number; next_due: number | null }>(
     `SELECT
        (SELECT count(*) FROM srs_cards WHERE due <= ?) AS due,
        (SELECT min(due) FROM srs_cards WHERE due > ?) AS next_due,
        (SELECT count(*) FROM srs_cards WHERE due > ? AND due <= ?) AS next_day,
        (SELECT count(DISTINCT item_key) FROM srs_cards WHERE started_at >= ? AND item_key LIKE 'kana:%') AS kana_today,
-       (SELECT count(DISTINCT item_key) FROM srs_cards WHERE started_at >= ? AND item_key NOT LIKE 'kana:%') AS main_today`,
-    [now, now, now, now + DAY_MS, dayStart, dayStart],
+       (SELECT count(DISTINCT item_key) FROM srs_cards WHERE started_at >= ? AND item_key NOT LIKE 'kana:%') AS main_today,
+       (SELECT count(*) FROM review_log WHERE reviewed_at >= ?) AS reviewed_today`,
+    [now, now, now, now + DAY_MS, dayStart, dayStart, dayStart],
   );
   const unlocked = await availableLessons(db);
   // Kana first, so a lesson round doesn't mix a kana row with kanji.
@@ -152,8 +175,11 @@ export async function todaySummary(db: Db, now: number): Promise<TodaySummary> {
   };
   const kana = pick("kana", lessonAllowance(counts.due, counts.kana_today, pacing.kanaPerDay, pacing.pauseLessonsAtDue));
   const main = pick("main", lessonAllowance(counts.due, counts.main_today, pacing.newPerDay, pacing.pauseLessonsAtDue));
+  const catchUp = catchUpPlan(counts.due, counts.reviewed_today, pacing.catchUpPerDay);
   return {
     reviewsDue: counts.due,
+    reviewsToday: catchUp ? catchUp.todayLeft : counts.due,
+    catchUp,
     reviewsNext24h: counts.next_day,
     lessonsDoneToday: counts.kana_today + counts.main_today,
     lessons: [...kana.lessons, ...main.lessons],

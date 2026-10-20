@@ -22,7 +22,7 @@ const openDb = () =>
     autoBackupIfDue().catch((e) => console.warn("Automatic backup failed:", e));
   }));
 
-const SESSIONS: Screen[] = ["lessons", "reviews", "quick-reviews"];
+const SESSIONS: Screen[] = ["lessons", "reviews", "quick-reviews", "extra-reviews"];
 /** Screens that use the full width (item pages, the library grid). */
 const WIDE: Screen[] = [...SESSIONS, "library", "dictionary", "today"];
 
@@ -46,7 +46,7 @@ function App() {
   };
   const startStudy = (order: StudyOrder) => {
     const parts: Screen[] = [];
-    if (summary?.reviewsDue) parts.push("reviews");
+    if (summary?.reviewsToday) parts.push("reviews");
     if (summary?.lessons.length) parts.push("lessons");
     if (order === "lessons") parts.reverse();
     if (parts.length === 0) return;
@@ -81,6 +81,8 @@ function App() {
           <Lessons onExit={next} exitLabel={exitLabel} />
         ) : screen === "reviews" ? (
           <Reviews onExit={next} exitLabel={exitLabel} />
+        ) : screen === "extra-reviews" ? (
+          <Reviews extra onExit={next} />
         ) : screen === "quick-reviews" ? (
           <Reviews minutes={5} onExit={next} />
         ) : screen === "library" ? (

@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { tauriDb } from "../db/tauriDb.ts";
-import { dueCards, recordReview } from "../srs/progress.ts";
+import { dueCards, recordReview, todaySummary } from "../srs/progress.ts";
 import { answerCurrent, currentQuestion, sessionStats, spreadOutPairs, startSession, type Session } from "../srs/session.ts";
 import { DoneView } from "../ui/DoneView.tsx";
 import { QuestionCard, SessionGauge } from "../ui/QuestionCard.tsx";
@@ -8,25 +8,44 @@ import { useItem } from "../ui/useItem.ts";
 
 /**
  * Due reviews, most at-risk first. With `minutes`, wraps up once time is up.
- * `exitLabel` replaces "Back to Today" when this is part of a longer study session.
+ * During catch-up only today's share is asked, unless `extra` (or you pick
+ * "Do extra anyway" at the end). `exitLabel` replaces "Back to Today" when
+ * this is part of a longer study session.
  */
-export function Reviews({ minutes, onExit, exitLabel = "Back to Today" }: { minutes?: number; onExit: () => void; exitLabel?: string }) {
+export function Reviews({
+  minutes,
+  extra: startExtra = false,
+  onExit,
+  exitLabel = "Back to Today",
+}: {
+  minutes?: number;
+  extra?: boolean;
+  onExit: () => void;
+  exitLabel?: string;
+}) {
+  const [extra, setExtra] = useState(startExtra);
   const [session, setSession] = useState<Session>();
   const [total, setTotal] = useState(0);
+  // Due reviews left out of this session by catch-up.
+  const [waiting, setWaiting] = useState(0);
   const [turn, setTurn] = useState(0);
   const [stopped, setStopped] = useState(false);
   const [deadline] = useState(() => (minutes ? Date.now() + minutes * 60_000 : undefined));
   const [error, setError] = useState<string>();
 
   useEffect(() => {
-    dueCards(tauriDb, Date.now())
-      .then((cards) => {
-        const s = startSession(spreadOutPairs(cards.map((c) => ({ item_key: c.item_key, card_type: c.card_type }))));
+    const now = Date.now();
+    Promise.all([dueCards(tauriDb, now), todaySummary(tauriDb, now)])
+      .then(([cards, summary]) => {
+        const asked = extra ? cards : cards.slice(0, summary.reviewsToday);
+        const s = startSession(spreadOutPairs(asked.map((c) => ({ item_key: c.item_key, card_type: c.card_type }))));
         setSession(s);
         setTotal(s.queue.length);
+        setWaiting(cards.length - asked.length);
+        setStopped(false);
       })
       .catch((e) => setError(String(e)));
-  }, []);
+  }, [extra]);
 
   const question = session && !stopped ? currentQuestion(session) : undefined;
   const { item, error: itemError, reload } = useItem(question?.item_key);
@@ -52,11 +71,26 @@ export function Reviews({ minutes, onExit, exitLabel = "Back to Today" }: { minu
     const left = total - stats.answered;
     return (
       <DoneView
-        title={total === 0 ? "No reviews due" : stopped ? "Nice, that's a wrap" : "All reviews done!"}
+        title={
+          total === 0
+            ? waiting > 0
+              ? "Today's share is done ✓"
+              : "No reviews due"
+            : stopped
+              ? "Nice, that's a wrap"
+              : waiting > 0
+                ? "Today's share done!"
+                : "All reviews done!"
+        }
         actions={
-          <button className="primary" onClick={onExit} autoFocus>
-            {exitLabel}
-          </button>
+          <>
+            <button className="primary" onClick={onExit} autoFocus>
+              {exitLabel}
+            </button>
+            {waiting > 0 && !stopped && (
+              <button onClick={() => setExtra(true)}>Do extra anyway</button>
+            )}
+          </>
         }
       >
         {stats.answered > 0 && (
@@ -65,6 +99,7 @@ export function Reviews({ minutes, onExit, exitLabel = "Back to Today" }: { minu
           </p>
         )}
         {left > 0 && <p>{left} still due. They'll keep until next time.</p>}
+        {waiting > 0 && !stopped && <p>{waiting} more are waiting for the coming days, so the pile shrinks one share at a time.</p>}
       </DoneView>
     );
   }

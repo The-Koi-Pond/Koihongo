@@ -35,6 +35,12 @@ const FIELDS: { key: keyof Pacing; label: string; help: string; unit: string }[]
     help: "New lessons shrink as due reviews pile up, and stop at this many, so a missed day can't snowball.",
     unit: "due reviews",
   },
+  {
+    key: "catchUpPerDay",
+    label: "Catch-up share",
+    help: "After a break, a pile of reviews is split into daily shares of this size, most at risk first. You can always do extra.",
+    unit: "reviews a day",
+  },
   { key: "dayStartsAtHour", label: "New day starts at", help: "Study after midnight still counts as the day before until this hour.", unit: "" },
 ];
 
