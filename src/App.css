@@ -579,7 +579,8 @@ textarea {
 /* Item page, sized to the window (ItemView.tsx): cards anchor to the bottom and
    the banner flexes to fill what's left. The 28px is .app's top padding, which
    the banner pulls back up so it sits flush under the title bar. */
-.item-view {
+.item-view,
+.fit-page {
   display: flex;
   flex-direction: column;
   gap: 12px;
@@ -758,17 +759,21 @@ textarea {
 
 /* On item pages the banner spans the window, flush under the title bar, with
    its content lined up with the 1040px page column and a fade into the page. */
-.item-view > .banner {
-  flex: 1 1 auto;
-  container-type: size; /* lets the character size itself from the banner (cqh/cqw) */
+/* Full-width banner, flush under the title bar (item pages and Today). */
+.banner.bleed {
   margin: -28px calc(50% - 50vw) 0;
   padding: 18px max(22px, calc(50vw - 498px)) 84px;
-  min-height: 240px;
   border-radius: 0;
   box-shadow: none;
 }
 
-.item-view > .banner::after {
+.item-view > .banner {
+  flex: 1 1 auto;
+  container-type: size; /* lets the character size itself from the banner (cqh/cqw) */
+  min-height: 240px;
+}
+
+.banner.bleed::after {
   content: "";
   position: absolute;
   left: 0;
@@ -1408,6 +1413,305 @@ textarea {
 .gloss-note {
   opacity: 0.55;
   font-weight: 400;
+}
+
+/* Today */
+.today-banner {
+  flex: 1 1 auto;
+  min-height: 200px;
+  grid-template-rows: auto 1fr;
+}
+
+.banner.bleed.today-banner {
+  padding-bottom: 24px;
+}
+
+.greeting-ja {
+  font-size: 1.9rem;
+  font-weight: 700;
+  line-height: 1.1;
+  text-shadow: 0 2px 10px rgb(0 0 0 / 0.3);
+}
+
+.greeting-en {
+  font-size: 0.85rem;
+  opacity: 0.85;
+}
+
+.today-date {
+  font-size: 0.85rem;
+  font-weight: 600;
+  padding: 4px 12px;
+  border-radius: 999px;
+  background: rgb(0 0 0 / 0.25);
+}
+
+.start-stack {
+  align-self: center;
+  display: grid;
+  justify-items: center;
+  gap: 10px;
+}
+
+.start-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  padding: 14px 28px;
+  border-radius: 999px;
+  border: none;
+  background: #fff;
+  color: color-mix(in srgb, var(--kind) 80%, #000);
+  font-size: 1.15rem;
+  font-weight: 700;
+  box-shadow: 0 10px 30px rgb(0 0 0 / 0.3);
+  transition: transform 120ms;
+}
+
+.start-btn:not(:disabled):hover {
+  transform: translateY(-1px) scale(1.02);
+}
+
+.start-btn:disabled {
+  background: rgb(255 255 255 / 0.25);
+  color: #fff;
+  box-shadow: none;
+}
+
+.start-detail {
+  font-weight: 500;
+  opacity: 0.8;
+}
+
+/* Segmented "Reviews first | Lessons first" choice. */
+.order-toggle {
+  display: inline-flex;
+  padding: 3px;
+  border-radius: 999px;
+  background: rgb(0 0 0 / 0.28);
+  backdrop-filter: blur(4px);
+}
+
+.order-toggle button {
+  border: none;
+  background: none;
+  color: rgb(255 255 255 / 0.8);
+  padding: 4px 14px;
+  border-radius: 999px;
+  font-size: 0.85rem;
+}
+
+.order-toggle button[aria-pressed="true"] {
+  background: rgb(255 255 255 / 0.92);
+  color: color-mix(in srgb, var(--kind) 80%, #000);
+  font-weight: 600;
+}
+
+.link-light {
+  border: none;
+  background: none;
+  padding: 0;
+  color: #fff;
+  font-size: 0.9rem;
+  text-decoration: underline;
+  opacity: 0.9;
+}
+
+.today-tiles {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+@media (max-width: 700px) {
+  .today-tiles {
+    grid-template-columns: 1fr;
+  }
+}
+
+.tile-title {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 0 0 6px;
+}
+
+.tile-title svg {
+  color: var(--accent);
+}
+
+.tile-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+}
+
+.tile-big {
+  margin: 0;
+  font-size: 2rem;
+  font-weight: 700;
+  line-height: 1.15;
+}
+
+.tile-big.done {
+  font-size: 1.4rem;
+}
+
+.tile-unit {
+  font-size: 1rem;
+  font-weight: 500;
+  color: var(--muted);
+}
+
+.track-preview {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 8px;
+}
+
+.track-name {
+  min-width: 72px;
+  font-size: 0.8rem;
+  color: var(--muted);
+}
+
+.mini-glyphs {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.mini-glyphs li {
+  min-width: 26px;
+  padding: 1px 5px;
+  border-radius: 6px;
+  color: #fff;
+  font-size: 1rem;
+  text-align: center;
+}
+
+.mini-glyphs .kana { background: var(--kana); }
+.mini-glyphs .component { background: var(--component); }
+.mini-glyphs .kanji { background: var(--kanji); }
+.mini-glyphs .word { background: var(--word); }
+.mini-glyphs .more { color: var(--muted); }
+
+/* Review forecast: one series, thin bars with rounded tops on a baseline, 2px gaps. */
+.forecast {
+  margin: 10px 0 0;
+}
+
+.forecast-bars {
+  display: flex;
+  align-items: flex-end;
+  gap: 2px;
+  height: 56px;
+  border-bottom: 1px solid var(--border);
+}
+
+.forecast-slot {
+  flex: 1;
+  height: 100%;
+  display: flex;
+  align-items: flex-end;
+}
+
+.forecast-slot:hover {
+  background: color-mix(in srgb, var(--accent) 10%, transparent);
+}
+
+.forecast-bar {
+  width: 100%;
+  background: var(--accent);
+  border-radius: 4px 4px 0 0;
+}
+
+.forecast-axis {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.7rem;
+  color: var(--muted);
+  margin-top: 3px;
+}
+
+.forecast-empty {
+  margin-top: 10px;
+}
+
+/* Progress: amount per kind in one hue (rows are labelled, so colour doesn't carry identity). */
+.legend {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  gap: 12px;
+  font-size: 0.8rem;
+  color: var(--muted);
+}
+
+.legend li {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.swatch-bar {
+  width: 14px;
+  height: 8px;
+  border-radius: 2px;
+}
+
+.swatch-bar.passed,
+.progress-fill.passed {
+  background: var(--accent);
+}
+
+.swatch-bar.learning,
+.progress-fill.learning {
+  background: color-mix(in srgb, var(--accent) 40%, var(--surface));
+}
+
+.progress-rows {
+  list-style: none;
+  margin: 8px 0 0;
+  padding: 0;
+  display: grid;
+  gap: 8px;
+}
+
+.progress-rows li {
+  display: grid;
+  grid-template-columns: 96px minmax(0, 1fr) 110px;
+  align-items: center;
+  gap: 12px;
+}
+
+.progress-name {
+  font-size: 0.9rem;
+}
+
+.progress-track {
+  display: flex;
+  gap: 2px;
+  height: 10px;
+  border-radius: 5px;
+  background: var(--surface-2);
+  overflow: hidden;
+}
+
+.progress-fill {
+  min-width: 3px;
+}
+
+.progress-count {
+  font-size: 0.85rem;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
 }
 
 /* Popovers */
