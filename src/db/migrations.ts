@@ -51,6 +51,13 @@ const MIGRATIONS: string[][] = [
       PRIMARY KEY (item_key, text)
     )`,
   ],
+  [
+    // Your settings, e.g. "pacing.newPerDay" → "10" (see src/srs/settings.ts).
+    `CREATE TABLE settings (
+      key   TEXT PRIMARY KEY,
+      value TEXT NOT NULL
+    )`,
+  ],
 ];
 
 export const SCHEMA_VERSION = MIGRATIONS.length;

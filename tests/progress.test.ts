@@ -13,7 +13,9 @@ import {
   todaySummary,
 } from "../src/srs/progress.ts";
 import { FIRST_REVIEW_DELAY_MS, PASS_STABILITY_DAYS } from "../src/srs/scheduler.ts";
-import { NEW_PER_DAY, PAUSE_LESSONS_AT_DUE } from "../src/srs/settings.ts";
+import { DEFAULT_PACING, loadPacing, savePacing } from "../src/srs/settings.ts";
+
+const { newPerDay: NEW_PER_DAY, pauseLessonsAtDue: PAUSE_LESSONS_AT_DUE } = DEFAULT_PACING;
 import { openTestDb } from "./nodeDb.ts";
 
 const HOUR = 60 * 60 * 1000;
@@ -199,4 +201,27 @@ test("forecast buckets upcoming reviews by hour and summary knows the next one",
   assert.equal((await todaySummary(db, T0)).nextReviewAt, T0 + FIRST_REVIEW_DELAY_MS);
   // Once due, they leave the forecast (they're counted as due instead).
   assert.deepEqual(await reviewForecast(db, T0 + FIRST_REVIEW_DELAY_MS, 6), [0, 0, 0, 0, 0, 0]);
+});
+
+test("pacing: defaults until you save your own; invalid numbers are refused", async () => {
+  const db = await freshDb();
+  assert.deepEqual(await loadPacing(db), DEFAULT_PACING);
+  const mine = { newPerDay: 1, kanaPerDay: 5, pauseLessonsAtDue: 50, dayStartsAtHour: 6 };
+  await savePacing(db, mine);
+  assert.deepEqual(await loadPacing(db), mine);
+  await assert.rejects(savePacing(db, { ...mine, newPerDay: 2.5 }), /newPerDay/);
+  await assert.rejects(savePacing(db, { ...mine, dayStartsAtHour: 13 }), /dayStartsAtHour/);
+  assert.deepEqual(await loadPacing(db), mine, "a refused save changes nothing");
+  // A stored value that's out of range (say, edited by hand) falls back to the default.
+  await db.batch([{ sql: "UPDATE settings SET value = '-3' WHERE key = 'pacing.kanaPerDay'" }]);
+  assert.equal((await loadPacing(db)).kanaPerDay, DEFAULT_PACING.kanaPerDay);
+});
+
+test("today summary uses your pacing", async () => {
+  const db = await freshDb();
+  await savePacing(db, { ...DEFAULT_PACING, newPerDay: 1 });
+  const s = await todaySummary(db, T0);
+  assert.deepEqual(keys(s.lessons), ["component:木"]);
+  assert.equal(s.lessonsWaiting, 1);
+  assert.equal(s.pacing.newPerDay, 1);
 });

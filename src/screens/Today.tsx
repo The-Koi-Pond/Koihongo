@@ -3,7 +3,6 @@ import { useEffect, useState } from "react";
 import { tauriDb } from "../db/tauriDb.ts";
 import { progressByKind, type KindProgress } from "../library.ts";
 import { lessonAllowance, reviewForecast, type Lesson, type TodaySummary } from "../srs/progress.ts";
-import { KANA_PER_DAY, NEW_PER_DAY } from "../srs/settings.ts";
 import type { Screen } from "../ui/NavBar.tsx";
 import { BannerScene } from "../ui/Scene.tsx";
 import { StatusBar } from "../ui/StatusBar.tsx";
@@ -165,9 +164,9 @@ export function Today({
           <TrackPreview name="Kanji path" lessons={summary.lessons.filter((l) => l.track === "main")} />
           <p className="muted small">
             {summary.lessonsWaiting > 0
-              ? lessonAllowance(summary.reviewsDue, 0) < NEW_PER_DAY
+              ? lessonAllowance(summary.reviewsDue, 0, summary.pacing.newPerDay, summary.pacing.pauseLessonsAtDue) < summary.pacing.newPerDay
                 ? `${summary.lessonsWaiting} more unlocked · clear some reviews first`
-                : `${summary.lessonsWaiting} more unlocked, saved for tomorrow (daily limits: ${KANA_PER_DAY} kana, ${NEW_PER_DAY} others)`
+                : `${summary.lessonsWaiting} more unlocked, saved for tomorrow (daily limits: ${summary.pacing.kanaPerDay} kana, ${summary.pacing.newPerDay} others)`
               : lessons === 0
                 ? "New items unlock as your reviews go well."
                 : ""}

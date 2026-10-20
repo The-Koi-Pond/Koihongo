@@ -5,7 +5,9 @@ import { acceptedAnswers, getItemDetails } from "../src/items.ts";
 import { itemPreview, libraryItems } from "../src/library.ts";
 import { checkKana } from "../src/srs/answers.ts";
 import { availableLessons, cardTypesFor, lessonAllowance, startLessons, todaySummary } from "../src/srs/progress.ts";
-import { KANA_PER_DAY, NEW_PER_DAY } from "../src/srs/settings.ts";
+import { DEFAULT_PACING } from "../src/srs/settings.ts";
+
+const { kanaPerDay: KANA_PER_DAY, newPerDay: NEW_PER_DAY } = DEFAULT_PACING;
 import { openTestDb } from "./nodeDb.ts";
 
 const T0 = new Date("2026-03-02T10:00:00").getTime();
