@@ -11,6 +11,7 @@ import { DatabaseSync } from "node:sqlite";
 import { strFromU8, unzipSync } from "fflate";
 import { describeComponent } from "./components.ts";
 import { allKana, CURATED_EXAMPLES, pickExample, type ExampleCandidate } from "./kana.ts";
+import { allMnemonics } from "./mnemonics/index.ts";
 import { buildPath, type PathKanji, type PathWord } from "./path.ts";
 import { NO_PRIORITY, parsePriorities } from "./priority.ts";
 
@@ -301,6 +302,19 @@ async function main() {
   fullPath.forEach((p, i) => insertPath.run(i + 1, p.key, p.kind, p.track));
   for (const p of fullPath) for (const r of p.requires) insertRequirement.run(p.key, r);
 
+  // Default mnemonics. Kana and components only have one kind (sound or name).
+  const pathKinds = new Map(fullPath.map((p) => [p.key, p.kind]));
+  const insertMnemonic = db.prepare("INSERT INTO mnemonics (item_key, kind, text) VALUES (?, ?, ?)");
+  const mnemonics = allMnemonics();
+  for (const [key, m] of Object.entries(mnemonics)) {
+    const kind = pathKinds.get(key);
+    if (!kind) throw new Error(`Mnemonic for ${key}, which isn't on the path`);
+    if (kind === "kana" && m.meaning) throw new Error(`Kana mnemonics are reading-only: ${key}`);
+    if (kind === "component" && m.reading) throw new Error(`Component mnemonics are meaning-only: ${key}`);
+    if (m.meaning) insertMnemonic.run(key, "meaning", m.meaning.trim());
+    if (m.reading) insertMnemonic.run(key, "reading", m.reading.trim());
+  }
+
   db.exec("COMMIT");
   const brokenRefs = db.prepare("PRAGMA foreign_key_check").all();
   if (brokenRefs.length) throw new Error(`content.db has ${brokenRefs.length} broken references, e.g. ${JSON.stringify(brokenRefs[0])}`);
@@ -320,6 +334,7 @@ async function main() {
   if (curatedMissing.length) console.log(`  hand-picked kana examples not found in common words: ${curatedMissing.join(" ")}`);
   if (kanaWithoutExample.length) console.log(`  kana without an example word: ${kanaWithoutExample.join(" ")}`);
   if (noSvg.length) console.log(`  jōyō kanji without stroke order: ${noSvg.join(" ")}`);
+  console.log(`  default mnemonics: ${Object.keys(mnemonics).length} items`);
 }
 
 await main();

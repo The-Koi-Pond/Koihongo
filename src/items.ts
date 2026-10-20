@@ -5,7 +5,8 @@ import type { Db } from "./db/db.ts";
 import type { ItemKind } from "./srs/progress.ts";
 
 export type NoteKind = "mnemonic_meaning" | "mnemonic_reading" | "note";
-export type NoteAuthor = "you" | "ai" | "ai_edited";
+/** "default" is Koihongo's own mnemonic (content.mnemonics), shown until you save one. */
+export type NoteAuthor = "you" | "ai" | "ai_edited" | "default";
 export type Note = { text: string; author: NoteAuthor; created_at: number };
 
 type Common = {
@@ -75,10 +76,16 @@ export async function getItemDetails(db: Db, itemKey: string): Promise<ItemDetai
      WHERE item_key = ? AND id = (SELECT max(id) FROM notes WHERE item_key = n.item_key AND kind = n.kind)`,
     [itemKey],
   );
+  const defaults = await db.all<{ kind: "meaning" | "reading"; text: string }>("SELECT kind, text FROM content.mnemonics WHERE item_key = ?", [
+    itemKey,
+  ]);
   const synonyms = await db.all<{ text: string }>("SELECT text FROM synonyms WHERE item_key = ? ORDER BY created_at", [itemKey]);
   const common: Common = {
     item_key: itemKey,
-    notes: Object.fromEntries(notes.map(({ kind, ...note }) => [kind, note])),
+    notes: {
+      ...Object.fromEntries(defaults.map((d) => [`mnemonic_${d.kind}`, { text: d.text, author: "default", created_at: 0 }])),
+      ...Object.fromEntries(notes.map(({ kind, ...note }) => [kind, note])),
+    },
     synonyms: synonyms.map((s) => s.text),
   };
 
@@ -214,7 +221,7 @@ export function acceptedAnswers(d: ItemDetails): { meanings: string[]; readings:
 }
 
 /** Saves a new version of a note; older versions are kept. */
-export async function saveNote(db: Db, itemKey: string, kind: NoteKind, text: string, author: NoteAuthor, now: number) {
+export async function saveNote(db: Db, itemKey: string, kind: NoteKind, text: string, author: Exclude<NoteAuthor, "default">, now: number) {
   await db.batch([
     {
       sql: "INSERT INTO notes (item_key, kind, text, author, created_at) VALUES (?, ?, ?, ?, ?)",

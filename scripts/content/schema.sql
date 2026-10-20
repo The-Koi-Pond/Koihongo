@@ -99,6 +99,15 @@ CREATE TABLE path (
   track    TEXT NOT NULL DEFAULT 'main' CHECK (track IN ('kana', 'main'))
 );
 
+-- Koihongo's default mnemonics (scripts/content/mnemonics/), shown until the
+-- learner writes or picks their own.
+CREATE TABLE mnemonics (
+  item_key TEXT NOT NULL REFERENCES path(item_key),
+  kind     TEXT NOT NULL CHECK (kind IN ('meaning', 'reading')),
+  text     TEXT NOT NULL,
+  PRIMARY KEY (item_key, kind)
+);
+
 -- An item unlocks once every item it requires is learned.
 CREATE TABLE path_requirements (
   item_key     TEXT NOT NULL REFERENCES path(item_key),

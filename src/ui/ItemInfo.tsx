@@ -233,7 +233,12 @@ function Chips({ items }: { items: { glyph: string; text: string; kind: string; 
   );
 }
 
-const AUTHOR_NOTE: Record<Note["author"], string> = { you: "", ai: "written by AI", ai_edited: "AI draft, edited by you" };
+const AUTHOR_NOTE: Record<Note["author"], string> = {
+  you: "",
+  ai: "written by AI",
+  ai_edited: "AI draft, edited by you",
+  default: "Koihongo's mnemonic: edit it or ask AI to make it yours",
+};
 
 function NoteEditor({ item, kind, label, onSaved }: { item: ItemDetails; kind: NoteKind; label: string; onSaved: () => void }) {
   const note = item.notes[kind];
@@ -243,7 +248,7 @@ function NoteEditor({ item, kind, label, onSaved }: { item: ItemDetails; kind: N
   const [error, setError] = useState<string>();
 
   async function save() {
-    const author = note && note.author !== "you" ? "ai_edited" : "you";
+    const author = note?.author === "ai" || note?.author === "ai_edited" ? "ai_edited" : "you";
     try {
       await saveNote(tauriDb, item.item_key, kind, text, author, Date.now());
       setEditing(false);
