@@ -974,8 +974,9 @@ textarea {
   column-gap: 10px;
 }
 
-.example-meaning {
-  font-weight: 600;
+/* The kanji at full brightness and bold so its strokes read clearly; the meaning plain. */
+.example-kanji {
+  font-weight: 700;
 }
 
 /* Detail cards: short facts pair up two per row, long ones span the width. */
