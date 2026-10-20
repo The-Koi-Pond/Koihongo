@@ -1,64 +1,144 @@
+import { useId } from "react";
 import type { ItemDetails } from "../items.ts";
 import { ItemInfo } from "./ItemInfo.tsx";
+import { SpeakButton } from "./SpeakButton.tsx";
 import { itemLabel } from "./useItem.ts";
 
 const GROUP_NAME = { basic: "basic", dakuten: "゛/゜ marks", combo: "combination", extended: "extended" } as const;
 
-/** Full item page: a hero panel (character and key answer) beside the detail cards. */
+/** Full item page: a scenic banner with the character, then the detail cards. */
 export function ItemView({ item, onChange, above }: { item: ItemDetails; onChange: () => void; above?: React.ReactNode }) {
   return (
     <div className="item-view">
-      <ItemHero item={item} />
-      <div className="item-body">
-        {above}
-        <ItemInfo item={item} onChange={onChange} />
-      </div>
+      <ItemBanner item={item} />
+      {above}
+      <ItemInfo item={item} onChange={onChange} />
     </div>
   );
 }
 
-/** kicker: small label top-left. corner: big answer top-right (kana romaji). primary/secondary: lines under the character. */
-function heroFacts(item: ItemDetails): { kicker: string; corner?: string; primary?: string; secondary?: string } {
+/**
+ * kicker: small label top-left. badge: the answer in a chip top-right (kana romaji).
+ * primary/secondary: lines under the character. speak: what the speaker button reads out.
+ */
+function bannerFacts(item: ItemDetails): { kicker: string; badge?: string; primary?: string; secondary?: string; speak?: string } {
   switch (item.kind) {
     case "kana":
-      return { kicker: `${item.script} · ${GROUP_NAME[item.group]}`, corner: item.romaji };
+      return {
+        kicker: `${item.script} · ${GROUP_NAME[item.group]}`,
+        badge: item.romaji,
+        primary: item.counterpart ? (item.script === "hiragana" ? "katakana" : "hiragana") : undefined,
+        secondary: item.counterpart ?? undefined,
+        speak: item.character,
+      };
     case "component":
       return { kicker: "component", primary: item.name };
-    case "kanji":
+    case "kanji": {
+      const reading = item.kunReadings[0] ?? item.onReadings[0];
       return {
         kicker: "kanji",
         primary: item.meanings.slice(0, 2).join(", "),
         secondary: [item.onReadings[0], item.kunReadings[0]].filter(Boolean).join(" · "),
+        speak: reading?.replace(/[.-]/g, ""),
       };
+    }
     case "word":
-      return { kicker: "word", primary: item.senses[0]?.glosses.slice(0, 2).join(", ") ?? "", secondary: item.reading };
+      return { kicker: "word", primary: item.senses[0]?.glosses.slice(0, 2).join(", ") ?? "", secondary: item.reading, speak: item.reading };
   }
 }
 
-/** Shrinks long words so they still fit the panel. */
+/** Shrinks long words so they still fit the banner. */
 function glyphSize(label: string): string {
   const n = [...label].length;
-  return n <= 1 ? "7rem" : n === 2 ? "4.6rem" : n === 3 ? "3.4rem" : "2.6rem";
+  return n <= 1 ? "8rem" : n === 2 ? "6rem" : n === 3 ? "4.6rem" : "3.4rem";
 }
 
-function ItemHero({ item }: { item: ItemDetails }) {
-  const { kicker, corner, primary, secondary } = heroFacts(item);
+function ItemBanner({ item }: { item: ItemDetails }) {
+  const { kicker, badge, primary, secondary, speak } = bannerFacts(item);
   const label = itemLabel(item);
   return (
-    <aside className={`hero ${item.kind}`}>
-      <div className="hero-top">
-        <p className="hero-kind">{kicker}</p>
-        {corner && <p className="hero-corner">{corner}</p>}
+    <header className={`banner ${item.kind}`}>
+      <BannerScene />
+      <div className="banner-top">
+        <p className="banner-kind">{kicker}</p>
+        {badge && <p className="banner-badge">{badge}</p>}
       </div>
-      <div className="hero-glyph" lang="ja" style={{ fontSize: glyphSize(label) }}>
+      <div className="banner-glyph" lang="ja" style={{ fontSize: glyphSize(label) }}>
         {label}
       </div>
-      {primary && <p className="hero-primary">{primary}</p>}
-      {secondary && (
-        <p className="hero-secondary" lang="ja">
-          {secondary}
-        </p>
+      {(primary || secondary) && (
+        <div className="banner-facts">
+          {primary && <p className="banner-primary">{primary}</p>}
+          {secondary && (
+            <p className="banner-secondary" lang="ja">
+              {secondary}
+            </p>
+          )}
+        </div>
       )}
-    </aside>
+      {speak && <SpeakButton text={speak} className="banner-speak" />}
+    </header>
+  );
+}
+
+// Blossom clusters: [x, y, size] along the two corner branches.
+const BLOSSOMS: [number, number, number][] = [
+  [30, 58, 9], [52, 46, 7], [70, 66, 10], [92, 58, 7], [110, 84, 9], [128, 100, 7], [46, 84, 6], [16, 92, 7],
+  [770, 58, 9], [748, 44, 7], [726, 70, 10], [752, 86, 7], [706, 96, 8], [784, 104, 6], [732, 116, 6],
+];
+
+/** A five-petal blossom. */
+function Blossom({ x, y, size }: { x: number; y: number; size: number }) {
+  return (
+    <g transform={`translate(${x} ${y})`}>
+      {[0, 72, 144, 216, 288].map((angle) => (
+        <circle key={angle} cx={0} cy={-size * 0.55} r={size * 0.5} transform={`rotate(${angle})`} className="petal" />
+      ))}
+      <circle r={size * 0.22} className="blossom-centre" />
+    </g>
+  );
+}
+
+/**
+ * Dusk landscape behind the character: sky in the item's kind colour, a low
+ * sun, three mountain ridges and two blossom branches. Pure SVG, tinted via
+ * the --kind CSS variable, so it needs no image files.
+ */
+function BannerScene() {
+  // Unique gradient ids, in case two banners are ever on screen at once.
+  const id = useId().replace(/:/g, "");
+  return (
+    <svg className="banner-scene" viewBox="0 0 800 300" preserveAspectRatio="xMidYMax slice" aria-hidden="true">
+      <defs>
+        <linearGradient id={`${id}-sky`} x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" style={{ stopColor: "color-mix(in srgb, var(--kind) 45%, #120a1c)" }} />
+          <stop offset="0.75" style={{ stopColor: "var(--kind)" }} />
+          <stop offset="1" style={{ stopColor: "color-mix(in srgb, var(--kind) 70%, #ffd9a8)" }} />
+        </linearGradient>
+        <radialGradient id={`${id}-sun`}>
+          <stop offset="0" stopColor="#fff" stopOpacity="0.55" />
+          <stop offset="0.35" stopColor="#ffe3c4" stopOpacity="0.25" />
+          <stop offset="1" stopColor="#fff" stopOpacity="0" />
+        </radialGradient>
+      </defs>
+      <rect width="800" height="300" fill={`url(#${id}-sky)`} />
+      <circle cx="400" cy="215" r="150" fill={`url(#${id}-sun)`} />
+      <path d="M0 205 L80 172 L150 190 L240 140 L320 182 L400 158 L480 186 L570 132 L660 176 L740 150 L800 170 L800 300 L0 300Z" fill="#000" opacity="0.16" />
+      <path d="M0 236 L110 200 L210 222 L300 196 L370 160 L400 150 L430 160 L500 196 L600 222 L700 198 L800 228 L800 300 L0 300Z" fill="#000" opacity="0.26" />
+      <path d="M0 268 Q 140 240 290 262 T 560 255 T 800 264 L800 300 L0 300Z" fill="#000" opacity="0.38" />
+      {/* The banner crops the top of the scene, so the branches sit lower, at the sides. */}
+      <g transform="translate(0 85)">
+      <g className="branches">
+        <path d="M-10 36 Q 40 48 72 66 T 136 104" />
+        <path d="M40 52 Q 54 74 44 96" />
+        <path d="M86 72 Q 104 70 112 86" />
+        <path d="M812 30 Q 770 52 742 74 T 700 102" />
+        <path d="M752 66 Q 760 88 778 104" />
+      </g>
+      {BLOSSOMS.map(([x, y, size], i) => (
+        <Blossom key={i} x={x} y={y} size={size} />
+      ))}
+      </g>
+    </svg>
   );
 }

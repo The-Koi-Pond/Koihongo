@@ -560,87 +560,156 @@ textarea {
 
 /* Item details */
 
-/* Page layout: hero panel beside the detail cards; stacks on narrow windows. */
+/* Item page: scenic banner on top, detail cards below (ItemView.tsx). */
 .item-view {
-  display: grid;
-  grid-template-columns: 280px minmax(0, 1fr);
-  gap: 16px;
-  align-items: start;
-}
-
-.item-body {
   display: grid;
   gap: 12px;
 }
 
-.hero {
+.banner {
   --kind: var(--kanji);
-  position: sticky;
-  top: 60px;
+  position: relative;
+  overflow: hidden;
+  min-height: 250px;
+  border-radius: 18px;
+  padding: 18px 22px 20px;
   display: grid;
+  grid-template-rows: auto 1fr auto;
   justify-items: center;
-  gap: 6px;
-  padding: 18px 16px 20px;
-  border-radius: 16px;
   color: #fff;
-  text-align: center;
-  background: linear-gradient(160deg, var(--kind), color-mix(in srgb, var(--kind) 55%, #000));
-  box-shadow: 0 6px 20px color-mix(in srgb, var(--kind) 30%, transparent);
+  box-shadow: 0 8px 28px color-mix(in srgb, var(--kind) 30%, transparent);
 }
 
-.hero.kana { --kind: var(--kana); }
-.hero.component { --kind: var(--component); }
-.hero.word { --kind: var(--word); }
+.banner.kana { --kind: var(--kana); }
+.banner.component { --kind: var(--component); }
+.banner.word { --kind: var(--word); }
 
-.hero p {
-  margin: 0;
+.banner-scene {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 0;
 }
 
-.hero-kind {
-  font-size: 0.7rem;
-  font-weight: 700;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
+.banner-scene .branches path {
+  fill: none;
+  stroke: #2b1520;
+  stroke-width: 5;
+  stroke-linecap: round;
+  opacity: 0.7;
+}
+
+.banner-scene .petal {
+  fill: #ffd8e6;
   opacity: 0.85;
 }
 
-.hero-glyph {
-  line-height: 1.15;
-  padding: 4px 0 12px;
-  overflow-wrap: anywhere;
+.banner-scene .blossom-centre {
+  fill: #f28fb3;
 }
 
-.hero-primary {
-  font-size: 1.3rem;
-  font-weight: 700;
+.banner > :not(.banner-scene) {
+  position: relative;
+  z-index: 1;
 }
 
-.hero-secondary {
-  font-size: 1.2rem;
-  opacity: 0.9;
+.banner p {
+  margin: 0;
 }
 
-.hero-top {
+.banner-top {
   justify-self: stretch;
   display: flex;
   justify-content: space-between;
-  align-items: baseline;
-  gap: 8px;
+  align-items: flex-start;
 }
 
-.hero-corner {
-  font-size: 2.2rem;
+.banner-kind {
+  font-size: 0.72rem;
   font-weight: 700;
-  line-height: 1;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  text-shadow: 0 1px 4px rgb(0 0 0 / 0.35);
 }
 
-@media (max-width: 820px) {
-  .item-view {
-    grid-template-columns: 1fr;
-  }
-  .hero {
-    position: static;
-  }
+.banner-badge {
+  min-width: 44px;
+  padding: 4px 12px;
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--kind) 70%, #000);
+  border: 1px solid rgb(255 255 255 / 0.25);
+  font-size: 1.6rem;
+  font-weight: 700;
+  line-height: 1.2;
+  text-align: center;
+}
+
+.banner-glyph {
+  align-self: center;
+  line-height: 1.1;
+  padding: 6px 0 10px;
+  text-shadow: 0 6px 24px rgb(0 0 0 / 0.35);
+  overflow-wrap: anywhere;
+}
+
+.banner-facts {
+  display: flex;
+  gap: 14px;
+  align-items: baseline;
+  padding: 6px 14px;
+  border-radius: 999px;
+  background: rgb(0 0 0 / 0.25);
+  backdrop-filter: blur(4px);
+}
+
+.banner-primary {
+  font-size: 1.15rem;
+  font-weight: 700;
+}
+
+.banner-secondary {
+  font-size: 1.1rem;
+  opacity: 0.9;
+}
+
+.banner .banner-speak {
+  position: absolute;
+  right: 16px;
+  bottom: 16px;
+  color: #fff;
+  background: rgb(0 0 0 / 0.25);
+  border-color: rgb(255 255 255 / 0.25);
+}
+
+/* Small round speaker button (hidden when Windows has no Japanese voice). */
+.speak-btn {
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  border-radius: 50%;
+  color: var(--accent);
+}
+
+.field-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 4px;
+}
+
+.field-head h3 {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 0;
+}
+
+.field-head h3 svg {
+  color: var(--accent);
 }
 
 /* Step-by-step stroke order */
@@ -655,6 +724,13 @@ textarea {
 
 .stroke-steps li {
   position: relative;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.stroke-arrow {
+  color: var(--muted);
 }
 
 .stroke-frame {
@@ -662,7 +738,7 @@ textarea {
   width: 68px;
   height: 68px;
   border: 1px solid var(--border);
-  border-radius: 8px;
+  border-radius: 50%;
   background: var(--surface-2);
   fill: none;
   stroke-linecap: round;
@@ -692,8 +768,15 @@ textarea {
 
 .stroke-num {
   position: absolute;
-  top: 3px;
-  left: 6px;
+  top: -2px;
+  right: -2px;
+  min-width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  text-align: center;
+  line-height: 15px;
   font-size: 0.65rem;
   color: var(--muted);
 }

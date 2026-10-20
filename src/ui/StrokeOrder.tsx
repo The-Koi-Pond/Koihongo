@@ -1,3 +1,4 @@
+import { ChevronRight } from "lucide-react";
 import { strokePaths, strokeStart } from "../strokes.ts";
 
 /**
@@ -14,6 +15,7 @@ export function StrokeOrder({ svg, label }: { svg: string; label: string }) {
         const start = strokeStart(d);
         return (
           <li key={i}>
+            {i > 0 && <ChevronRight className="stroke-arrow" size={16} aria-hidden="true" />}
             <svg viewBox="0 0 109 109" className="stroke-frame" aria-hidden="true">
               <line x1="54.5" y1="4" x2="54.5" y2="105" className="guide" />
               <line x1="4" y1="54.5" x2="105" y2="54.5" className="guide" />

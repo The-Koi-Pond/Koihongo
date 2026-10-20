@@ -1,9 +1,11 @@
+import { BookOpen, Ear, Languages, Lightbulb, List, PenLine, Quote, Search, Shapes, Tag, Tags, type LucideIcon } from "lucide-react";
 import { useState } from "react";
 import { tauriDb } from "../db/tauriDb.ts";
 import { addSynonym, removeSynonym, saveNote, type ItemDetails, type Note, type NoteKind } from "../items.ts";
 import { MnemonicWorkshop } from "./MnemonicWorkshop.tsx";
 import { soundHint } from "../kanaSounds.ts";
 import { ItemHover, JapaneseText } from "./Popover.tsx";
+import { SpeakButton } from "./SpeakButton.tsx";
 import { StrokeOrder } from "./StrokeOrder.tsx";
 
 const KANA_ONLY = /^[\p{Script=Hiragana}\p{Script=Katakana}ー]+$/u;
@@ -14,9 +16,9 @@ export function ItemInfo({ item, onChange }: { item: ItemDetails; onChange: () =
     <div className="item-info">
       {item.kind === "kana" && (
         <>
-          <SoundsLike romaji={item.romaji} accept={item.accept} />
+          <SoundsLike kana={item.character} romaji={item.romaji} accept={item.accept} wide={!item.example} />
           {item.example && (
-            <Field label="Example word">
+            <Field label="Example word" icon={Quote} action={<SpeakButton text={item.example.reading} />}>
               <p className="example-word">
                 {/* Show what a kana learner can read: the kana spelling, kanji only as an aside. */}
                 <span lang="ja" className="example-form">
@@ -35,13 +37,8 @@ export function ItemInfo({ item, onChange }: { item: ItemDetails; onChange: () =
               </p>
             </Field>
           )}
-          {item.counterpart && (
-            <Field label={item.script === "hiragana" ? "Same sound in katakana" : "Same sound in hiragana"}>
-              <Chips items={[{ glyph: item.counterpart, text: item.romaji, kind: "kana", itemKey: `kana:${item.counterpart}` }]} />
-            </Field>
-          )}
           {item.strokeSvg && (
-            <Field label="Stroke order" wide>
+            <Field label="Stroke order" icon={PenLine} wide>
               <StrokeOrder svg={item.strokeSvg} label={item.character} />
             </Field>
           )}
@@ -51,11 +48,11 @@ export function ItemInfo({ item, onChange }: { item: ItemDetails; onChange: () =
 
       {item.kind === "component" && (
         <>
-          <Field label="Name">
+          <Field label="Name" icon={Tag}>
             <span className="big-reading">{item.name}</span>
           </Field>
           {item.usedIn.length > 0 && (
-            <Field label="Found in">
+            <Field label="Found in" icon={Search}>
               <Chips items={item.usedIn.map((k) => ({ glyph: k.character, text: k.meaning, kind: "kanji", itemKey: `kanji:${k.character}` }))} />
             </Field>
           )}
@@ -65,8 +62,8 @@ export function ItemInfo({ item, onChange }: { item: ItemDetails; onChange: () =
 
       {item.kind === "kanji" && (
         <>
-          <Field label="Meanings">{item.meanings.join(", ")}</Field>
-          <Field label="Readings">
+          <Field label="Meanings" icon={BookOpen}>{item.meanings.join(", ")}</Field>
+          <Field label="Readings" icon={Ear}>
             {item.onReadings.length > 0 && (
               <p className="reading-line">
                 <span className="reading-kind">on'yomi</span> <span lang="ja">{item.onReadings.join("、")}</span>
@@ -78,18 +75,18 @@ export function ItemInfo({ item, onChange }: { item: ItemDetails; onChange: () =
               </p>
             )}
           </Field>
-          <Field label="Components">
+          <Field label="Components" icon={Shapes}>
             <Chips items={item.components.map((c) => ({ glyph: c.display, text: c.name, kind: "component", itemKey: `component:${c.glyph}` }))} />
           </Field>
           {item.strokeSvg && (
-            <Field label="Stroke order" wide>
+            <Field label="Stroke order" icon={PenLine} wide>
               <StrokeOrder svg={item.strokeSvg} label={item.character} />
             </Field>
           )}
           <NoteEditor item={item} kind="mnemonic_meaning" label="Meaning mnemonic" onSaved={onChange} />
           <NoteEditor item={item} kind="mnemonic_reading" label="Reading mnemonic" onSaved={onChange} />
           {item.words.length > 0 && (
-            <Field label="Words" wide>
+            <Field label="Words" icon={List} wide>
               <ul className="word-list">
                 {item.words.map((w) => (
                   <li key={w.written}>
@@ -112,20 +109,20 @@ export function ItemInfo({ item, onChange }: { item: ItemDetails; onChange: () =
 
       {item.kind === "word" && (
         <>
-          <Field label="Meanings">
+          <Field label="Meanings" icon={BookOpen}>
             <ol className="senses">
               {item.senses.slice(0, 4).map((s, i) => (
                 <li key={i}>{s.glosses.join("; ")}</li>
               ))}
             </ol>
           </Field>
-          <Field label="Kanji">
+          <Field label="Kanji" icon={Languages}>
             <Chips items={item.kanji.map((k) => ({ glyph: k.character, text: k.meaning, kind: "kanji", itemKey: `kanji:${k.character}` }))} />
           </Field>
           <NoteEditor item={item} kind="mnemonic_meaning" label="Meaning mnemonic" onSaved={onChange} />
           <NoteEditor item={item} kind="mnemonic_reading" label="Reading mnemonic" onSaved={onChange} />
           {item.sentences.length > 0 && (
-            <Field label="Examples" wide>
+            <Field label="Examples" icon={Quote} wide>
               <ul className="plain">
                 {item.sentences.map((s) => (
                   <li key={s.japanese}>
@@ -145,10 +142,10 @@ export function ItemInfo({ item, onChange }: { item: ItemDetails; onChange: () =
   );
 }
 
-function SoundsLike({ romaji, accept }: { romaji: string; accept: string[] }) {
+function SoundsLike({ kana, romaji, accept, wide }: { kana: string; romaji: string; accept: string[]; wide?: boolean }) {
   const hint = soundHint(romaji);
   return (
-    <Field label="Sounds like">
+    <Field label="Sounds like" icon={Ear} action={<SpeakButton text={kana} />} wide={wide}>
       {hint.asIn && (
         <p className="as-in">
           <span className="muted small">as in</span> {hint.asIn[0]}
@@ -162,10 +159,29 @@ function SoundsLike({ romaji, accept }: { romaji: string; accept: string[] }) {
   );
 }
 
-function Field({ label, wide, children }: { label: string; wide?: boolean; children: React.ReactNode }) {
+function Field({
+  label,
+  icon: Icon,
+  action,
+  wide,
+  children,
+}: {
+  label: string;
+  icon?: LucideIcon;
+  /** Extra control on the heading row, e.g. a speaker button. */
+  action?: React.ReactNode;
+  wide?: boolean;
+  children: React.ReactNode;
+}) {
   return (
     <section className={`field ${wide ? "wide" : ""}`}>
-      <h3>{label}</h3>
+      <div className="field-head">
+        <h3>
+          {Icon && <Icon size={15} strokeWidth={2} aria-hidden="true" />}
+          {label}
+        </h3>
+        {action}
+      </div>
       <div>{children}</div>
     </section>
   );
@@ -209,7 +225,7 @@ function NoteEditor({ item, kind, label, onSaved }: { item: ItemDetails; kind: N
   }
 
   return (
-    <Field label={label} wide>
+    <Field label={label} icon={Lightbulb} wide>
       {editing ? (
         <div className="note-edit">
           <textarea value={text} onChange={(e) => setText(e.target.value)} rows={3} autoFocus />
@@ -262,7 +278,7 @@ function NoteEditor({ item, kind, label, onSaved }: { item: ItemDetails; kind: N
 function SynonymEditor({ item, onChange }: { item: ItemDetails; onChange: () => void }) {
   const [text, setText] = useState("");
   return (
-    <Field label="Your synonyms">
+    <Field label="Your synonyms" icon={Tags}>
       {item.synonyms.length > 0 && (
         <ul className="synonyms">
           {item.synonyms.map((s) => (
