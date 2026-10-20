@@ -43,6 +43,10 @@ The one place you start every session.
 - **[later]** Reviews: fill in the blank in a sentence.
 - **[later]** Grammar examples prefer vocabulary you've already learned.
 
+## E0. Library
+
+- **[v1]** Browse every path item outside lessons: tiles in path order, styled by status (locked / ready / learning / passed), filter by kind and status, search by character, meaning or reading. Item pages show status, next review, what a locked item is waiting for, and allow editing mnemonics and synonyms.
+
 ## E. Dictionary and lookup
 
 - **[v1]** Search kanji/words by English, kana, romaji or kanji.
