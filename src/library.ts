@@ -90,6 +90,21 @@ export async function itemPreview(db: Db, itemKey: string): Promise<ItemPreview>
   }
 }
 
+export type KindProgress = { kind: ItemKind; passed: number; learning: number; total: number };
+
+/** How far along each kind of item is, in teaching order (kana, components, kanji, words). */
+export async function progressByKind(db: Db): Promise<KindProgress[]> {
+  const kinds: ItemKind[] = ["kana", "component", "kanji", "word"];
+  const counts = new Map(kinds.map((kind) => [kind, { kind, passed: 0, learning: 0, total: 0 }]));
+  for (const item of await libraryItems(db)) {
+    const c = counts.get(item.kind)!;
+    c.total++;
+    if (item.status === "passed") c.passed++;
+    else if (item.status === "learning") c.learning++;
+  }
+  return kinds.map((k) => counts.get(k)!);
+}
+
 export type ItemProgress = {
   status: ItemStatus;
   cards: { card_type: CardType; due: number; stability: number; reps: number; lapses: number; started_at: number }[];

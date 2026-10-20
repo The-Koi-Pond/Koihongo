@@ -11,7 +11,8 @@ export type Track = "kana" | "main";
 
 export type Lesson = { item_key: string; kind: ItemKind; track: Track; position: number; label: string };
 
-const DAY_MS = 24 * 60 * 60 * 1000;
+const HOUR_MS = 60 * 60 * 1000;
+const DAY_MS = 24 * HOUR_MS;
 
 /** Kana are learned by reading, components by meaning, kanji and words by both. */
 export function cardTypesFor(kind: ItemKind): CardType[] {
@@ -120,16 +121,19 @@ export type TodaySummary = {
   lessons: Lesson[];
   /** Unlocked lessons held back by the daily limit or the review backlog. */
   lessonsWaiting: number;
+  /** When the next not-yet-due review comes up, or null if none are scheduled. */
+  nextReviewAt: number | null;
 };
 
 export async function todaySummary(db: Db, now: number): Promise<TodaySummary> {
-  const [counts] = await db.all<{ due: number; next_day: number; kana_today: number; main_today: number }>(
+  const [counts] = await db.all<{ due: number; next_day: number; kana_today: number; main_today: number; next_due: number | null }>(
     `SELECT
        (SELECT count(*) FROM srs_cards WHERE due <= ?) AS due,
+       (SELECT min(due) FROM srs_cards WHERE due > ?) AS next_due,
        (SELECT count(*) FROM srs_cards WHERE due > ? AND due <= ?) AS next_day,
        (SELECT count(DISTINCT item_key) FROM srs_cards WHERE started_at >= ? AND item_key LIKE 'kana:%') AS kana_today,
        (SELECT count(DISTINCT item_key) FROM srs_cards WHERE started_at >= ? AND item_key NOT LIKE 'kana:%') AS main_today`,
-    [now, now, now + DAY_MS, studyDayStart(now), studyDayStart(now)],
+    [now, now, now, now + DAY_MS, studyDayStart(now), studyDayStart(now)],
   );
   const unlocked = await availableLessons(db);
   // Kana first, so a lesson round doesn't mix a kana row with kanji.
@@ -145,5 +149,18 @@ export async function todaySummary(db: Db, now: number): Promise<TodaySummary> {
     lessonsDoneToday: counts.kana_today + counts.main_today,
     lessons: [...kana.lessons, ...main.lessons],
     lessonsWaiting: kana.waiting + main.waiting,
+    nextReviewAt: counts.next_due,
   };
+}
+
+/** Reviews coming due in each of the next `hours` hours (index 0 = within the next hour). Already-due ones aren't included. */
+export async function reviewForecast(db: Db, now: number, hours = 24): Promise<number[]> {
+  const rows = await db.all<{ hour: number; n: number }>(
+    `SELECT CAST((due - ?) / ? AS INTEGER) AS hour, count(*) AS n
+     FROM srs_cards WHERE due > ? AND due <= ? GROUP BY hour`,
+    [now, HOUR_MS, now, now + hours * HOUR_MS],
+  );
+  const forecast = new Array<number>(hours).fill(0);
+  for (const { hour, n } of rows) forecast[Math.min(hour, hours - 1)] += n;
+  return forecast;
 }

@@ -4,6 +4,7 @@ import type { DatabaseSync } from "node:sqlite";
 import { migrate, SCHEMA_VERSION } from "../src/db/migrations.ts";
 import {
   availableLessons,
+  reviewForecast,
   dueCards,
   lessonAllowance,
   recordReview,
@@ -184,4 +185,18 @@ test("today summary counts due reviews and today's lessons", async () => {
   assert.equal(after.reviewsDue, 0);
   assert.equal(after.reviewsNext24h, 1);
   assert.deepEqual(keys(after.lessons), ["component:化"]);
+});
+
+test("forecast buckets upcoming reviews by hour and summary knows the next one", async () => {
+  const db = await freshDb();
+  assert.deepEqual(await reviewForecast(db, T0, 3), [0, 0, 0]);
+  assert.equal((await todaySummary(db, T0)).nextReviewAt, null);
+
+  await startLessons(db, [{ item_key: "component:木", kind: "component" }, { item_key: "component:化", kind: "component" }], T0);
+  // Both first reviews land FIRST_REVIEW_DELAY_MS (4h) after the lesson.
+  const forecast = await reviewForecast(db, T0, 6);
+  assert.deepEqual(forecast, [0, 0, 0, 0, 2, 0], "exactly 4h away = the 4–5h bucket");
+  assert.equal((await todaySummary(db, T0)).nextReviewAt, T0 + FIRST_REVIEW_DELAY_MS);
+  // Once due, they leave the forecast (they're counted as due instead).
+  assert.deepEqual(await reviewForecast(db, T0 + FIRST_REVIEW_DELAY_MS, 6), [0, 0, 0, 0, 0, 0]);
 });

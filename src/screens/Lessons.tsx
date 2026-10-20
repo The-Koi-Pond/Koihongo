@@ -22,7 +22,8 @@ function shuffle<T>(list: T[]): T[] {
   return out;
 }
 
-export function Lessons({ onExit }: { onExit: () => void }) {
+/** Lesson rounds. `exitLabel` replaces "Back to Today" when this is part of a longer study session. */
+export function Lessons({ onExit, exitLabel = "Back to Today" }: { onExit: () => void; exitLabel?: string }) {
   const [batch, setBatch] = useState<Lesson[]>([]);
   const [phase, setPhase] = useState<Phase>({ name: "loading" });
   const [moreAvailable, setMoreAvailable] = useState(false);
@@ -87,7 +88,7 @@ export function Lessons({ onExit }: { onExit: () => void }) {
         <h2>No lessons right now</h2>
         <p className="muted">Either today's lessons are done, or new items unlock as your reviews go well.</p>
         <button className="primary" onClick={onExit} autoFocus>
-          Back to Today
+          {exitLabel}
         </button>
       </div>
     );
@@ -105,7 +106,7 @@ export function Lessons({ onExit }: { onExit: () => void }) {
             </button>
           )}
           <button onClick={onExit} autoFocus={!moreAvailable}>
-            Back to Today
+            {exitLabel}
           </button>
         </div>
       </div>

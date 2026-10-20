@@ -8,13 +8,15 @@ Each feature is tagged:
 
 ## A. Today (home screen)
 
-The one place you start every session.
+The one place you start every session. Fits the window without scrolling.
 
-- **[v1]** One "Start" button: due reviews first, then new lessons if the backlog is small enough.
-- **[v1]** "5 minutes" button: most overdue / most at-risk reviews only.
-- **[v1]** Shows reviews due now and in the next 24h, plus lessons available.
-- **[v1]** Catch-up mode after a break: spreads overdue reviews over several days.
-- **[later]** Simple progress view: items by stage, kanji/words known, forecast of upcoming reviews.
+- **[v1]** Scenic banner with a time-of-day greeting (おはよう / こんにちは / こんばんは) and the date.
+- **[v1]** One **Start** button that runs a whole study session: reviews then lessons, or lessons then reviews (a "Reviews first | Lessons first" toggle, remembered). Its label says what you'll get ("12 reviews, then 10 new").
+- **[v1]** "Just 5 minutes": most at-risk reviews only.
+- **[v1]** Reviews tile: due now, next 24 hours, a per-hour forecast chart, "all caught up · next review in 3h" when empty.
+- **[v1]** Lessons tile: available today, split into kana and kanji-path previews, and why more are waiting (daily limit or review backlog).
+- **[v1]** Progress bars per kind (passed / learning / total). No streaks, by design.
+- **[later]** Catch-up mode after a break: spreads overdue reviews over several days.
 - **[later]** "Text coverage" estimate: % of common written Japanese you'd recognise.
 
 ## A2. Kana (hiragana and katakana)

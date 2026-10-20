@@ -5,8 +5,11 @@ import { answerCurrent, currentQuestion, sessionStats, spreadOutPairs, startSess
 import { QuestionCard } from "../ui/QuestionCard.tsx";
 import { useItem } from "../ui/useItem.ts";
 
-/** Due reviews, most at-risk first. With `minutes`, wraps up once time is up. */
-export function Reviews({ minutes, onExit }: { minutes?: number; onExit: () => void }) {
+/**
+ * Due reviews, most at-risk first. With `minutes`, wraps up once time is up.
+ * `exitLabel` replaces "Back to Today" when this is part of a longer study session.
+ */
+export function Reviews({ minutes, onExit, exitLabel = "Back to Today" }: { minutes?: number; onExit: () => void; exitLabel?: string }) {
   const [session, setSession] = useState<Session>();
   const [total, setTotal] = useState(0);
   const [turn, setTurn] = useState(0);
@@ -56,7 +59,7 @@ export function Reviews({ minutes, onExit }: { minutes?: number; onExit: () => v
         )}
         {left > 0 && <p className="muted">{left} still due. They'll keep until next time.</p>}
         <button className="primary" onClick={onExit} autoFocus>
-          Back to Today
+          {exitLabel}
         </button>
       </div>
     );
