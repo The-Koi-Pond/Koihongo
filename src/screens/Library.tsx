@@ -18,7 +18,7 @@ const KIND_TABS: { kind: ItemKind | "all"; name: string }[] = [
 ];
 
 /** Every item on the path, browsable outside lessons. */
-export function Library({ onExit }: { onExit: () => void }) {
+export function Library() {
   const [items, setItems] = useState<LibraryItem[]>();
   const [error, setError] = useState<string>();
   const [kind, setKind] = useState<ItemKind | "all">("all");
@@ -53,7 +53,7 @@ export function Library({ onExit }: { onExit: () => void }) {
     return c;
   }, [items, kind]);
 
-  if (error) return <ErrorView message={error} onExit={onExit} />;
+  if (error) return <p className="error">Couldn't load the library: {error}</p>;
   if (selected) {
     const back = () => {
       setSelected(undefined);
@@ -76,12 +76,9 @@ export function Library({ onExit }: { onExit: () => void }) {
 
   return (
     <>
-      <div className="row space-between">
-        <h1>
-          <span lang="ja">図書館</span> Library
-        </h1>
-        <button onClick={onExit}>Back to Today</button>
-      </div>
+      <h1>
+        <span lang="ja">図書館</span> Library
+      </h1>
 
       <div className="library-controls">
         <div className="tabs" role="tablist">
