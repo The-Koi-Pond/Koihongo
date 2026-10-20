@@ -1,4 +1,4 @@
-import { BookOpen, Ear, Languages, Lightbulb, List, PenLine, Quote, Search, Shapes, Tag, Tags, type LucideIcon } from "lucide-react";
+import { BookOpen, Ear, Languages, Lightbulb, List, PenLine, Quote, Search, Shapes, Tag, Tags, Volume2, type LucideIcon } from "lucide-react";
 import { useState } from "react";
 import { tauriDb } from "../db/tauriDb.ts";
 import { addSynonym, removeSynonym, saveNote, type ItemDetails, type Note, type NoteKind } from "../items.ts";
@@ -18,7 +18,7 @@ export function ItemInfo({ item, onChange }: { item: ItemDetails; onChange: () =
         <>
           {/* Pronunciation strip: one card, two halves (overlaps the banner on item pages). */}
           <div className="split-card wide overlap">
-            <SoundsLike kana={item.character} romaji={item.romaji} accept={item.accept} />
+            <SoundsLike romaji={item.romaji} accept={item.accept} />
             {item.example && (
               <Field label="Example word" icon={Quote} action={<SpeakButton text={item.example.reading} />}>
                 <p className="example-word">
@@ -148,10 +148,11 @@ export function ItemInfo({ item, onChange }: { item: ItemDetails; onChange: () =
   );
 }
 
-function SoundsLike({ kana, romaji, accept }: { kana: string; romaji: string; accept: string[] }) {
+/** The "as in f(a)ther" hint; no heading, the example speaks for itself. */
+function SoundsLike({ romaji, accept }: { romaji: string; accept: string[] }) {
   const hint = soundHint(romaji);
   return (
-    <Field label="Sounds like" icon={Ear} action={<SpeakButton text={kana} />}>
+    <Field action={<AudioPlaceholder />}>
       {hint.asIn && (
         <p className="as-in">
           <span className="muted small">as in</span> {hint.asIn[0]}
@@ -165,6 +166,15 @@ function SoundsLike({ kana, romaji, accept }: { kana: string; romaji: string; ac
   );
 }
 
+/** Placeholder for kana audio (recorded or synthesised), to be wired up later. */
+function AudioPlaceholder() {
+  return (
+    <button type="button" className="audio-btn" disabled title="Audio is coming soon">
+      <Volume2 size={15} strokeWidth={2} aria-hidden="true" /> Audio
+    </button>
+  );
+}
+
 function Field({
   label,
   icon: Icon,
@@ -172,7 +182,8 @@ function Field({
   wide,
   children,
 }: {
-  label: string;
+  /** Heading; omit for cards whose content speaks for itself. */
+  label?: string;
   icon?: LucideIcon;
   /** Extra control on the heading row, e.g. a speaker button. */
   action?: React.ReactNode;
@@ -181,13 +192,17 @@ function Field({
 }) {
   return (
     <section className={`field ${wide ? "wide" : ""}`}>
-      <div className="field-head">
-        <h3>
-          {Icon && <Icon size={15} strokeWidth={2} aria-hidden="true" />}
-          {label}
-        </h3>
-        {action}
-      </div>
+      {(label || action) && (
+        <div className="field-head">
+          {label && (
+            <h3>
+              {Icon && <Icon size={15} strokeWidth={2} aria-hidden="true" />}
+              {label}
+            </h3>
+          )}
+          {action}
+        </div>
+      )}
       <div>{children}</div>
     </section>
   );

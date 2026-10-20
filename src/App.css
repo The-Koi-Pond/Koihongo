@@ -858,6 +858,20 @@ textarea {
   margin-bottom: 4px;
 }
 
+.audio-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 12px;
+  border-radius: 999px;
+  font-size: 0.8rem;
+}
+
+.audio-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
 .field-head h3 {
   display: flex;
   align-items: center;
