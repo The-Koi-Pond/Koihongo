@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { autoBackupIfDue } from "./backup.ts";
 import { migrate } from "./db/migrations.ts";
 import { tauriDb } from "./db/tauriDb.ts";
 import { ComingSoon } from "./screens/ComingSoon.tsx";
@@ -6,15 +7,20 @@ import { Dictionary } from "./screens/Dictionary.tsx";
 import { Lessons } from "./screens/Lessons.tsx";
 import { Library } from "./screens/Library.tsx";
 import { Reviews } from "./screens/Reviews.tsx";
+import { Settings } from "./screens/Settings.tsx";
 import { Sources } from "./screens/Sources.tsx";
 import { Today, type StudyOrder } from "./screens/Today.tsx";
 import { todaySummary, type TodaySummary } from "./srs/progress.ts";
 import { NavBar, type Screen } from "./ui/NavBar.tsx";
 import "./App.css";
 
-// Shared so React's double-run of effects in dev can't migrate twice at once.
+// Shared so React's double-run of effects in dev can't migrate (or back up) twice at once.
 let dbReady: Promise<void> | undefined;
-const openDb = () => (dbReady ??= migrate(tauriDb));
+const openDb = () =>
+  (dbReady ??= migrate(tauriDb).then(() => {
+    // In the background; a failure shows up as a missing backup in Settings, not a broken app.
+    autoBackupIfDue().catch((e) => console.warn("Automatic backup failed:", e));
+  }));
 
 const SESSIONS: Screen[] = ["lessons", "reviews", "quick-reviews"];
 /** Screens that use the full width (item pages, the library grid). */
@@ -84,18 +90,7 @@ function App() {
         ) : screen === "grammar" || screen === "reading" ? (
           <ComingSoon section={screen} />
         ) : screen === "settings" ? (
-          <ComingSoon
-            section="settings"
-            extra={
-              <section className="card row space-between">
-                <div>
-                  <h2>Sources &amp; licences</h2>
-                  <p className="muted">Credits for the dictionary, kanji and sentence data.</p>
-                </div>
-                <button onClick={() => setScreen("sources")}>Open</button>
-              </section>
-            }
-          />
+          <Settings onOpenSources={() => setScreen("sources")} />
         ) : screen === "sources" ? (
           <Sources onExit={() => setScreen("settings")} />
         ) : (

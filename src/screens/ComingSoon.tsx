@@ -1,6 +1,6 @@
 // Placeholder pages for planned sections (see docs/04-roadmap.md).
 
-export type PlannedSection = "grammar" | "reading" | "settings";
+export type PlannedSection = "grammar" | "reading";
 
 const PLANS: Record<PlannedSection, { ja: string; en: string; phase: string; intro: string; planned: string[] }> = {
   grammar: {
@@ -27,21 +27,9 @@ const PLANS: Record<PlannedSection, { ja: string; en: string; phase: string; int
       "Maybe: AI-written graded readings at your level",
     ],
   },
-  settings: {
-    ja: "設定",
-    en: "Settings",
-    phase: "Phase 1",
-    intro: "Pacing and housekeeping.",
-    planned: [
-      "Lessons per day and review backlog limit",
-      "Backup and restore your progress",
-      "Catch-up mode after a break",
-      "AI model choice per feature",
-    ],
-  },
 };
 
-export function ComingSoon({ section, extra }: { section: PlannedSection; extra?: React.ReactNode }) {
+export function ComingSoon({ section }: { section: PlannedSection }) {
   const plan = PLANS[section];
   return (
     <>
@@ -58,7 +46,6 @@ export function ComingSoon({ section, extra }: { section: PlannedSection; extra?
           ))}
         </ul>
       </section>
-      {extra}
     </>
   );
 }

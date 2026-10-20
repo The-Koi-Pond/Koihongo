@@ -2,7 +2,7 @@
 
 import type { Db, Statement } from "../db/db.ts";
 import { newCard, PASS_STABILITY_DAYS, retrievability, review, type CardRow, type CardType } from "./scheduler.ts";
-import { DAY_STARTS_AT_HOUR, KANA_PER_DAY, LESSON_WINDOW, NEW_PER_DAY, PAUSE_LESSONS_AT_DUE } from "./settings.ts";
+import { DEFAULT_PACING, LESSON_WINDOW, loadPacing, type Pacing } from "./settings.ts";
 
 export type ItemKind = "kana" | "component" | "kanji" | "word";
 
@@ -20,17 +20,22 @@ export function cardTypesFor(kind: ItemKind): CardType[] {
   return kind === "component" ? ["meaning"] : ["meaning", "reading"];
 }
 
-/** Start of the current study day (local time, 4 am rollover). */
-export function studyDayStart(now: number): number {
+/** Start of the current study day (local time, rolling over at `startHour`, 4 am by default). */
+export function studyDayStart(now: number, startHour = DEFAULT_PACING.dayStartsAtHour): number {
   const d = new Date(now);
-  if (d.getHours() < DAY_STARTS_AT_HOUR) d.setDate(d.getDate() - 1);
-  d.setHours(DAY_STARTS_AT_HOUR, 0, 0, 0);
+  if (d.getHours() < startHour) d.setDate(d.getDate() - 1);
+  d.setHours(startHour, 0, 0, 0);
   return d.getTime();
 }
 
-/** How many more lessons today: fewer as due reviews pile up, none at PAUSE_LESSONS_AT_DUE. */
-export function lessonAllowance(dueReviews: number, lessonsDoneToday: number, perDay = NEW_PER_DAY): number {
-  const scale = Math.min(1, Math.max(0, 1 - dueReviews / PAUSE_LESSONS_AT_DUE));
+/** How many more lessons today: fewer as due reviews pile up, none at `pauseAtDue`. */
+export function lessonAllowance(
+  dueReviews: number,
+  lessonsDoneToday: number,
+  perDay = DEFAULT_PACING.newPerDay,
+  pauseAtDue = DEFAULT_PACING.pauseLessonsAtDue,
+): number {
+  const scale = Math.min(1, Math.max(0, 1 - dueReviews / pauseAtDue));
   return Math.max(0, Math.floor(perDay * scale) - lessonsDoneToday);
 }
 
@@ -123,9 +128,13 @@ export type TodaySummary = {
   lessonsWaiting: number;
   /** When the next not-yet-due review comes up, or null if none are scheduled. */
   nextReviewAt: number | null;
+  /** Your pacing settings, as used for this summary. */
+  pacing: Pacing;
 };
 
 export async function todaySummary(db: Db, now: number): Promise<TodaySummary> {
+  const pacing = await loadPacing(db);
+  const dayStart = studyDayStart(now, pacing.dayStartsAtHour);
   const [counts] = await db.all<{ due: number; next_day: number; kana_today: number; main_today: number; next_due: number | null }>(
     `SELECT
        (SELECT count(*) FROM srs_cards WHERE due <= ?) AS due,
@@ -133,7 +142,7 @@ export async function todaySummary(db: Db, now: number): Promise<TodaySummary> {
        (SELECT count(*) FROM srs_cards WHERE due > ? AND due <= ?) AS next_day,
        (SELECT count(DISTINCT item_key) FROM srs_cards WHERE started_at >= ? AND item_key LIKE 'kana:%') AS kana_today,
        (SELECT count(DISTINCT item_key) FROM srs_cards WHERE started_at >= ? AND item_key NOT LIKE 'kana:%') AS main_today`,
-    [now, now, now, now + DAY_MS, studyDayStart(now), studyDayStart(now)],
+    [now, now, now, now + DAY_MS, dayStart, dayStart],
   );
   const unlocked = await availableLessons(db);
   // Kana first, so a lesson round doesn't mix a kana row with kanji.
@@ -141,8 +150,8 @@ export async function todaySummary(db: Db, now: number): Promise<TodaySummary> {
     const all = unlocked.filter((l) => l.track === track);
     return { lessons: all.slice(0, allowed), waiting: Math.max(0, all.length - allowed) };
   };
-  const kana = pick("kana", lessonAllowance(counts.due, counts.kana_today, KANA_PER_DAY));
-  const main = pick("main", lessonAllowance(counts.due, counts.main_today, NEW_PER_DAY));
+  const kana = pick("kana", lessonAllowance(counts.due, counts.kana_today, pacing.kanaPerDay, pacing.pauseLessonsAtDue));
+  const main = pick("main", lessonAllowance(counts.due, counts.main_today, pacing.newPerDay, pacing.pauseLessonsAtDue));
   return {
     reviewsDue: counts.due,
     reviewsNext24h: counts.next_day,
@@ -150,6 +159,7 @@ export async function todaySummary(db: Db, now: number): Promise<TodaySummary> {
     lessons: [...kana.lessons, ...main.lessons],
     lessonsWaiting: kana.waiting + main.waiting,
     nextReviewAt: counts.next_due,
+    pacing,
   };
 }
 

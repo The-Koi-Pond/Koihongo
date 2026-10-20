@@ -1,4 +1,5 @@
 mod ai;
+mod backup;
 mod db;
 
 use std::sync::Mutex;
@@ -17,7 +18,16 @@ pub fn run() {
             app.manage(db::Db(Mutex::new(conn)));
             Ok(())
         })
-        .invoke_handler(tauri::generate_handler![db::db_query, db::db_batch, ai::ai_complete])
+        .invoke_handler(tauri::generate_handler![
+            db::db_query,
+            db::db_batch,
+            ai::ai_complete,
+            backup::backup_create,
+            backup::backup_list,
+            backup::backup_prune,
+            backup::backup_restore,
+            backup::backup_open_folder
+        ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
 }
