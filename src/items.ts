@@ -55,7 +55,11 @@ export type WordDetails = Common & {
   otherForms: string[];
   senses: { pos: string[]; glosses: string[] }[];
   kanji: { character: string; meaning: string }[];
-  sentences: { japanese: string; english: string }[];
+  /**
+   * The examples you can read best first. form: how the word is written in it;
+   * newWords: words in it you haven't started (0 = you know them all).
+   */
+  sentences: { japanese: string; english: string; form: string; newWords: number }[];
 };
 
 export type ItemDetails = KanaDetails | ComponentDetails | KanjiDetails | WordDetails;
@@ -184,9 +188,16 @@ export async function getItemDetails(db: Db, itemKey: string): Promise<ItemDetai
      WHERE wk.word_id = ? ORDER BY instr(?, k.character)`,
     [id, w.written],
   );
-  const sentences = await db.all<{ japanese: string; english: string }>(
-    `SELECT s.japanese, s.english FROM content.word_sentences ws JOIN content.sentences s ON s.id = ws.sentence_id
-     WHERE ws.word_id = ? ORDER BY length(s.japanese) LIMIT 3`,
+  // Fewest words you haven't started (other than this one), then checked examples, then the shortest.
+  const sentences = await db.all<{ japanese: string; english: string; form: string; newWords: number }>(
+    `SELECT s.japanese, s.english, ws.form,
+       s.unlisted + (SELECT count(*) FROM json_each(s.kanji_words) j
+                     WHERE j.value != ws.word_id
+                       AND NOT EXISTS (SELECT 1 FROM srs_cards c WHERE c.item_key = 'word:' || j.value)) AS newWords
+     FROM content.word_sentences ws JOIN content.sentences s ON s.id = ws.sentence_id
+     WHERE ws.word_id = ?
+     ORDER BY newWords, ws.checked DESC, length(s.japanese), s.id
+     LIMIT 3`,
     [id],
   );
   return {

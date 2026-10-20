@@ -40,12 +40,12 @@ We can't ship WaniKani, Bunpro or Anki-deck content. These open datasets cover m
 | Dictionary: words, readings, meanings | **JMdict** (EDRDG) | CC BY-SA 4.0 |
 | Kanji components | **KRADFILE / RADKFILE** (EDRDG) | EDRDG license (similar terms) |
 | Stroke order | **KanjiVG** | CC BY-SA 3.0 |
-| Example sentences (Japanese + English) | **Tatoeba** | CC BY 2.0 FR (some sentences CC0) |
+| Example sentences (Japanese + English) | **Tatoeba**, as the Tanaka Corpus with EDRDG's word index (`examples.utf`) | CC BY 2.0 FR (some sentences CC0) |
 | JLPT word/kanji lists | Community lists (no official list exists since 2010) | Varies; check each before use. *Not used yet*: KANJIDIC's pre-2010 JLPT levels are enough for ordering. |
 
 Verified 2026-10-20. How we actually get the data:
 
-- KANJIDIC2, JMdict (with its Tatoeba example sentences) and KRADFILE/RADKFILE come as JSON from **jmdict-simplified** (CC BY-SA 4.0), which converts the EDRDG files every week.
+- KANJIDIC2, JMdict and KRADFILE/RADKFILE come as JSON from **jmdict-simplified** (CC BY-SA 4.0), which converts the EDRDG files every week.
 - Word **frequency** comes from the original JMdict XML (`JMdict_e.gz` from EDRDG), because the JSON conversion drops the frequency tags.
 - **EDRDG terms we must follow:** credit the sources on a separate *About/Sources screen* (not just the launch screen), and keep the data updated regularly. `pnpm content:build` always fetches the latest release, so re-running it now and then covers the second rule.
 
@@ -85,8 +85,8 @@ kanji_components    kanji → component
 words               id, written, reading, other_forms, senses, priority, usually_kana
                     (22,647 common words)
 word_kanji          word → kanji
-sentences           Tatoeba id, japanese, english                (15,302)
-word_sentences      word → sentence
+sentences           id, japanese, english, kanji_words, unlisted (84,824)
+word_sentences      word → sentence, up to 20 per word (the app shows the 3 you can read best)
 path                position, item_key, kind                    (7,869 items)
 path_requirements   item_key → requires_key   (an item unlocks when these are learned)
 mnemonics           item_key, kind, text      (Koihongo's default mnemonics)
