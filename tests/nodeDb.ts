@@ -16,7 +16,11 @@ export function openTestDb(fill: (content: DatabaseSync) => void): Db {
   content.exec(CONTENT_SCHEMA);
   fill(content);
   content.close();
+  return openDbWithContent(contentPath);
+}
 
+/** Opens a fresh in-memory user db with an existing content db attached. */
+export function openDbWithContent(contentPath: string): Db {
   const conn = new DatabaseSync(":memory:");
   conn.prepare("ATTACH DATABASE ? AS content").run(contentPath);
   return {
