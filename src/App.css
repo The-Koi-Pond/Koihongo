@@ -541,6 +541,7 @@ textarea {
 
 .check-btn {
   flex-shrink: 0;
+  min-width: 7.5em; /* "Check ⏎" and "Next ⏎" take the same space */
   padding: 6px 20px;
   border: 2px solid #fff;
   border-radius: 10px;
@@ -551,8 +552,10 @@ textarea {
   box-shadow: inset 0 2px 0 rgb(255 255 255 / 0.45);
 }
 
+/* Room for two lines (message + links) at all times, so nothing above moves when they appear. */
 .feedback {
-  min-height: 1.6em;
+  min-height: 3.1em;
+  line-height: 1.5;
   text-align: center;
 }
 
@@ -585,20 +588,26 @@ textarea {
 }
 
 .question-details {
-  margin-top: 8px;
+  margin-top: 16px;
 }
 
-.item-view.question-page > .banner {
+/* A grid, like .session: in a plain block the banner's height isn't definite,
+   and the character's container-query size (cqh) would resolve to 0. */
+.question-page {
+  display: grid;
+}
+
+.item-view.question-main > .banner {
   min-height: 320px; /* the character stays readable while details are open */
 }
 
 /* No facts row under the character here, so it can use more of the height. */
-.question-page .banner-glyph {
+.question-main .banner-glyph {
   font-size: clamp(2.5rem, min(calc((100cqh - 150px) / 1.1), calc(36cqw / var(--chars, 1))), 18rem);
 }
 
 @media (max-height: 580px) {
-  .item-view.question-page > .banner {
+  .item-view.question-main > .banner {
     min-height: 230px;
   }
 }
