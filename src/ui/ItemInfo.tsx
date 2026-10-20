@@ -152,14 +152,17 @@ export function ItemInfo({ item, onChange }: { item: ItemDetails; onChange: () =
 function SoundsLike({ romaji, accept }: { romaji: string; accept: string[] }) {
   const hint = soundHint(romaji);
   return (
-    <Field action={<AudioPlaceholder />}>
-      {hint.asIn && (
-        <p className="as-in">
-          <span className="muted small">as in</span> {hint.asIn[0]}
-          <mark>{hint.asIn[1]}</mark>
-          {hint.asIn[2]}
-        </p>
-      )}
+    <Field>
+      <div className="as-in-row">
+        <AudioPlaceholder />
+        {hint.asIn && (
+          <p className="as-in">
+            <span className="muted small">as in</span> {hint.asIn[0]}
+            <mark>{hint.asIn[1]}</mark>
+            {hint.asIn[2]}
+          </p>
+        )}
+      </div>
       {hint.note && <p className="small">{hint.note}</p>}
       {accept.length > 0 && <p className="muted small">Also accepted: {accept.join(", ")}</p>}
     </Field>

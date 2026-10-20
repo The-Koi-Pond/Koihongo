@@ -944,9 +944,16 @@ textarea {
 }
 
 /* Kana cards */
+.as-in-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 4px;
+}
+
 .as-in {
   font-size: 1.4rem;
-  margin: 0 0 4px;
+  margin: 0;
 }
 
 .as-in mark {
