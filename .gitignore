@@ -22,3 +22,7 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# Downloaded datasets and the generated content database (pnpm content:build)
+data/raw/
+src-tauri/resources/content.db*

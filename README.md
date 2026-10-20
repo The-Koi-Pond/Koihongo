@@ -2,7 +2,7 @@
 
 A personal, all-in-one Windows desktop app for learning Japanese. It takes the best methods from existing tools (WaniKani, Anki, Bunpro) and links kanji, vocabulary, grammar and reading together in one place. Where it helps, it can call AI models (for example, to rework a kanji mnemonic you don't like).
 
-Status: **Phase 0 done**: the empty app skeleton runs. Next up is Phase 1 (kanji core).
+Status: **Phase 1 in progress**. The content database (kanji, words, sentences, learning path) builds. Next: your progress database and the review screens.
 
 ## Running it
 
@@ -10,10 +10,14 @@ In a terminal, from this folder:
 
 ```
 pnpm install
+pnpm content:build
 pnpm tauri dev
 ```
 
-The first run compiles the Rust side and takes a minute or two; later runs are fast. While it's running, edits to files in `src/` update the window live.
+- `pnpm content:build` downloads the open datasets (~50 MB, cached in `data/raw/`) and builds `src-tauri/resources/content.db`. It takes about 10 seconds. Re-run it now and then to pick up dictionary updates; add `--refresh` to force fresh downloads.
+- `pnpm tauri dev` starts the app. The first run compiles the Rust side and takes a minute or two; later runs are fast. Edits to files in `src/` update the window live.
+
+Checks: `pnpm test` (unit tests) and `pnpm typecheck` (TypeScript errors).
 
 ## Documents
 
