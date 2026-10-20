@@ -1,6 +1,6 @@
 // AI prompts, kept in one place so they're easy to read and tune.
 
-import type { ItemDetails } from "../items.ts";
+import type { ItemDetails, SentenceWord } from "../items.ts";
 
 /** Who the AI is talking to. Edit freely; it shapes the style of every mnemonic. */
 export const LEARNER_PROFILE =
@@ -91,4 +91,39 @@ export function extractMnemonics(reply: string): string[] {
     .split("\n")
     .map((line) => /^\s*(?:\d+[.)]\s*)?(?:\*\*)?mnemonic(?:\*\*)?\s*:\s*(?:\*\*)?\s*(.+?)\s*$/i.exec(line)?.[1])
     .filter((m): m is string => Boolean(m));
+}
+
+export type SentenceToExplain = {
+  japanese: string;
+  english: string;
+  /** The word whose page the sentence is on. */
+  word: { written: string; reading: string; meaning: string };
+};
+
+export const EXPLAIN_OPENER = "Please break this sentence down for me.";
+
+/** "Explain this sentence": readings come from our dictionary, so the AI only has to explain. */
+export function explainSystemPrompt(sentence: SentenceToExplain, words: SentenceWord[]): string {
+  const facts = words.map(
+    (w) => `- ${w.written} (${w.reading}): ${w.meaning}. ${w.started ? "The learner has studied this word." : "New to the learner."}`,
+  );
+  return `You explain Japanese sentences to a beginner inside Koihongo, a study app.
+
+About the learner: ${LEARNER_PROFILE} They can read hiragana and katakana, and know very little grammar yet.
+
+Sentence: ${sentence.japanese}
+English translation (from a volunteer-made corpus; usually right, sometimes loose): ${sentence.english}
+The learner is studying the word ${sentence.word.written} (${sentence.word.reading}): ${sentence.word.meaning}.
+${facts.length > 0 ? `Dictionary facts for the words written with kanji in it (use these readings and meanings; if one appears conjugated, say so):\n${facts.join("\n")}` : ""}
+
+Format your first answer like this, in plain text (no markdown, no bold, no headings with #):
+1. The whole sentence in kana, then the same in romaji on the next line.
+2. A blank line, then the sentence piece by piece, one piece per line: "piece (reading) – what it means and what it does here". Include particles, and split conjugated forms into their parts (e.g. 食べたくない = 食べ (taberu) + たい "want to" + ない "not").
+3. A blank line, then at most 3 short grammar notes, only about things in this sentence. Name each one plainly (e.g. "〜たい = want to").
+4. A blank line, then "Translation: " and a natural English translation. If the given one is loose, say how in a few words.
+
+Rules:
+- Use the dictionary facts above for readings. For anything else, if you aren't sure of a reading, say so rather than guess.
+- Explain any grammar word you use (particle, conjugation, polite form) in plain words the first time.
+- Keep it compact. For follow-up questions, answer briefly and directly, in plain text.`;
 }

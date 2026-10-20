@@ -59,7 +59,7 @@ export type WordDetails = Common & {
    * The examples you can read best first. form: how the word is written in it;
    * newWords: words in it you haven't started (0 = you know them all).
    */
-  sentences: { japanese: string; english: string; form: string; newWords: number }[];
+  sentences: { id: string; japanese: string; english: string; form: string; newWords: number }[];
 };
 
 export type ItemDetails = KanaDetails | ComponentDetails | KanjiDetails | WordDetails;
@@ -189,8 +189,8 @@ export async function getItemDetails(db: Db, itemKey: string): Promise<ItemDetai
     [id, w.written],
   );
   // Fewest words you haven't started (other than this one), then checked examples, then the shortest.
-  const sentences = await db.all<{ japanese: string; english: string; form: string; newWords: number }>(
-    `SELECT s.japanese, s.english, ws.form,
+  const sentences = await db.all<{ id: string; japanese: string; english: string; form: string; newWords: number }>(
+    `SELECT s.id, s.japanese, s.english, ws.form,
        s.unlisted + (SELECT count(*) FROM json_each(s.kanji_words) j
                      WHERE j.value != ws.word_id
                        AND NOT EXISTS (SELECT 1 FROM srs_cards c WHERE c.item_key = 'word:' || j.value)) AS newWords
@@ -210,6 +210,27 @@ export async function getItemDetails(db: Db, itemKey: string): Promise<ItemDetai
     kanji: kanji.map((k) => ({ character: k.character, meaning: first(k.meanings) })),
     sentences,
   };
+}
+
+export type SentenceWord = { written: string; reading: string; meaning: string; started: boolean };
+
+/** The dictionary words (with kanji) in an example sentence, and whether you've started each. */
+export async function sentenceWords(db: Db, sentenceId: string): Promise<SentenceWord[]> {
+  const rows = await db.all<{ written: string; reading: string; senses: string; started: number }>(
+    `SELECT w.written, w.reading, w.senses,
+       EXISTS (SELECT 1 FROM srs_cards c WHERE c.item_key = 'word:' || w.id) AS started
+     FROM content.sentences s, json_each(s.kanji_words) j
+     JOIN content.words w ON w.id = j.value
+     WHERE s.id = ?
+     ORDER BY j.key`,
+    [sentenceId],
+  );
+  return rows.map((r) => ({
+    written: r.written,
+    reading: r.reading,
+    meaning: first<{ glosses: string[] }>(r.senses).glosses.slice(0, 3).join("; "),
+    started: r.started === 1,
+  }));
 }
 
 const KANA_ONLY = /^[\p{Script=Hiragana}\p{Script=Katakana}ー]+$/u;

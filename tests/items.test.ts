@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 import { migrate } from "../src/db/migrations.ts";
-import { acceptedAnswers, addSynonym, getItemDetails, removeSynonym, saveNote } from "../src/items.ts";
+import { acceptedAnswers, addSynonym, getItemDetails, removeSynonym, saveNote, sentenceWords } from "../src/items.ts";
 import { openTestDb } from "./nodeDb.ts";
 
 async function freshDb() {
@@ -47,7 +47,7 @@ test("word details include kanji, sentences, and kana alternatives as readings",
   const d = await getItemDetails(await freshDb(), "word:1");
   if (d.kind !== "word") return assert.fail("not a word");
   assert.deepEqual(d.kanji, [{ character: "休", meaning: "rest" }]);
-  assert.deepEqual(d.sentences, [{ japanese: "休みが欲しい。", english: "I want a break.", form: "休み", newWords: 0 }]);
+  assert.deepEqual(d.sentences, [{ japanese: "休みが欲しい。", id: "9", english: "I want a break.", form: "休み", newWords: 0 }]);
   assert.deepEqual(acceptedAnswers(d), { meanings: ["rest", "break", "holiday"], readings: ["やすみ", "やすみ", "ヤスミ"] });
 });
 
@@ -110,4 +110,9 @@ test("example sentences you can read come first, and change as you learn words",
   ]);
   // Once 今日 is started, the shorter sentence with it is just as readable.
   assert.deepEqual(await order(), ["今日は休み。:0", "休みがほしいです。:0", "休みだ。:1"]);
+});
+
+test("a sentence's words come with readings, meanings and whether you've started them", async () => {
+  const db = await freshDb();
+  assert.deepEqual(await sentenceWords(db, "9"), [{ written: "休み", reading: "やすみ", meaning: "rest; break", started: false }]);
 });

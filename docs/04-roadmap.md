@@ -41,7 +41,7 @@ Each phase ends with something you can **use daily**. Don't start the next phase
 
 - ✅ Dictionary search (English, kana, romaji, kanji) over all 22,647 common JMdict words and 2,974 kanji, on your path or not (`search` table in content.db, `src/dictionary.ts`).
 - ✅ Example sentences, preferring words you know: up to 20 per word from the Tanaka Corpus; a word page shows the 3 with the fewest words you haven't started. 15,755 words have some; 399 path words (mostly newspaper words like 県立) still have none.
-- "Explain this sentence" AI helper.
+- ✅ "Explain this sentence" AI helper: an Explain button on each example opens a chat that breaks the sentence down (kana and romaji, piece by piece, grammar notes, translation), using readings from our dictionary; follow-up questions welcome (`explainSystemPrompt` in `src/ai/prompts.ts`).
 
 ## Phase 4: Grammar
 

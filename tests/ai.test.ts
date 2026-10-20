@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 import { formatConversation } from "../src/ai/ai.ts";
-import { describeItem, extractMnemonics, mnemonicOpener, mnemonicSystemPrompt } from "../src/ai/prompts.ts";
+import { describeItem, explainSystemPrompt, extractMnemonics, mnemonicOpener, mnemonicSystemPrompt } from "../src/ai/prompts.ts";
 import type { KanjiDetails } from "../src/items.ts";
 
 const mori: KanjiDetails = {
@@ -63,4 +63,19 @@ test("mnemonic lines are found, even with numbering or bold markers", () => {
     "The FOREST spirit says hi.",
     "lowercase works too",
   ]);
+});
+
+test("the sentence explainer gets the sentence, its word facts and what the learner knows", () => {
+  const prompt = explainSystemPrompt(
+    { japanese: "休みが欲しい。", english: "I want a break.", word: { written: "休み", reading: "やすみ", meaning: "rest" } },
+    [
+      { written: "休み", reading: "やすみ", meaning: "rest; break", started: true },
+      { written: "欲しい", reading: "ほしい", meaning: "wanted; desired", started: false },
+    ],
+  );
+  assert.match(prompt, /Sentence: 休みが欲しい。/);
+  assert.match(prompt, /I want a break\./);
+  assert.match(prompt, /- 休み \(やすみ\): rest; break\. The learner has studied this word\./);
+  assert.match(prompt, /- 欲しい \(ほしい\): wanted; desired\. New to the learner\./);
+  assert.match(prompt, /no markdown/);
 });
