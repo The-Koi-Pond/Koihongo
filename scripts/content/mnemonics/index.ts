@@ -2,13 +2,14 @@
 // until they write or pick their own. Keys are path item keys.
 
 import { COMBOS } from "./combos.ts";
+import { COMPONENTS_1 } from "./components-1.ts";
 import { DAKUTEN } from "./dakuten.ts";
 import { HIRAGANA_BASIC } from "./hiragana-basic.ts";
 import { KATAKANA_BASIC } from "./katakana-basic.ts";
 
 export type MnemonicBatch = Record<string, { meaning?: string; reading?: string }>;
 
-const BATCHES: MnemonicBatch[] = [HIRAGANA_BASIC, KATAKANA_BASIC, DAKUTEN, COMBOS];
+const BATCHES: MnemonicBatch[] = [HIRAGANA_BASIC, KATAKANA_BASIC, DAKUTEN, COMBOS, COMPONENTS_1];
 
 /** All batches merged; a key appearing in two batches is a mistake. */
 export function allMnemonics(): MnemonicBatch {
