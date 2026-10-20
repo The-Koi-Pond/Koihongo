@@ -1,5 +1,7 @@
 import type { ItemDetails } from "../items.ts";
+import { ArrowLeftRight } from "lucide-react";
 import { Gloss } from "./Gloss.tsx";
+import { InfoTip } from "./InfoTip.tsx";
 import { ItemInfo } from "./ItemInfo.tsx";
 import { BannerScene } from "./Scene.tsx";
 import { SpeakButton } from "./SpeakButton.tsx";
@@ -43,8 +45,6 @@ function bannerFacts(item: ItemDetails): { kicker: string; badge?: string; prima
       return {
         kicker: `${item.script} · ${GROUP_NAME[item.group]}`,
         badge: item.romaji,
-        primary: item.counterpart ? (item.script === "hiragana" ? "katakana" : "hiragana") : undefined,
-        secondary: item.counterpart ?? undefined,
         speak: item.character,
       };
     case "component":
@@ -75,6 +75,23 @@ function ItemBanner({ item, start }: { item: ItemDetails; start?: React.ReactNod
           <p className="banner-kind">{kicker}</p>
         </div>
         <div className="banner-top-end">
+          {item.kind === "kana" && item.counterpart && (
+            // The same sound in the other script, tucked away until hovered or clicked.
+            <InfoTip
+              label={`Show the ${item.script === "hiragana" ? "katakana" : "hiragana"} version`}
+              icon={ArrowLeftRight}
+              placement="below"
+              align="end"
+              buttonClassName="speak-btn banner-speak"
+            >
+              <span className="counterpart-tip">
+                <span className="muted">{item.script === "hiragana" ? "katakana" : "hiragana"}</span>
+                <span lang="ja" className="counterpart-glyph">
+                  {item.counterpart}
+                </span>
+              </span>
+            </InfoTip>
+          )}
           {speak && <SpeakButton text={speak} className="banner-speak" />}
           {badge && <p className="banner-badge">{badge}</p>}
         </div>

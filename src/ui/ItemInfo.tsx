@@ -1,8 +1,9 @@
-import { BookOpen, Ear, Info, Languages, Lightbulb, List, Pencil, PenLine, Quote, Search, Shapes, Sparkles, Tag, Tags, type LucideIcon, Volume2 } from "lucide-react";
+import { BookOpen, Ear, Languages, Lightbulb, List, Pencil, PenLine, Quote, Search, Shapes, Sparkles, Tag, Tags, type LucideIcon, Volume2 } from "lucide-react";
 import { useState } from "react";
 import { tauriDb } from "../db/tauriDb.ts";
 import { addSynonym, removeSynonym, saveNote, type ItemDetails, type Note, type NoteKind } from "../items.ts";
 import { Gloss } from "./Gloss.tsx";
+import { InfoTip } from "./InfoTip.tsx";
 import { MnemonicWorkshop } from "./MnemonicWorkshop.tsx";
 import { soundHint } from "../kanaSounds.ts";
 import { ItemHover, JapaneseText } from "./Popover.tsx";
@@ -175,23 +176,9 @@ function SoundsLike({ romaji, accept }: { romaji: string; accept: string[] }) {
             </>
           )}
         </p>
-        {tip && <InfoTip text={tip} />}
+        {tip && <InfoTip label={tip}>{tip}</InfoTip>}
       </div>
     </Field>
-  );
-}
-
-/** A small ⓘ that shows `text` while hovered or focused. */
-function InfoTip({ text }: { text: string }) {
-  return (
-    <span className="info-tip">
-      <button type="button" className="info-tip-btn" aria-label={text}>
-        <Info size={16} strokeWidth={2} aria-hidden="true" />
-      </button>
-      <span className="info-tip-bubble" role="tooltip">
-        {text}
-      </span>
-    </span>
   );
 }
 

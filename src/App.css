@@ -1366,12 +1366,13 @@ textarea {
   color: var(--text);
 }
 
-/* Opens upwards: the sound card sits low on the page. */
+/* Opens upwards by default (the sound card sits low on the page). */
 .info-tip-bubble {
   position: absolute;
   bottom: calc(100% + 8px);
   left: 50%;
   translate: -50% 0;
+  color: var(--text);
   z-index: 60;
   width: max-content;
   max-width: 300px;
@@ -1387,6 +1388,30 @@ textarea {
   visibility: hidden;
   transition: opacity 120ms;
   pointer-events: none;
+}
+
+.info-tip.below .info-tip-bubble {
+  top: calc(100% + 8px);
+  bottom: auto;
+}
+
+.info-tip.end .info-tip-bubble {
+  left: auto;
+  right: 0;
+  translate: none;
+}
+
+.counterpart-tip {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 0.95rem;
+}
+
+.counterpart-glyph {
+  font-size: 2rem;
+  font-weight: 700;
+  line-height: 1.1;
 }
 
 .info-tip:hover .info-tip-bubble,
