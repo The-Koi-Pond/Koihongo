@@ -35,13 +35,15 @@ export function Today({ summary, go }: { summary?: TodaySummary; go: (screen: Sc
               ? ` · ${summary.lessonsWaiting} more unlocked, waiting until you've cleared some reviews`
               : ` · ${summary.lessonsWaiting} more unlocked, saved for another day (limit: ${NEW_PER_DAY} a day)`)}
         </p>
-        <ul className="lesson-preview">
-          {summary.lessons.map((l) => (
-            <li key={l.item_key} className={l.kind} lang="ja">
-              {l.label}
-            </li>
-          ))}
-        </ul>
+        {summary.lessons.length > 0 && (
+          <ul className="lesson-preview">
+            {summary.lessons.map((l) => (
+              <li key={l.item_key} className={l.kind} lang="ja">
+                {l.label}
+              </li>
+            ))}
+          </ul>
+        )}
         <button className="primary" disabled={summary.lessons.length === 0} onClick={() => go("lessons")}>
           Start lessons
         </button>

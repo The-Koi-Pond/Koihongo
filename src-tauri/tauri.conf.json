@@ -14,7 +14,10 @@
       {
         "title": "Koihongo",
         "width": 1100,
-        "height": 750
+        "height": 750,
+        "minWidth": 720,
+        "minHeight": 500,
+        "decorations": false
       }
     ],
     "security": {
