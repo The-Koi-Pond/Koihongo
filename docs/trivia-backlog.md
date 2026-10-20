@@ -12,3 +12,6 @@ When the feature is built, these move into the content build as curated data, an
 | 様 (kanji) | Media | The honorific 〜様 (〜さま) is the very polite form of 〜さん. You see it on letters and shop customers (お客様), and in anime it marks a character as very respected, or as someone who thinks they are. |
 | ゆ (kana) | Trip | Public baths (銭湯) and hot springs often hang a curtain with a big ゆ on it. It stands for 湯, hot water, so a ゆ curtain means "bath this way". |
 | 金魚 (word) | Trip + media | 金魚すくい (goldfish scooping) is a classic summer-festival game: you try to catch a goldfish with a paper scoop before the paper tears, and keep the fish if you succeed. It shows up in almost every anime festival episode. |
+| 鹿 (kanji) | Trip | In Nara Park, hundreds of deer (鹿, しか) roam free, and vendors sell 鹿せんべい (deer crackers) to feed them. Many of the deer bob their heads when you bow to them. |
+| 鬼 (kanji) | Trip + media | On 節分 (Setsubun, early February), people throw roasted soybeans while shouting 鬼は外！福は内！ ("Demons out! Luck in!"). 鬼 (oni) are the horned demons you see all over anime and folklore. |
+| 青 (kanji) | Trip | 青 covers more than English "blue": the green traffic light is called 青信号 (blue signal), and fresh green vegetables can be 青い too. |
