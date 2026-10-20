@@ -12,17 +12,23 @@ export type Pacing = {
    * so a missed day can't snowball into an impossible backlog.
    */
   pauseLessonsAtDue: number;
+  /**
+   * Catch-up: when more reviews are due than this (after a break, say), you get
+   * this many a day, most at risk first, instead of the whole pile at once.
+   */
+  catchUpPerDay: number;
   /** A study day runs from this hour to the same hour next day, so a late-night session counts as "today". */
   dayStartsAtHour: number;
 };
 
-export const DEFAULT_PACING: Pacing = { newPerDay: 10, kanaPerDay: 20, pauseLessonsAtDue: 100, dayStartsAtHour: 4 };
+export const DEFAULT_PACING: Pacing = { newPerDay: 10, kanaPerDay: 20, pauseLessonsAtDue: 100, catchUpPerDay: 150, dayStartsAtHour: 4 };
 
 /** Allowed range for each number (the Settings screen and savePacing both use these). */
 export const PACING_LIMITS: Record<keyof Pacing, { min: number; max: number }> = {
   newPerDay: { min: 0, max: 50 },
   kanaPerDay: { min: 0, max: 60 },
   pauseLessonsAtDue: { min: 20, max: 1000 },
+  catchUpPerDay: { min: 30, max: 2000 },
   dayStartsAtHour: { min: 0, max: 12 },
 };
 

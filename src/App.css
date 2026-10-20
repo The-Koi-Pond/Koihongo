@@ -1881,6 +1881,17 @@ textarea {
 .chip-link.kanji { background: var(--kanji); }
 .chip-link.word { background: var(--word); }
 
+/* Catch-up note on Today's reviews tile */
+.catch-up {
+  margin: 4px 0 2px;
+  color: var(--word);
+}
+
+.catch-up .link {
+  padding: 0;
+  color: var(--accent);
+}
+
 /* Settings */
 
 .settings {
@@ -2308,8 +2319,10 @@ select {
   box-shadow: none;
 }
 
+/* Rounded font: pixel digits misread (150 looks like 180). */
 .start-detail {
-  font-weight: 500;
+  font-family: "M PLUS Rounded 1c", sans-serif;
+  font-weight: 700;
   opacity: 0.8;
 }
 

@@ -27,7 +27,8 @@ export type Screen =
   | "sources"
   | "lessons"
   | "reviews"
-  | "quick-reviews";
+  | "quick-reviews"
+  | "extra-reviews";
 
 const SECTIONS: { screen: Screen; icon: LucideIcon; ja: string; en: string; short?: string; soon?: boolean }[] = [
   { screen: "today", icon: House, ja: "今日", en: "Today" },
@@ -86,7 +87,7 @@ export function NavBar({
       <div className="titlebar-space" data-tauri-drag-region />
 
       <div className={`nav-group ${locked ? "locked" : ""}`} data-tauri-drag-region>
-        <CountButton icon={RotateCcw} label="Reviews" count={summary?.reviewsDue} onClick={() => go("reviews")} locked={locked} />
+        <CountButton icon={RotateCcw} label="Reviews" count={summary?.reviewsToday} onClick={() => go("reviews")} locked={locked} />
         <CountButton icon={GraduationCap} label="Lessons" count={summary?.lessons.length} onClick={() => go("lessons")} locked={locked} />
         <button
           className={`icon-btn ${screen === "settings" || screen === "sources" ? "current" : ""}`}

@@ -6,6 +6,7 @@ import {
   availableLessons,
   reviewForecast,
   dueCards,
+  catchUpPlan,
   lessonAllowance,
   recordReview,
   startLessons,
@@ -206,7 +207,7 @@ test("forecast buckets upcoming reviews by hour and summary knows the next one",
 test("pacing: defaults until you save your own; invalid numbers are refused", async () => {
   const db = await freshDb();
   assert.deepEqual(await loadPacing(db), DEFAULT_PACING);
-  const mine = { newPerDay: 1, kanaPerDay: 5, pauseLessonsAtDue: 50, dayStartsAtHour: 6 };
+  const mine = { newPerDay: 1, kanaPerDay: 5, pauseLessonsAtDue: 50, catchUpPerDay: 60, dayStartsAtHour: 6 };
   await savePacing(db, mine);
   assert.deepEqual(await loadPacing(db), mine);
   await assert.rejects(savePacing(db, { ...mine, newPerDay: 2.5 }), /newPerDay/);
@@ -224,4 +225,28 @@ test("today summary uses your pacing", async () => {
   assert.deepEqual(keys(s.lessons), ["component:木"]);
   assert.equal(s.lessonsWaiting, 1);
   assert.equal(s.pacing.newPerDay, 1);
+});
+
+test("catch-up: a pile bigger than today's share is spread over days", () => {
+  assert.equal(catchUpPlan(80, 0, 150), null, "a normal day: everything due fits");
+  assert.deepEqual(catchUpPlan(400, 0, 150), { todayLeft: 150, waiting: 250, moreDays: 2 });
+  assert.deepEqual(catchUpPlan(400, 100, 150), { todayLeft: 50, waiting: 350, moreDays: 3 });
+  assert.deepEqual(catchUpPlan(10, 150, 150), { todayLeft: 0, waiting: 10, moreDays: 1 }, "share done: the rest waits");
+});
+
+test("today summary offers only today's catch-up share", async () => {
+  const db = await freshDb();
+  await savePacing(db, { ...DEFAULT_PACING, catchUpPerDay: 30 });
+  // 40 due cards, all overdue (fake items: only the counts matter here).
+  await db.batch(
+    Array.from({ length: 40 }, (_, i) => ({
+      sql: `INSERT INTO srs_cards (item_key, card_type, state, due, stability, difficulty, scheduled_days, learning_steps, reps, lapses, started_at)
+            VALUES (?, 'meaning', 2, ?, 5, 5, 1, 0, 1, 0, 0)`,
+      params: [`kanji:x${i}`, T0 - DAY],
+    })),
+  );
+  const s = await todaySummary(db, T0);
+  assert.equal(s.reviewsDue, 40);
+  assert.equal(s.reviewsToday, 30);
+  assert.deepEqual(s.catchUp, { todayLeft: 30, waiting: 10, moreDays: 1 });
 });
