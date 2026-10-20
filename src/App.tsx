@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { migrate } from "./db/migrations.ts";
 import { tauriDb } from "./db/tauriDb.ts";
 import { ComingSoon } from "./screens/ComingSoon.tsx";
+import { Dictionary } from "./screens/Dictionary.tsx";
 import { Lessons } from "./screens/Lessons.tsx";
 import { Library } from "./screens/Library.tsx";
 import { Reviews } from "./screens/Reviews.tsx";
@@ -17,7 +18,7 @@ const openDb = () => (dbReady ??= migrate(tauriDb));
 
 const SESSIONS: Screen[] = ["lessons", "reviews", "quick-reviews"];
 /** Screens that use the full width (item pages, the library grid). */
-const WIDE: Screen[] = [...SESSIONS, "library", "today"];
+const WIDE: Screen[] = [...SESSIONS, "library", "dictionary", "today"];
 
 function App() {
   const [ready, setReady] = useState(false);
@@ -78,7 +79,9 @@ function App() {
           <Reviews minutes={5} onExit={next} />
         ) : screen === "library" ? (
           <Library />
-        ) : screen === "dictionary" || screen === "grammar" || screen === "reading" ? (
+        ) : screen === "dictionary" ? (
+          <Dictionary />
+        ) : screen === "grammar" || screen === "reading" ? (
           <ComingSoon section={screen} />
         ) : screen === "settings" ? (
           <ComingSoon

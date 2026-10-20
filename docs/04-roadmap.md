@@ -39,7 +39,7 @@ Each phase ends with something you can **use daily**. Don't start the next phase
 
 ## Phase 3: Lookup and sentences
 
-- Dictionary search (English, kana, romaji, kanji).
+- ✅ Dictionary search (English, kana, romaji, kanji) over all 22,647 common JMdict words and 2,974 kanji, on your path or not (`search` table in content.db, `src/dictionary.ts`).
 - Example sentences on every word, preferring words you know.
 - "Explain this sentence" AI helper.
 

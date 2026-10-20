@@ -114,3 +114,15 @@ CREATE TABLE path_requirements (
   requires_key TEXT NOT NULL REFERENCES path(item_key),
   PRIMARY KEY (item_key, requires_key)
 );
+
+-- Dictionary search index (terms from src/searchTerms.ts) over every word and
+-- kanji, on the path or not. rank: how common the item is, lower = more common
+-- (words.priority for words, kanji.freq_rank for kanji, 9999 if unranked).
+CREATE TABLE search (
+  term     TEXT NOT NULL,
+  field    TEXT NOT NULL CHECK (field IN ('form', 'reading', 'meaning', 'meaning_word')),
+  item_key TEXT NOT NULL,
+  weight   INTEGER NOT NULL,
+  rank     INTEGER NOT NULL,
+  PRIMARY KEY (term, field, item_key)
+) WITHOUT ROWID;
