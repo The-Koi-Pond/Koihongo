@@ -847,17 +847,15 @@ textarea {
 .banner-side.left { left: 0; }
 .banner-side.right { right: 0; }
 
-/* Calm water along the bottom edge, below the hero area. */
-.banner-water {
+/* Low ridges along the bottom edge (Scene.tsx), under the hero area. */
+.banner-ridges {
   position: absolute;
   left: 0;
   right: 0;
   bottom: 0;
-  height: 10%;
+  width: 100%;
+  height: min(22%, 110px);
   z-index: 0;
-  background:
-    repeating-linear-gradient(180deg, transparent 0 6px, rgb(255 255 255 / 0.05) 6px 7px),
-    linear-gradient(180deg, rgb(42 44 120 / 0.6), #2a2c78);
 }
 
 .banner-branch {

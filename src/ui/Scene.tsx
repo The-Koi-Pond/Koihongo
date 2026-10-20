@@ -8,14 +8,14 @@
 
 import { useId } from "react";
 
-/** Everything decorative in a banner: stars, both side sceneries, water, blossoms. */
+/** Everything decorative in a banner: stars, both side sceneries, low ridges, blossoms. */
 export function BannerScene() {
   return (
     <>
       <div className="banner-deco banner-stars" aria-hidden="true" />
       <SideScenery side="left" />
       <SideScenery side="right" />
-      <div className="banner-deco banner-water" aria-hidden="true" />
+      <Ridges />
       <BlossomBranch />
     </>
   );
@@ -87,6 +87,21 @@ function SideScenery({ side }: { side: "left" | "right" }) {
           <Sparkle x={222} y={70} size={1} />
         </>
       )}
+    </svg>
+  );
+}
+
+/**
+ * Low ridges across the whole bottom edge, darker toward the front. The front
+ * ridge is the page colour, so the banner melts into the page below. They stay
+ * in the bottom strip, under the hero area.
+ */
+function Ridges() {
+  return (
+    <svg className="banner-deco banner-ridges" viewBox="0 0 400 40" preserveAspectRatio="none" shapeRendering="crispEdges" aria-hidden="true">
+      <polygon points="0,16 40,9 85,15 130,7 175,14 215,11 255,5 300,13 345,8 400,14 400,40 0,40" fill="#3d3893" opacity="0.75"></polygon>
+      <polygon points="0,24 55,18 110,25 160,19 205,24 250,17 300,23 350,18 400,22 400,40 0,40" fill="#302e80"></polygon>
+      <polygon points="0,31 70,27 140,32 200,28 270,33 330,28 400,31 400,40 0,40" fill="var(--bg)"></polygon>
     </svg>
   );
 }
