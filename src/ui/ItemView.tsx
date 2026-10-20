@@ -24,7 +24,7 @@ export function ItemView({
   bannerStart?: React.ReactNode;
 }) {
   return (
-    <div className="item-view">
+    <div className={`item-view ${item.kind}`}>
       <ItemBanner item={item} start={bannerStart} />
       <ItemInfo item={item} onChange={onChange} />
       {below}
