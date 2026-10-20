@@ -118,7 +118,7 @@ export function Library({ onExit }: { onExit: () => void }) {
         <>
           <ul className="tiles">
             {matches.slice(0, shown).map((i) => (
-              <li key={i.item_key}>
+              <li key={i.item_key} style={{ gridColumn: `span ${tileSpan(i)}` }}>
                 <ItemHover itemKey={i.item_key} openOnClick={false}>
                   <button className={`tile ${i.kind} ${i.status}`} onClick={() => setSelected(i.item_key)}>
                     <span className="tile-kind">{KIND_NAME[i.kind]}</span>
@@ -139,6 +139,11 @@ export function Library({ onExit }: { onExit: () => void }) {
       )}
     </>
   );
+}
+
+/** Grid columns a tile takes: words get about two characters per column, so they never need "…". */
+function tileSpan(item: LibraryItem): number {
+  return item.kind === "word" ? Math.min(4, Math.max(1, Math.ceil([...item.label].length / 2))) : 1;
 }
 
 function ItemPage({ itemKey, onOpen, onBack }: { itemKey: string; onOpen: (key: string) => void; onBack: () => void }) {

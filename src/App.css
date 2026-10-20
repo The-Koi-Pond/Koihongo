@@ -553,6 +553,7 @@ footer {
   margin: 0;
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(60px, 1fr));
+  grid-auto-flow: dense; /* later small tiles fill gaps left by wide word tiles */
   gap: 5px;
 }
 
@@ -577,14 +578,13 @@ footer {
   margin: auto 0; /* centred in the space below the band */
   font-size: 2.3rem;
   line-height: 1;
-  white-space: nowrap;
   max-width: 100%;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  /* Never "…": words get wider tiles (see tileSpan), and anything still too long wraps. */
+  overflow-wrap: anywhere;
 }
 
 .tile.word .tile-glyph {
-  font-size: 1.35rem;
+  font-size: 1.6rem;
 }
 
 /* Kind band across the top: shown in every status, so a 日 component, kanji
