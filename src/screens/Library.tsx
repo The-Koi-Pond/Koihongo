@@ -9,6 +9,7 @@ import { ErrorView } from "./Reviews.tsx";
 
 const PAGE = 300;
 const STATUS_NAME: Record<ItemStatus, string> = { locked: "Locked", available: "Ready to learn", learning: "Learning", passed: "Passed" };
+const KIND_NAME: Record<ItemKind, string> = { component: "component", kanji: "kanji", word: "word" };
 const KIND_TABS: { kind: ItemKind | "all"; name: string }[] = [
   { kind: "all", name: "All" },
   { kind: "component", name: "Components" },
@@ -114,10 +115,20 @@ export function Library({ onExit }: { onExit: () => void }) {
           <ul className="tiles">
             {matches.slice(0, shown).map((i) => (
               <li key={i.item_key}>
-                <button className={`tile ${i.kind} ${i.status}`} title={`${i.meaning} · ${STATUS_NAME[i.status]}`} onClick={() => setSelected(i.item_key)}>
+                <button
+                  className={`tile ${i.kind} ${i.status}`}
+                  title={`${KIND_NAME[i.kind]}: ${i.meaning} · ${STATUS_NAME[i.status]}`}
+                  onClick={() => setSelected(i.item_key)}
+                >
+                  <span className="tile-kind">{KIND_NAME[i.kind]}</span>
                   <span className="tile-glyph" lang="ja">
                     {i.label}
                   </span>
+                  {i.reading && (
+                    <span className="tile-reading" lang="ja">
+                      {i.reading}
+                    </span>
+                  )}
                   <span className="tile-meaning">{i.meaning}</span>
                 </button>
               </li>
