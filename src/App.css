@@ -774,16 +774,38 @@ textarea {
   pointer-events: none;
 }
 
-/* The first card floats over the bottom of the banner, frosted. */
+/* The first strip isn't a card: a band fading from the banner into the solid
+   panel below, with its parts as frosted, kind-tinted bubbles on top. */
 .banner + .item-info > .overlap {
   margin-top: -72px;
   position: relative;
   z-index: 2;
-  background: color-mix(in srgb, var(--surface) 70%, transparent);
-  backdrop-filter: blur(14px);
-  border-color: rgb(255 255 255 / 0.12);
-  box-shadow: 0 10px 30px rgb(0 0 0 / 0.25);
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 12px;
+  padding-top: 10px;
+  padding-bottom: 14px;
+  background: linear-gradient(to bottom, transparent, var(--surface) 88%);
+  border: none;
+  border-radius: 0;
 }
+
+.banner + .item-info > .overlap > .field,
+.banner + .item-info > .overlap > .field + .field {
+  min-width: 220px;
+  padding: 10px 18px;
+  border: 1px solid color-mix(in srgb, var(--kind) 35%, transparent);
+  border-radius: 16px;
+  background: color-mix(in srgb, var(--kind) 22%, color-mix(in srgb, var(--surface) 70%, transparent));
+  backdrop-filter: blur(12px);
+  box-shadow: 0 6px 18px rgb(0 0 0 / 0.22);
+}
+
+.item-view.kana { --kind: var(--kana); }
+.item-view.component { --kind: var(--component); }
+.item-view.kanji { --kind: var(--kanji); }
+.item-view.word { --kind: var(--word); }
 
 /* The overlapping strip and the panel under it read as one card. */
 .item-info > .overlap + .split-card {
@@ -947,7 +969,6 @@ textarea {
 .as-in-row {
   display: flex;
   align-items: center;
-  justify-content: flex-end;
   gap: 10px;
   margin-bottom: 4px;
 }

@@ -151,7 +151,6 @@ function SoundsLike({ romaji, accept }: { romaji: string; accept: string[] }) {
   const hint = soundHint(romaji);
   return (
     <Field>
-      {/* Speaker + "as in" sit together at the right, beside the centre divider and the example word. */}
       <div className="as-in-row">
         <AudioPlaceholder />
         {hint.asIn && (
