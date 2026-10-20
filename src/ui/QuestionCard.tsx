@@ -62,7 +62,8 @@ export function QuestionCard({
           ? checkMeaning(answer, accepted.meanings, accepted.readings)
           : checkReading(answer, accepted.readings);
     setVerdict(v);
-    if (v.result === "wrong") setShowInfo(true);
+    // Open on the next frames, so the panel first renders closed and then animates open.
+    if (v.result === "wrong") requestAnimationFrame(() => requestAnimationFrame(() => setShowInfo(true)));
   }
 
   async function acceptMine() {
@@ -79,9 +80,9 @@ export function QuestionCard({
         : accepted.readings.join("、");
 
   return (
-    // One window-high column. Opening details animates the banner down to a compact
-    // height so banner, answer and details all fit (details scroll inside if needed).
-    <div className={`item-view question-page ${item.kind} ${graded && showInfo ? "details-open" : ""}`}>
+    // One window-high column: banner on top takes whatever the answer dock and the
+    // details (anchored to the bottom, sized to their content) leave over.
+    <div className={`item-view question-page ${item.kind}`}>
       <header className={`banner bleed ${item.kind}`}>
         <BannerScene />
         <div className="banner-top">
@@ -155,9 +156,11 @@ export function QuestionCard({
         </div>
       </section>
 
-      {graded && showInfo && (
-        <div className="question-details">
-          <ItemInfo item={item} onChange={onReload} />
+      {graded && (
+        <div className={`question-details ${showInfo ? "open" : ""}`} aria-hidden={!showInfo}>
+          <div className="question-details-inner">
+            <ItemInfo item={item} onChange={onReload} />
+          </div>
         </div>
       )}
     </div>

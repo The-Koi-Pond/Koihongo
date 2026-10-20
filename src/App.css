@@ -587,10 +587,15 @@ textarea {
   color: var(--text);
 }
 
-/* Question page (QuestionCard.tsx): exactly one window high. The banner takes
-   the leftover space; with details open it eases down to a compact height and the
-   details panel fills the rest, scrolling inside if it must. A definite height also
-   keeps the character's container-query size (cqh) working. */
+/* Question page (QuestionCard.tsx): exactly one window high, so nothing scrolls.
+   The banner takes the leftover space (down to a compact minimum); the details panel
+   sits at the bottom, as tall as its content, and scrolls inside only if it must.
+   A definite height also keeps the character's container-query size (cqh) working. */
+/* Details anchor to the bottom, so only a small gap is kept below them. */
+.app:has(.question-page) {
+  --page-pad-bottom: 12px;
+}
+
 .item-view.question-page {
   height: calc(100vh - var(--titlebar-h) - 28px - var(--page-pad-bottom));
   min-height: 0;
@@ -598,12 +603,7 @@ textarea {
 
 .item-view.question-page > .banner {
   flex: 1 1 0;
-  min-height: 0;
-  transition: flex-grow 380ms cubic-bezier(0.22, 1, 0.36, 1), flex-basis 380ms cubic-bezier(0.22, 1, 0.36, 1);
-}
-
-.item-view.question-page.details-open > .banner {
-  flex: 0 0 clamp(190px, 30vh, 260px);
+  min-height: clamp(170px, 26vh, 240px);
 }
 
 /* No facts row under the character here, so it can use more of the height. */
@@ -611,29 +611,44 @@ textarea {
   font-size: clamp(2.5rem, min(calc((100cqh - 150px) / 1.1), calc(36cqw / var(--chars, 1))), 18rem);
 }
 
+/* Opens by growing its one grid row from 0fr to 1fr (its content height), which
+   the banner gives way to smoothly. */
 .question-details {
-  flex: 1 1 0;
+  flex: 0 1 auto;
+  min-height: 0;
+  display: grid;
+  grid-template-rows: 0fr;
+  transition: grid-template-rows 380ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.question-details.open {
+  grid-template-rows: 1fr;
+}
+
+.question-details-inner {
   min-height: 0;
   overflow-y: auto;
   scrollbar-width: thin; /* not inherited from html */
-  padding: 4px 2px 2px;
-  animation: details-in 380ms cubic-bezier(0.22, 1, 0.36, 1);
+  padding: 12px 2px 2px;
+  opacity: 0;
+  transform: translateY(16px);
+  transition: opacity 300ms ease-out, transform 380ms cubic-bezier(0.22, 1, 0.36, 1);
 }
 
-@keyframes details-in {
-  from {
-    opacity: 0;
-    transform: translateY(24px);
-  }
+.question-details.open .question-details-inner {
+  opacity: 1;
+  transform: none;
+}
+
+.question-details:not(.open) .question-details-inner {
+  visibility: hidden; /* keeps hidden fields out of the tab order */
+  transition: opacity 200ms ease-in, transform 380ms, visibility 0s 380ms;
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .item-view.question-page > .banner {
+  .question-details,
+  .question-details-inner {
     transition: none;
-  }
-
-  .question-details {
-    animation: none;
   }
 }
 
