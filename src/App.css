@@ -104,13 +104,6 @@ p {
   padding: 20px;
 }
 
-.card.done {
-  text-align: center;
-  display: grid;
-  gap: 8px;
-  justify-items: center;
-}
-
 .big {
   margin: 4px 0 0;
   font-size: 2.5rem;
@@ -458,22 +451,6 @@ textarea {
   gap: 16px;
 }
 
-.session-bar {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-}
-
-.session-bar progress {
-  flex: 1;
-  height: 8px;
-  accent-color: var(--accent);
-}
-
-.session-bar .link {
-  margin-left: auto;
-}
-
 .glyph {
   color: var(--on-kind);
   border-radius: 14px;
@@ -483,56 +460,116 @@ textarea {
   padding: 24px 16px;
 }
 
-.question {
+/* Question page (QuestionCard.tsx): the item in the banner, the answer dock
+   overlapping the banner's fade. Reading questions are cyan, meaning questions
+   pink, so the two kinds are told apart at a glance (with the label, not by colour alone). */
+.answer-dock {
+  --ask: #ff9bd6;
+  position: relative;
+  z-index: 2;
+  margin-top: -76px;
+  padding: 0 16px;
   display: grid;
-  gap: 12px;
+  justify-items: center;
+  gap: 6px;
 }
 
-/* Keep the prompt and answer box focused; details below may use the full width. */
-.question > .glyph,
-.question > .answer-row,
-.question > .feedback {
-  width: 100%;
-  max-width: 760px;
-  justify-self: center;
-  box-sizing: border-box;
+.answer-dock.reading {
+  --ask: #8fdcff;
 }
 
-.answer-row {
+.answer-form {
+  width: min(640px, 100%);
   display: grid;
-  grid-template-columns: 1fr auto;
+  justify-items: center;
   gap: 8px;
-  align-items: center;
 }
 
-.answer-row label {
-  grid-column: 1 / -1;
-  font-weight: 600;
+.ask-tag {
+  padding: 2px 16px;
+  border: 2px solid #fff;
+  border-radius: 999px;
+  background: var(--ask);
+  color: var(--on-kind);
+  font-family: var(--font-pixel);
+  font-weight: 700;
+  box-shadow: 0 0 14px color-mix(in srgb, var(--ask) 55%, transparent);
 }
 
-.answer-row.reading label {
-  color: var(--accent);
+.answer-field {
+  width: 100%;
+  box-sizing: border-box;
+  display: flex;
+  gap: 6px;
+  padding: 6px;
+  border: 2px solid var(--panel-border);
+  border-radius: 14px;
+  background: var(--surface);
+  box-shadow: var(--panel-glow), 0 0 22px rgb(139 144 234 / 0.3);
+  transition: border-color 150ms, box-shadow 150ms;
 }
 
-.answer-row input {
-  font-size: 1.3rem;
-  padding: 10px 14px;
+.answer-field:focus-within {
+  border-color: var(--ask);
+  box-shadow: var(--panel-glow), 0 0 24px color-mix(in srgb, var(--ask) 45%, transparent);
+}
+
+.answer-field input {
+  flex: 1;
+  min-width: 0;
+  border: none;
+  background: transparent;
+  outline: none;
+  font-size: 1.5rem;
+  font-weight: 700;
   text-align: center;
+  padding: 4px 8px;
 }
 
-.answer-row input.right {
+.answer-dock.right .answer-field {
   border-color: var(--right);
-  color: var(--right);
+  box-shadow: var(--panel-glow), 0 0 26px color-mix(in srgb, var(--right) 50%, transparent);
 }
 
-.answer-row input.wrong {
+.answer-dock.wrong .answer-field {
   border-color: var(--wrong);
-  color: var(--wrong);
+  box-shadow: var(--panel-glow), 0 0 26px color-mix(in srgb, var(--wrong) 50%, transparent);
+}
+
+.answer-dock.right input { color: var(--right); }
+.answer-dock.wrong input { color: var(--wrong); }
+
+.check-btn {
+  flex-shrink: 0;
+  padding: 6px 20px;
+  border: 2px solid #fff;
+  border-radius: 10px;
+  background: linear-gradient(90deg, #ff8fd0 0%, #c9a2f5 55%, #8fdcff 100%);
+  color: var(--on-kind);
+  font-size: 1.05rem;
+  font-weight: 800; /* not the pixel font: its small capital C reads as O */
+  box-shadow: inset 0 2px 0 rgb(255 255 255 / 0.45);
 }
 
 .feedback {
-  min-height: 1.5em;
+  min-height: 1.6em;
   text-align: center;
+}
+
+.feedback p {
+  margin: 0;
+}
+
+.feedback-links {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 4px 18px;
+}
+
+.yay {
+  color: var(--right);
+  font-weight: 800;
 }
 
 .hint {
@@ -543,9 +580,116 @@ textarea {
   color: var(--wrong);
 }
 
-.miss .link {
-  display: block;
-  margin: 4px auto 0;
+.miss strong {
+  color: var(--text);
+}
+
+.question-details {
+  margin-top: 8px;
+}
+
+.item-view.question-page > .banner {
+  min-height: 320px; /* the character stays readable while details are open */
+}
+
+/* No facts row under the character here, so it can use more of the height. */
+.question-page .banner-glyph {
+  font-size: clamp(2.5rem, min(calc((100cqh - 150px) / 1.1), calc(36cqw / var(--chars, 1))), 18rem);
+}
+
+@media (max-height: 580px) {
+  .item-view.question-page > .banner {
+    min-height: 230px;
+  }
+}
+
+.verdict-icon {
+  display: grid;
+  place-items: center;
+  width: 34px;
+  flex-shrink: 0;
+}
+
+.answer-dock.right .verdict-icon { color: var(--right); }
+.answer-dock.wrong .verdict-icon { color: var(--wrong); }
+
+/* Session progress in the banner: retro gauge plus "7 / 20". */
+.session-gauge {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.session-gauge .progress-track {
+  width: clamp(120px, 22vw, 240px);
+}
+
+.session-count {
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  text-shadow: 0 1px 4px rgb(0 0 0 / 0.4);
+}
+
+.session-note {
+  color: var(--muted);
+}
+
+.ghost-light,
+.quiz-note {
+  padding: 3px 14px;
+  border: 2px solid var(--panel-border);
+  border-radius: 999px;
+  background: rgb(38 40 102 / 0.65);
+  color: var(--text);
+  font-size: 0.9rem;
+}
+
+.ghost-light:hover {
+  border-color: #fff;
+}
+
+.quiz-note {
+  font-family: var(--font-pixel);
+}
+
+/* End of a session: the message centred in the banner. */
+.banner.done-banner {
+  flex: 1 1 0;
+  min-height: 300px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+}
+
+.done-content {
+  max-width: 560px;
+  display: grid;
+  justify-items: center;
+  gap: 10px;
+  text-align: center;
+  color: #e6e3ff;
+}
+
+.done-content h1 {
+  margin: 0;
+  color: #fff;
+  font-size: 2.4rem;
+  text-shadow: 0 0 22px rgb(255 122 198 / 0.6), 3px 3px 0 #c94f99;
+}
+
+.done-stat {
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: #fff;
+}
+
+.done-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 10px;
+  margin-top: 6px;
 }
 
 .lesson-dots {
