@@ -962,8 +962,15 @@ textarea {
   font-weight: 700;
 }
 
-.example-word {
-  margin: 0;
+.example-row {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  column-gap: 10px;
+}
+
+.example-meaning {
+  font-weight: 600;
 }
 
 .example-form {
