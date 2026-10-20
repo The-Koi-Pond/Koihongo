@@ -552,15 +552,17 @@ footer {
   padding: 0;
   margin: 0;
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(84px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(92px, 1fr));
   gap: 8px;
 }
 
 .tile {
   --kind: var(--kanji);
   width: 100%;
-  height: 84px;
+  height: 104px;
   padding: 4px;
+  /* Kind stripe: visible in every status, so a 日 component, kanji and word never look alike. */
+  box-shadow: inset 0 5px 0 var(--kind);
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -584,6 +586,19 @@ footer {
 
 .tile.word .tile-glyph {
   font-size: 1.15rem;
+}
+
+.tile-kind {
+  font-size: 0.6rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  opacity: 0.85;
+}
+
+.tile-reading {
+  font-size: 0.75rem;
+  line-height: 1.1;
 }
 
 .tile-meaning {

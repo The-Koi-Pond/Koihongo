@@ -13,6 +13,8 @@ export type LibraryItem = {
   position: number;
   label: string;
   meaning: string;
+  /** Kana reading, for words only. */
+  reading: string | null;
   status: ItemStatus;
   /** Lowercase text to search: label, meanings, readings. */
   search: string;
@@ -27,6 +29,7 @@ export async function libraryItems(db: Db, keys?: string[]): Promise<LibraryItem
      SELECT p.item_key, p.kind, p.position,
        coalesce(c.display, k.character, w.written) AS label,
        coalesce(c.name, json_extract(k.meanings, '$[0]'), json_extract(w.senses, '$[0].glosses[0]')) AS meaning,
+       w.reading AS reading,
        CASE
          WHEN cards.item_key IS NOT NULL THEN CASE WHEN cards.stability >= ? THEN 'passed' ELSE 'learning' END
          WHEN EXISTS (SELECT 1 FROM content.path_requirements r
