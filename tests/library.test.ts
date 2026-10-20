@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 import { migrate } from "../src/db/migrations.ts";
-import { itemProgress, libraryItems } from "../src/library.ts";
+import { itemPreview, itemProgress, libraryItems } from "../src/library.ts";
 import { recordReview, startLessons } from "../src/srs/progress.ts";
 import { FIRST_REVIEW_DELAY_MS } from "../src/srs/scheduler.ts";
 import { openTestDb } from "./nodeDb.ts";
@@ -76,6 +76,32 @@ test("item progress lists requirements with their status", async () => {
     p.requires.map((r) => [r.label, r.status]),
     [["木", "available"], ["⺅", "available"]],
   );
+});
+
+test("previews summarise kanji, words and components with status", async () => {
+  const db = await freshDb();
+  assert.deepEqual(await itemPreview(db, "kanji:木"), {
+    item_key: "kanji:木",
+    kind: "kanji",
+    status: "locked",
+    label: "木",
+    meanings: ["tree", "wood"],
+    readings: ["モク", "き"],
+  });
+  const word = await itemPreview(db, "word:1");
+  assert.deepEqual([word.label, word.readings, word.meanings], ["休み", ["やすみ"], ["rest, holiday"]]);
+  assert.deepEqual((await itemPreview(db, "component:化")).meanings, ["person"]);
+});
+
+test("previews work for kanji that aren't on the path", async () => {
+  const db = openTestDb((content) =>
+    content.exec(`INSERT INTO kanji (character, meanings, on_readings, kun_readings, nanori, stroke_count)
+                  VALUES ('龍', '["dragon"]', '["リュウ"]', '["たつ"]', '[]', 16)`),
+  );
+  await migrate(db);
+  const p = await itemPreview(db, "kanji:龍");
+  assert.equal(p.status, null);
+  assert.deepEqual(p.meanings, ["dragon"]);
 });
 
 test("item progress includes card details once started", async () => {

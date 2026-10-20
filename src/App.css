@@ -675,6 +675,86 @@ footer {
 .chip-link.kanji { background: var(--kanji); }
 .chip-link.word { background: var(--word); }
 
+/* Popovers */
+
+.hover-target {
+  cursor: help;
+  border-radius: 3px;
+}
+
+.hover-target:hover {
+  background: color-mix(in srgb, var(--accent) 18%, transparent);
+}
+
+.hover-target.can-open {
+  cursor: pointer;
+}
+
+.chips .hover-target {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.tiles .hover-target {
+  display: block;
+}
+
+.tiles .hover-target:hover {
+  background: none;
+}
+
+.popover {
+  position: fixed;
+  z-index: 100;
+  box-sizing: border-box;
+  background: var(--surface);
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  box-shadow: 0 8px 24px rgb(0 0 0 / 0.25);
+  padding: 10px 12px;
+  font-size: 0.9rem;
+  pointer-events: auto;
+}
+
+.popover.above {
+  transform: translateY(-100%);
+}
+
+.popover p {
+  margin: 6px 0 0;
+}
+
+.popover-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  color: #fff;
+  border-radius: 6px;
+  padding: 2px 10px;
+}
+
+.popover-head.component { background: var(--component); }
+.popover-head.kanji { background: var(--kanji); }
+.popover-head.word { background: var(--word); }
+
+.popover-glyph {
+  font-size: 1.6rem;
+}
+
+.popover-kind {
+  font-size: 0.65rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.popover-readings {
+  font-size: 1rem;
+}
+
 /* Sources */
 
 .sources {

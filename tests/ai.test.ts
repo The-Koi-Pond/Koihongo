@@ -11,7 +11,7 @@ const mori: KanjiDetails = {
   meanings: ["forest", "woods"],
   onReadings: ["シン"],
   kunReadings: ["もり"],
-  components: [{ display: "木", name: "tree" }],
+  components: [{ glyph: "木", display: "木", name: "tree" }],
   strokeSvg: null,
   words: [],
   notes: {},

@@ -1,11 +1,19 @@
 // The library: every path item with its learning status.
 
 import type { Db } from "./db/db.ts";
+import { getItemDetails } from "./items.ts";
 import type { ItemKind } from "./srs/progress.ts";
 import { PASS_STABILITY_DAYS, type CardType } from "./srs/scheduler.ts";
 
 /** locked: needs other items first · available: ready for a lesson · learning: started, not passed · passed */
 export type ItemStatus = "locked" | "available" | "learning" | "passed";
+
+export const STATUS_NAME: Record<ItemStatus, string> = {
+  locked: "Locked",
+  available: "Ready to learn",
+  learning: "Learning",
+  passed: "Passed",
+};
 
 export type LibraryItem = {
   item_key: string;
@@ -49,6 +57,36 @@ export async function libraryItems(db: Db, keys?: string[]): Promise<LibraryItem
      ORDER BY p.position`,
     [PASS_STABILITY_DAYS, PASS_STABILITY_DAYS, ...(keys ?? [])],
   );
+}
+
+export type ItemPreview = {
+  item_key: string;
+  kind: ItemKind;
+  label: string;
+  meanings: string[];
+  readings: string[];
+  /** null for items that exist (e.g. a rare kanji) but aren't on the path. */
+  status: ItemStatus | null;
+};
+
+/** The short summary a popover shows. */
+export async function itemPreview(db: Db, itemKey: string): Promise<ItemPreview> {
+  const item = await getItemDetails(db, itemKey);
+  const [onPath] = await libraryItems(db, [itemKey]);
+  const base = { item_key: itemKey, kind: item.kind, status: onPath?.status ?? null };
+  switch (item.kind) {
+    case "component":
+      return { ...base, label: item.display, meanings: [item.name, ...item.synonyms], readings: [] };
+    case "kanji":
+      return { ...base, label: item.character, meanings: item.meanings, readings: [...item.onReadings, ...item.kunReadings] };
+    case "word":
+      return {
+        ...base,
+        label: item.written,
+        meanings: item.senses.slice(0, 3).map((s) => s.glosses.slice(0, 3).join(", ")),
+        readings: [item.reading],
+      };
+  }
 }
 
 export type ItemProgress = {

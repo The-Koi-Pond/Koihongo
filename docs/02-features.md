@@ -47,6 +47,11 @@ The one place you start every session.
 
 - **[v1]** Browse every path item outside lessons: tiles in path order, styled by status (locked / ready / learning / passed), filter by kind and status, search by character, meaning or reading. Item pages show status, next review, what a locked item is waiting for, and allow editing mnemonics and synonyms.
 
+## E1. Hover popovers
+
+- **[v1]** Hover any kanji in Japanese text (example sentences, word lists) or any component/kanji/word chip or library tile for a popover: meanings, readings, your status. In the library, clicking opens the item; in lessons and reviews it only previews (leaving would end the session).
+- **[later]** Hover whole *words* inside sentences (needs a word splitter; see F).
+
 ## E. Dictionary and lookup
 
 - **[v1]** Search kanji/words by English, kana, romaji or kanji.

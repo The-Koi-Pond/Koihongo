@@ -2,6 +2,7 @@ import { useState } from "react";
 import { tauriDb } from "../db/tauriDb.ts";
 import { addSynonym, removeSynonym, saveNote, type ItemDetails, type Note, type NoteKind } from "../items.ts";
 import { MnemonicWorkshop } from "./MnemonicWorkshop.tsx";
+import { ItemHover, JapaneseText } from "./Popover.tsx";
 
 const KIND_NAME = { component: "Component", kanji: "Kanji", word: "Word" } as const;
 
@@ -17,7 +18,7 @@ export function ItemInfo({ item, onChange }: { item: ItemDetails; onChange: () =
           <NoteEditor item={item} kind="mnemonic_meaning" label="Mnemonic" onSaved={onChange} />
           {item.usedIn.length > 0 && (
             <Field label="Found in">
-              <Chips items={item.usedIn.map((k) => ({ glyph: k.character, text: k.meaning, kind: "kanji" }))} />
+              <Chips items={item.usedIn.map((k) => ({ glyph: k.character, text: k.meaning, kind: "kanji", itemKey: `kanji:${k.character}` }))} />
             </Field>
           )}
         </>
@@ -40,7 +41,7 @@ export function ItemInfo({ item, onChange }: { item: ItemDetails; onChange: () =
             )}
           </Field>
           <Field label="Components">
-            <Chips items={item.components.map((c) => ({ glyph: c.display, text: c.name, kind: "component" }))} />
+            <Chips items={item.components.map((c) => ({ glyph: c.display, text: c.name, kind: "component", itemKey: `component:${c.glyph}` }))} />
           </Field>
           <NoteEditor item={item} kind="mnemonic_meaning" label="Meaning mnemonic" onSaved={onChange} />
           <NoteEditor item={item} kind="mnemonic_reading" label="Reading mnemonic" onSaved={onChange} />
@@ -58,7 +59,7 @@ export function ItemInfo({ item, onChange }: { item: ItemDetails; onChange: () =
               <ul className="plain">
                 {item.words.map((w) => (
                   <li key={w.written}>
-                    <span lang="ja">{w.written}</span> <span lang="ja" className="muted">【{w.reading}】</span> {w.meaning}
+                    <ItemHover itemKey={`word:${w.id}`}><span lang="ja">{w.written}</span></ItemHover> <span lang="ja" className="muted">【{w.reading}】</span> {w.meaning}
                   </li>
                 ))}
               </ul>
@@ -80,7 +81,7 @@ export function ItemInfo({ item, onChange }: { item: ItemDetails; onChange: () =
             <span lang="ja">{item.reading}</span>
           </Field>
           <Field label="Kanji">
-            <Chips items={item.kanji.map((k) => ({ glyph: k.character, text: k.meaning, kind: "kanji" }))} />
+            <Chips items={item.kanji.map((k) => ({ glyph: k.character, text: k.meaning, kind: "kanji", itemKey: `kanji:${k.character}` }))} />
           </Field>
           <NoteEditor item={item} kind="mnemonic_meaning" label="Meaning mnemonic" onSaved={onChange} />
           <NoteEditor item={item} kind="mnemonic_reading" label="Reading mnemonic" onSaved={onChange} />
@@ -89,7 +90,7 @@ export function ItemInfo({ item, onChange }: { item: ItemDetails; onChange: () =
               <ul className="plain">
                 {item.sentences.map((s) => (
                   <li key={s.japanese}>
-                    <span lang="ja">{s.japanese}</span>
+                    <JapaneseText text={s.japanese} />
                     <br />
                     <span className="muted">{s.english}</span>
                   </li>
@@ -114,15 +115,17 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
   );
 }
 
-function Chips({ items }: { items: { glyph: string; text: string; kind: string }[] }) {
+function Chips({ items }: { items: { glyph: string; text: string; kind: string; itemKey: string }[] }) {
   return (
     <ul className="chips">
       {items.map((c) => (
         <li key={c.glyph + c.text}>
-          <span lang="ja" className={`chip-glyph ${c.kind}`}>
-            {c.glyph}
-          </span>
-          {c.text}
+          <ItemHover itemKey={c.itemKey}>
+            <span lang="ja" className={`chip-glyph ${c.kind}`}>
+              {c.glyph}
+            </span>
+            {c.text}
+          </ItemHover>
         </li>
       ))}
     </ul>
