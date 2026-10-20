@@ -629,10 +629,15 @@ textarea {
   min-height: 0;
   overflow-y: auto;
   scrollbar-width: thin; /* not inherited from html */
-  padding: 12px 2px 2px;
   opacity: 0;
   transform: translateY(16px);
   transition: opacity 300ms ease-out, transform 380ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+/* Spacing goes on the content, inside the scroll area: padding on the panel itself
+   would keep a closed panel from reaching 0px and nudge the page. */
+.question-details-inner > .item-info {
+  margin: 12px 2px 2px;
 }
 
 .question-details.open .question-details-inner {

@@ -156,13 +156,10 @@ export function QuestionCard({
         </div>
       </section>
 
-      {graded && (
-        <div className={`question-details ${showInfo ? "open" : ""}`} aria-hidden={!showInfo}>
-          <div className="question-details-inner">
-            <ItemInfo item={item} onChange={onReload} />
-          </div>
-        </div>
-      )}
+      {/* Always in the layout (0px high while closed), so answering doesn't shift the page. */}
+      <div className={`question-details ${graded && showInfo ? "open" : ""}`} aria-hidden={!(graded && showInfo)}>
+        <div className="question-details-inner">{graded && <ItemInfo item={item} onChange={onReload} />}</div>
+      </div>
     </div>
   );
 }
