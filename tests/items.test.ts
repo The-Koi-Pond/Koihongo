@@ -37,8 +37,8 @@ test("component details list the kanji that use it, in path order", async () => 
 test("kanji details include components, words and accepted answers", async () => {
   const d = await getItemDetails(await freshDb(), "kanji:休");
   if (d.kind !== "kanji") return assert.fail("not a kanji");
-  assert.deepEqual(d.components, [{ display: "⺅", name: "person" }, { display: "木", name: "tree" }]);
-  assert.deepEqual(d.words, [{ written: "休み", reading: "やすみ", meaning: "rest" }]);
+  assert.deepEqual(d.components, [{ glyph: "化", display: "⺅", name: "person" }, { glyph: "木", display: "木", name: "tree" }]);
+  assert.deepEqual(d.words, [{ id: "1", written: "休み", reading: "やすみ", meaning: "rest" }]);
   assert.deepEqual(acceptedAnswers(d), { meanings: ["rest"], readings: ["キュウ", "やす.む"] });
 });
 

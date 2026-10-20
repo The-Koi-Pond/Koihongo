@@ -1,14 +1,14 @@
 import { useEffect, useMemo, useState } from "react";
 import { isRomaji, toHiragana } from "wanakana";
 import { tauriDb } from "../db/tauriDb.ts";
-import { itemProgress, libraryItems, type ItemProgress, type ItemStatus, type LibraryItem } from "../library.ts";
+import { itemProgress, libraryItems, STATUS_NAME, type ItemProgress, type ItemStatus, type LibraryItem } from "../library.ts";
 import type { ItemKind } from "../srs/progress.ts";
 import { ItemInfo } from "../ui/ItemInfo.tsx";
+import { ItemHover, OpenItemContext } from "../ui/Popover.tsx";
 import { itemLabel, useItem } from "../ui/useItem.ts";
 import { ErrorView } from "./Reviews.tsx";
 
 const PAGE = 300;
-const STATUS_NAME: Record<ItemStatus, string> = { locked: "Locked", available: "Ready to learn", learning: "Learning", passed: "Passed" };
 const KIND_NAME: Record<ItemKind, string> = { component: "component", kanji: "kanji", word: "word" };
 const KIND_TABS: { kind: ItemKind | "all"; name: string }[] = [
   { kind: "all", name: "All" },
@@ -59,7 +59,11 @@ export function Library({ onExit }: { onExit: () => void }) {
       setSelected(undefined);
       setVersion((v) => v + 1); // statuses may have changed meanwhile
     };
-    return <ItemPage itemKey={selected} onOpen={setSelected} onBack={back} />;
+    return (
+      <OpenItemContext.Provider value={setSelected}>
+        <ItemPage itemKey={selected} onOpen={setSelected} onBack={back} />
+      </OpenItemContext.Provider>
+    );
   }
 
   const toggleStatus = (s: ItemStatus) =>
@@ -115,22 +119,20 @@ export function Library({ onExit }: { onExit: () => void }) {
           <ul className="tiles">
             {matches.slice(0, shown).map((i) => (
               <li key={i.item_key}>
-                <button
-                  className={`tile ${i.kind} ${i.status}`}
-                  title={`${KIND_NAME[i.kind]}: ${i.meaning} · ${STATUS_NAME[i.status]}`}
-                  onClick={() => setSelected(i.item_key)}
-                >
-                  <span className="tile-kind">{KIND_NAME[i.kind]}</span>
-                  <span className="tile-glyph" lang="ja">
-                    {i.label}
-                  </span>
-                  {i.reading && (
-                    <span className="tile-reading" lang="ja">
-                      {i.reading}
+                <ItemHover itemKey={i.item_key} openOnClick={false}>
+                  <button className={`tile ${i.kind} ${i.status}`} onClick={() => setSelected(i.item_key)}>
+                    <span className="tile-kind">{KIND_NAME[i.kind]}</span>
+                    <span className="tile-glyph" lang="ja">
+                      {i.label}
                     </span>
-                  )}
-                  <span className="tile-meaning">{i.meaning}</span>
-                </button>
+                    {i.reading && (
+                      <span className="tile-reading" lang="ja">
+                        {i.reading}
+                      </span>
+                    )}
+                    <span className="tile-meaning">{i.meaning}</span>
+                  </button>
+                </ItemHover>
               </li>
             ))}
           </ul>

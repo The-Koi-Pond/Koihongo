@@ -27,9 +27,9 @@ export type KanjiDetails = Common & {
   meanings: string[];
   onReadings: string[];
   kunReadings: string[];
-  components: { display: string; name: string }[];
+  components: { glyph: string; display: string; name: string }[];
   strokeSvg: string | null;
-  words: { written: string; reading: string; meaning: string }[];
+  words: { id: string; written: string; reading: string; meaning: string }[];
 };
 
 export type WordDetails = Common & {
@@ -86,13 +86,13 @@ export async function getItemDetails(db: Db, itemKey: string): Promise<ItemDetai
       [id],
     );
     if (!k) throw new Error(`Unknown kanji ${id}`);
-    const components = await db.all<{ display: string; name: string }>(
-      `SELECT c.display, c.name FROM content.kanji_components kc JOIN content.components c ON c.glyph = kc.component
+    const components = await db.all<{ glyph: string; display: string; name: string }>(
+      `SELECT c.glyph, c.display, c.name FROM content.kanji_components kc JOIN content.components c ON c.glyph = kc.component
        WHERE kc.kanji = ? ORDER BY c.stroke_count`,
       [id],
     );
-    const words = await db.all<{ written: string; reading: string; senses: string }>(
-      `SELECT w.written, w.reading, w.senses FROM content.word_kanji wk
+    const words = await db.all<{ id: string; written: string; reading: string; senses: string }>(
+      `SELECT w.id, w.written, w.reading, w.senses FROM content.word_kanji wk
        JOIN content.words w ON w.id = wk.word_id
        JOIN content.path p ON p.item_key = 'word:' || w.id
        WHERE wk.kanji = ? ORDER BY p.position LIMIT 5`,
@@ -107,7 +107,7 @@ export async function getItemDetails(db: Db, itemKey: string): Promise<ItemDetai
       kunReadings: JSON.parse(k.kun_readings),
       components,
       strokeSvg: k.stroke_svg,
-      words: words.map((w) => ({ written: w.written, reading: w.reading, meaning: first<{ glosses: string[] }>(w.senses).glosses[0] })),
+      words: words.map((w) => ({ id: w.id, written: w.written, reading: w.reading, meaning: first<{ glosses: string[] }>(w.senses).glosses[0] })),
     };
   }
 
