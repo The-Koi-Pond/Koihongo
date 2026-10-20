@@ -15,12 +15,14 @@ Each phase ends with something you can **use daily**. Don't start the next phase
 - ✅ Import script: KANJIDIC2, KRADFILE, a JMdict subset, KanjiVG, a Tatoeba subset → SQLite (`pnpm content:build`).
 - ✅ Generate the learning path (components → kanji → vocabulary).
 - ✅ Progress database (`user.db`) and loading both databases in the app.
-- ✅ FSRS scheduling, unlocking, backlog-aware new-item limit (logic + tests; no screens yet).
-- ✅ Today screen, first version: shows due reviews and available lessons.
-- Lesson screen and review screen (typed answers, romaji → kana, answer checking).
-- "5 minutes" mode and catch-up mode.
-- Manual mnemonic editing with history.
-- Backup button.
+- ✅ FSRS scheduling, unlocking, backlog-aware new-item limit.
+- ✅ Today screen: due reviews, available lessons, start buttons.
+- ✅ Lesson screen (5 items per round, then a practice quiz) and review screen (typed answers, romaji → kana, typo-tolerant meanings, exact readings, "I was right" → adds a synonym).
+- ✅ "Just 5 minutes" mode, and "Stop here" any time without losing progress.
+- ✅ Manual mnemonic editing with history; synonyms; Sources & licences screen.
+- Catch-up mode after a break (today: overdue reviews come most-at-risk first and you can stop any time, but nothing spreads them over several days yet).
+- Backup button (today: copy `%APPDATA%\com.xel.nihongo\user.db`).
+- Settings screen for pacing numbers.
 
 **Done when:** you can do daily kanji/vocab lessons and reviews in the app and would rather use it than WaniKani for this.
 
