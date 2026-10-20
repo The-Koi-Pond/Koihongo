@@ -691,15 +691,16 @@ textarea {
   box-sizing: border-box;
   display: grid;
   place-items: center;
-  min-width: 52px;
-  height: 52px;
-  padding: 0 10px;
-  border-radius: 12px;
+  min-width: 44px;
+  height: 44px;
+  /* Lowercase romaji sits on the baseline, so lift it a little to look centred. */
+  padding: 0 7px 0.15em;
+  border-radius: 11px;
   background: color-mix(in srgb, var(--kind) 70%, #000);
   border: 1px solid rgb(255 255 255 / 0.25);
   font-size: 1.6rem;
   font-weight: 700;
-  line-height: 1.2;
+  line-height: 1;
   text-align: center;
 }
 
