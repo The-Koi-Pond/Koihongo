@@ -1030,6 +1030,7 @@ textarea {
   background: linear-gradient(to bottom, transparent, var(--surface) 88%);
   border: none;
   border-radius: 0;
+  overflow: visible; /* no rounded corners to clip, and the sound tip opens upwards */
 }
 
 .banner + .item-info > .overlap > .field,
@@ -1223,6 +1224,58 @@ textarea {
 
 .as-in {
   margin: 0;
+}
+
+.info-tip {
+  position: relative;
+  display: inline-grid;
+}
+
+.info-tip-btn {
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  border-radius: 999px;
+  border: none;
+  background: none;
+  color: var(--muted);
+  cursor: help;
+}
+
+.info-tip-btn:hover,
+.info-tip-btn:focus-visible {
+  color: var(--text);
+}
+
+/* Opens upwards: the sound card sits low on the page. */
+.info-tip-bubble {
+  position: absolute;
+  bottom: calc(100% + 8px);
+  left: 50%;
+  translate: -50% 0;
+  z-index: 60;
+  width: max-content;
+  max-width: 300px;
+  padding: 8px 12px;
+  border: 2px solid var(--panel-border);
+  border-radius: 10px;
+  background: var(--surface-2);
+  box-shadow: 0 8px 22px rgb(0 0 0 / 0.35);
+  font-size: 0.85rem;
+  line-height: 1.45;
+  text-align: left;
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 120ms;
+  pointer-events: none;
+}
+
+.info-tip:hover .info-tip-bubble,
+.info-tip:focus-within .info-tip-bubble {
+  opacity: 1;
+  visibility: visible;
 }
 
 .as-in mark {
