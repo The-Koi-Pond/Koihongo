@@ -172,7 +172,7 @@ export const KANJI_3: MnemonicBatch = {
     reading: "おも in 思う (おもう, to think); し, as in 思考 (しこう, thought).",
   },
   "kanji:家": {
-    meaning: "A PIG (豕) under a ROOF (宀): in old farmhouses the animals lived inside too. HOUSE, HOME.",
+    meaning: "A PIG (豕) under a ROOF (宀): a cosy farmhouse where even the pig sleeps indoors. HOUSE, HOME.",
     reading: "いえ or うち (house, home); か, as in 家族 (かぞく, family); や in 大家 (おおや, landlord).",
   },
   "kanji:世": {
@@ -188,7 +188,7 @@ export const KANJI_3: MnemonicBatch = {
     reading: "けん, as in 県立 (けんりつ, prefectural). Japan has 47 prefectures.",
   },
   "kanji:進": {
-    meaning: "An OLD BIRD (隹) walking along the ROAD (⻌): birds can't walk backwards, so they can only ADVANCE.",
+    meaning: "A stubborn OLD BIRD (隹) marching down the ROAD (⻌), never once looking back: ADVANCE.",
     reading: "すす in 進む (すすむ, to advance); しん, as in 進学 (しんがく, going on to further study).",
   },
   "kanji:正": {
