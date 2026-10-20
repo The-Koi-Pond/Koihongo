@@ -42,7 +42,7 @@ People drop SRS apps for predictable reasons. Each rule below answers one of the
 
 ### Other rules
 
-- **Works offline.** AI features are extras. With no internet or no API key, everything else still works.
+- **Works offline.** AI features are extras. With no internet or no Claude login, everything else still works.
 - **AI suggests, you decide.** AI never changes your content without you approving it. Anything AI wrote is marked as such, because AI can be wrong, especially about Japanese nuance.
 - **Your data stays on your PC** in one file you can back up.
 - **Borrow methods, not content.** We can copy *how* WaniKani or Bunpro teach, but not their copyrighted text, mnemonics or lesson order. Content comes from openly licensed sources or is written by you or the AI (details in [03-architecture.md](03-architecture.md#content-sources-and-licenses)).
