@@ -10,6 +10,7 @@ import "@fontsource/pixelify-sans/500.css";
 import "@fontsource/pixelify-sans/600.css";
 import "@fontsource/pixelify-sans/700.css";
 import "@fontsource/dotgothic16/400.css";
+import "@fontsource/tiny5/400.css";
 
 // Dev only: lets the app run in a plain browser for UI checks (see CLAUDE.md).
 installBrowserBridge();

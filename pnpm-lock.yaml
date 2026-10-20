@@ -17,6 +17,9 @@ importers:
       '@fontsource/pixelify-sans':
         specifier: ^5.3.0
         version: 5.3.0
+      '@fontsource/tiny5':
+        specifier: ^5.3.0
+        version: 5.3.0
       '@tauri-apps/api':
         specifier: ^2
         version: 2.12.4
@@ -74,6 +77,9 @@ packages:
 
   '@fontsource/pixelify-sans@5.3.0':
     resolution: {integrity: sha512-4RCe9nXbi7wUu5+H0FNX1sgPZ2kJ1MmY1uTkEfvQIzzqhoS8zGKJaJfdK8oreE0OU+5gM+NdurFi3H3FJRBvyw==}
+
+  '@fontsource/tiny5@5.3.0':
+    resolution: {integrity: sha512-29H01ByMRs6uiLeOoBnZLedf0dR3pF5A53cIBzhp1/Y6Bu5D0t5selTb4TWs3ENoc/OK71rOed5xAdvBywe4aQ==}
 
   '@oxc-project/types@0.154.0':
     resolution: {integrity: sha512-KYOUGQFlLWR+s4QMV2Q9ko38TZm7EdO87Qm7rvZLqk/webse/cDjtyxKhg/47l0byCbs/k46LT8qc4PKjAikzA==}
@@ -500,6 +506,8 @@ snapshots:
   '@fontsource/m-plus-rounded-1c@5.3.0': {}
 
   '@fontsource/pixelify-sans@5.3.0': {}
+
+  '@fontsource/tiny5@5.3.0': {}
 
   '@oxc-project/types@0.154.0': {}
 

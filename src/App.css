@@ -24,6 +24,9 @@
   --font-pixel: "Pixelify Sans", "M PLUS Rounded 1c", sans-serif;
   /* Pixel font for kana only: complex kanji need a font that keeps every stroke legible. */
   --font-kana: "DotGothic16", "M PLUS Rounded 1c", sans-serif;
+  /* Pixel font for numbers: its digits stay distinct (Pixelify's 150 reads as 180). Chosen in a playground. */
+  --font-num: "Tiny5", "M PLUS Rounded 1c", sans-serif;
+  --font-body: "M PLUS Rounded 1c", "Yu Gothic UI", "Meiryo", system-ui, sans-serif;
 
   /* Fixed chrome heights, used to size pages to the window. */
   --titlebar-h: 46px;
@@ -32,7 +35,7 @@
   --statusbar-gap: 12px;
   --page-pad-bottom: 48px;
 
-  font-family: "M PLUS Rounded 1c", "Yu Gothic UI", "Meiryo", system-ui, sans-serif;
+  font-family: var(--font-body);
   font-size: 16px;
   line-height: 1.5;
   color: var(--text);
@@ -2231,7 +2234,7 @@ select {
 
 .status-clock {
   margin-left: auto;
-  font-family: var(--font-pixel);
+  font-family: var(--font-num);
   font-weight: 600;
 }
 
@@ -2334,15 +2337,22 @@ select {
   visibility: hidden;
 }
 
-/* Rounded font: pixel digits misread (150 looks like 180). */
 .start-detail {
-  font-family: "M PLUS Rounded 1c", sans-serif;
+  font-family: var(--font-num);
   font-weight: 700;
   opacity: 0.8;
 }
 
 /* Segmented "Reviews first | Lessons first" choice. */
+.order-toggle:hover,
+.order-toggle:focus-within {
+  opacity: 1;
+}
+
+/* A rarely changed preference: quieter than "Just 5 minutes" until hovered. */
 .order-toggle {
+  opacity: 0.8;
+  transition: opacity 150ms;
   display: inline-flex;
   padding: 3px;
   border-radius: 999px;
@@ -2365,14 +2375,19 @@ select {
   font-weight: 600;
 }
 
+/* "Just 5 minutes": a soft pill, the easy choice on a hard day. */
 .link-light {
   border: none;
-  background: none;
-  padding: 0;
+  border-radius: 999px;
+  background: rgb(255 255 255 / 0.16);
+  padding: 6px 16px;
   color: #fff;
   font-size: 0.9rem;
-  text-decoration: underline;
-  opacity: 0.9;
+  font-weight: 600;
+}
+
+.link-light:hover {
+  background: rgb(255 255 255 / 0.26);
 }
 
 .today-tiles {
@@ -2419,12 +2434,14 @@ select {
 
 .tile-big {
   margin: 0;
+  font-family: var(--font-num);
   font-size: 2rem;
   font-weight: 700;
   line-height: 1.15;
 }
 
 .tile-unit {
+  font-family: var(--font-body);
   font-size: 1rem;
   font-weight: 500;
   color: var(--muted);
@@ -2601,7 +2618,13 @@ select {
   box-shadow: inset 0 3px 0 rgb(255 255 255 / 0.4), inset 0 -2px 0 rgb(0 0 0 / 0.25);
 }
 
+/* The count in the pixel font, the "/ total" quieter in the body font. */
+.progress-count .muted {
+  font-family: var(--font-body);
+}
+
 .progress-count {
+  font-family: var(--font-num);
   font-size: 0.85rem;
   text-align: right;
   font-variant-numeric: tabular-nums;
