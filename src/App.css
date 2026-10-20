@@ -27,7 +27,7 @@
 
   /* Fixed chrome heights, used to size pages to the window. */
   --titlebar-h: 46px;
-  --bottombar-h: 80px;
+  --bottombar-h: 56px;
   --statusbar-h: 34px;
   --statusbar-gap: 12px;
   --page-pad-bottom: 48px;
@@ -755,17 +755,39 @@ textarea {
   flex-wrap: wrap;
 }
 
-.dot {
-  color: var(--on-kind);
-  border: 2px solid transparent;
-  font-size: 1.1rem;
-  padding: 2px 10px;
-  opacity: 0.6;
+/* Lesson page chips: small dark keycaps, the item in its kind colour; the current
+   page lights up in that colour. (Beats the shared .dot.kana backgrounds.) */
+.lesson-dots .dot {
+  --dot: var(--kanji);
+  min-width: 30px;
+  height: 30px;
+  box-sizing: border-box;
+  padding: 0 6px;
+  display: grid;
+  place-items: center;
+  border: 2px solid var(--panel-border);
+  border-radius: 7px;
+  background: var(--surface-2);
+  box-shadow: inset 0 -3px 0 rgb(0 0 0 / 0.3);
+  color: var(--dot);
+  font-family: var(--font-kana);
+  font-size: 1.05rem;
+  line-height: 1;
 }
 
-.dot.current {
-  opacity: 1;
-  border-color: var(--text);
+.lesson-dots .dot.kana { --dot: var(--kana); }
+.lesson-dots .dot.component { --dot: var(--component); }
+.lesson-dots .dot.word { --dot: var(--word); }
+
+.lesson-dots .dot:hover {
+  border-color: #fff;
+}
+
+.lesson-dots .dot.current {
+  border-color: #fff;
+  background: var(--dot);
+  color: var(--on-kind);
+  box-shadow: inset 0 -3px 0 rgb(0 0 0 / 0.18), 0 0 12px color-mix(in srgb, var(--dot) 60%, transparent);
 }
 
 /* Fixed bottom bar for lesson pages (matches the title bar). */
@@ -787,7 +809,7 @@ textarea {
   width: 100%;
   max-width: 1040px;
   margin: 0 auto;
-  padding: 10px 16px;
+  padding: 0 16px;
   box-sizing: border-box;
   display: flex;
   align-items: center;
@@ -795,8 +817,49 @@ textarea {
   gap: 16px;
 }
 
-.bottom-bar-inner > button {
-  min-width: 120px;
+/* Bar buttons: a bevelled pixel keycap (Back) and the gradient pill (Next). */
+.bar-key,
+.bar-go {
+  min-width: 104px;
+  height: 36px;
+  box-sizing: border-box;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  padding: 0 14px;
+  font-family: var(--font-pixel);
+  font-size: 1rem;
+  font-weight: 700;
+}
+
+.bar-key {
+  border: 2px solid var(--panel-border);
+  border-radius: 8px;
+  background: var(--surface);
+  box-shadow: inset 0 -3px 0 rgb(0 0 0 / 0.3);
+  color: var(--text);
+}
+
+.bar-key:not(:disabled):hover {
+  border-color: #fff;
+}
+
+.bar-key:disabled {
+  opacity: 0.35;
+  cursor: default;
+}
+
+.bar-go {
+  border: 2px solid #fff;
+  border-radius: 999px;
+  background: linear-gradient(90deg, #ff8fd0 0%, #c9a2f5 55%, #8fdcff 100%);
+  box-shadow: inset 0 2px 0 rgb(255 255 255 / 0.45), 0 0 14px rgb(255 122 198 / 0.4);
+  color: var(--on-kind);
+}
+
+.bar-go:hover {
+  box-shadow: inset 0 2px 0 rgb(255 255 255 / 0.45), 0 0 20px rgb(255 122 198 / 0.6);
 }
 
 .bottom-bar-center {
@@ -2247,7 +2310,7 @@ textarea {
 @media (max-height: 700px) {
   :root {
     --page-pad-bottom: 16px;
-    --bottombar-h: 64px;
+    --bottombar-h: 50px;
     --stroke-frame: 54px;
   }
 

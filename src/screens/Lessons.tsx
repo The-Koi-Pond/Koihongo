@@ -1,3 +1,4 @@
+import { ChevronLeft, ChevronRight } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 import { tauriDb } from "../db/tauriDb.ts";
 import { cardTypesFor, startLessons, todaySummary, type Lesson } from "../srs/progress.ts";
@@ -153,8 +154,8 @@ export function Lessons({ onExit, exitLabel = "Back to Today" }: { onExit: () =>
       {/* Pinned to the bottom of the window, so Back/Next never move. */}
       <nav className="bottom-bar" aria-label="Lesson pages">
         <div className="bottom-bar-inner">
-          <button disabled={page === 0} onClick={() => setPhase({ name: "learn", page: page - 1 })}>
-            ← Back
+          <button className="bar-key" disabled={page === 0} onClick={() => setPhase({ name: "learn", page: page - 1 })}>
+            <ChevronLeft size={18} strokeWidth={2.5} aria-hidden="true" /> Back
           </button>
           <div className="bottom-bar-center">
             <ol className="lesson-dots">
@@ -173,12 +174,12 @@ export function Lessons({ onExit, exitLabel = "Back to Today" }: { onExit: () =>
             </ol>
           </div>
           {last ? (
-            <button className="primary" onClick={startQuiz}>
-              Start quiz →
+            <button className="bar-go" onClick={startQuiz}>
+              Start quiz <ChevronRight size={18} strokeWidth={2.5} aria-hidden="true" />
             </button>
           ) : (
-            <button className="primary" onClick={() => setPhase({ name: "learn", page: page + 1 })}>
-              Next →
+            <button className="bar-go" onClick={() => setPhase({ name: "learn", page: page + 1 })}>
+              Next <ChevronRight size={18} strokeWidth={2.5} aria-hidden="true" />
             </button>
           )}
         </div>
