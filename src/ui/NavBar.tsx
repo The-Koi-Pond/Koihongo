@@ -1,3 +1,20 @@
+import { getCurrentWindow } from "@tauri-apps/api/window";
+import {
+  BookA,
+  BookOpenText,
+  GraduationCap,
+  House,
+  LibraryBig,
+  Maximize2,
+  Minimize2,
+  Minus,
+  Puzzle,
+  RotateCcw,
+  Settings,
+  X,
+  type LucideIcon,
+} from "lucide-react";
+import { useEffect, useState } from "react";
 import type { TodaySummary } from "../srs/progress.ts";
 
 export type Screen =
@@ -12,15 +29,21 @@ export type Screen =
   | "reviews"
   | "quick-reviews";
 
-const SECTIONS: { screen: Screen; ja: string; en: string; soon?: boolean }[] = [
-  { screen: "today", ja: "今日", en: "Today" },
-  { screen: "library", ja: "図書館", en: "Library" },
-  { screen: "dictionary", ja: "辞書", en: "Dictionary", soon: true },
-  { screen: "grammar", ja: "文法", en: "Grammar", soon: true },
-  { screen: "reading", ja: "読書", en: "Reading", soon: true },
+const SECTIONS: { screen: Screen; icon: LucideIcon; ja: string; en: string; soon?: boolean }[] = [
+  { screen: "today", icon: House, ja: "今日", en: "Today" },
+  { screen: "library", icon: LibraryBig, ja: "図書館", en: "Library" },
+  { screen: "dictionary", icon: BookA, ja: "辞書", en: "Dictionary", soon: true },
+  { screen: "grammar", icon: Puzzle, ja: "文法", en: "Grammar", soon: true },
+  { screen: "reading", icon: BookOpenText, ja: "読書", en: "Reading", soon: true },
 ];
 
-/** Top bar. Locked during lessons/reviews, so a stray click can't end a session. */
+const ICON = { size: 19, strokeWidth: 1.75 };
+
+/**
+ * The app's title bar (the window has no Windows frame): drag empty space to
+ * move, double-click to maximise. Navigation is locked during lessons/reviews
+ * so a stray click can't end a session; window controls always work.
+ */
 export function NavBar({
   screen,
   go,
@@ -32,55 +55,114 @@ export function NavBar({
   summary?: TodaySummary;
   locked: boolean;
 }) {
+  const navTitle = (label: string) => (locked ? "Finish or stop the session first" : label);
+
   return (
-    <header className={`navbar ${locked ? "locked" : ""}`} title={locked ? "Finish or stop the session to use the menu" : undefined}>
-      <nav className="navbar-inner" aria-label="Main">
-        <button className="brand" onClick={() => go("today")} disabled={locked}>
-          <span lang="ja" className="brand-mark">
-            鯉
+    <header className="titlebar" data-tauri-drag-region>
+      <button className="brand" onClick={() => go("today")} disabled={locked} title={navTitle("Koihongo")}>
+        <span lang="ja" className="brand-mark">
+          鯉
+        </span>
+      </button>
+
+      <nav className={`nav-group ${locked ? "locked" : ""}`} aria-label="Main" data-tauri-drag-region>
+        {SECTIONS.map(({ screen: s, icon: Icon, ja, en, soon }, i) => (
+          <span key={s} className="nav-slot">
+            {i === 1 && <span className="divider" />}
+            <button
+              className={`icon-btn ${screen === s ? "current" : ""}`}
+              aria-current={screen === s ? "page" : undefined}
+              aria-label={en}
+              title={navTitle(`${ja} ${en}${soon ? " (coming soon)" : ""}`)}
+              onClick={() => go(s)}
+              disabled={locked}
+            >
+              <Icon {...ICON} />
+              {soon && <span className="soon-dot" />}
+            </button>
           </span>
-          Koihongo
-        </button>
-
-        <ul className="nav-sections">
-          {SECTIONS.map((s) => (
-            <li key={s.screen}>
-              <button
-                className={`nav-item ${screen === s.screen ? "current" : ""}`}
-                aria-current={screen === s.screen ? "page" : undefined}
-                onClick={() => go(s.screen)}
-                disabled={locked}
-              >
-                <span lang="ja" className="nav-ja">
-                  {s.ja}
-                </span>
-                <span className="nav-en">
-                  {s.en}
-                  {s.soon && <span className="soon">soon</span>}
-                </span>
-              </button>
-            </li>
-          ))}
-        </ul>
-
-        <div className="nav-actions">
-          <button className="nav-count" onClick={() => go("reviews")} disabled={locked || !summary?.reviewsDue}>
-            Reviews <span className="count">{summary?.reviewsDue ?? "–"}</span>
-          </button>
-          <button className="nav-count" onClick={() => go("lessons")} disabled={locked || !summary?.lessons.length}>
-            Lessons <span className="count">{summary?.lessons.length ?? "–"}</span>
-          </button>
-          <button
-            className={`nav-icon ${screen === "settings" || screen === "sources" ? "current" : ""}`}
-            onClick={() => go("settings")}
-            disabled={locked}
-            aria-label="Settings"
-            title="Settings"
-          >
-            ⚙
-          </button>
-        </div>
+        ))}
       </nav>
+
+      <div className="titlebar-space" data-tauri-drag-region />
+
+      <div className={`nav-group ${locked ? "locked" : ""}`} data-tauri-drag-region>
+        <CountButton icon={RotateCcw} label="Reviews" count={summary?.reviewsDue} onClick={() => go("reviews")} locked={locked} />
+        <CountButton icon={GraduationCap} label="Lessons" count={summary?.lessons.length} onClick={() => go("lessons")} locked={locked} />
+        <button
+          className={`icon-btn ${screen === "settings" || screen === "sources" ? "current" : ""}`}
+          aria-label="Settings"
+          title={navTitle("設定 Settings")}
+          onClick={() => go("settings")}
+          disabled={locked}
+        >
+          <Settings {...ICON} />
+        </button>
+      </div>
+
+      <span className="divider" />
+      <WindowControls />
     </header>
+  );
+}
+
+function CountButton({
+  icon: Icon,
+  label,
+  count,
+  onClick,
+  locked,
+}: {
+  icon: LucideIcon;
+  label: string;
+  count?: number;
+  onClick: () => void;
+  locked: boolean;
+}) {
+  const empty = !count;
+  return (
+    <button
+      className="icon-btn"
+      aria-label={`${label}: ${count ?? 0}`}
+      title={locked ? "Finish or stop the session first" : `${label}: ${count ?? 0}${empty ? "" : " (click to start)"}`}
+      onClick={onClick}
+      disabled={locked || empty}
+    >
+      <Icon {...ICON} />
+      {!empty && <span className="badge">{count > 99 ? "99+" : count}</span>}
+    </button>
+  );
+}
+
+function WindowControls() {
+  const [maximized, setMaximized] = useState(false);
+
+  useEffect(() => {
+    const win = getCurrentWindow();
+    win.isMaximized().then(setMaximized);
+    const unlisten = win.onResized(() => win.isMaximized().then(setMaximized));
+    return () => {
+      unlisten.then((f) => f());
+    };
+  }, []);
+
+  const win = getCurrentWindow();
+  return (
+    <div className="window-controls">
+      <button className="icon-btn win-min" aria-label="Minimise" title="Minimise" onClick={() => win.minimize()}>
+        <Minus {...ICON} />
+      </button>
+      <button
+        className="icon-btn win-max"
+        aria-label={maximized ? "Restore" : "Maximise"}
+        title={maximized ? "Restore" : "Maximise"}
+        onClick={() => win.toggleMaximize()}
+      >
+        {maximized ? <Minimize2 {...ICON} /> : <Maximize2 {...ICON} />}
+      </button>
+      <button className="icon-btn win-close" aria-label="Close" title="Close" onClick={() => win.close()}>
+        <X {...ICON} />
+      </button>
+    </div>
   );
 }
