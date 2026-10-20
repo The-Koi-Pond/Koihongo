@@ -169,8 +169,8 @@ function SoundsLike({ romaji, accept }: { romaji: string; accept: string[] }) {
 /** Placeholder for kana audio (recorded or synthesised), to be wired up later. */
 function AudioPlaceholder() {
   return (
-    <button type="button" className="audio-btn" disabled title="Audio is coming soon">
-      <Volume2 size={15} strokeWidth={2} aria-hidden="true" /> Audio
+    <button type="button" className="speak-btn" disabled aria-label="Audio (coming soon)" title="Audio is coming soon">
+      <Volume2 size={18} strokeWidth={1.75} aria-hidden="true" />
     </button>
   );
 }
