@@ -258,7 +258,7 @@ const AUTHOR_NOTE: Record<Note["author"], string> = {
   you: "",
   ai: "written by AI",
   ai_edited: "AI draft, edited by you",
-  default: "Koihongo's mnemonic: edit it or ask AI to make it yours",
+  default: "",
 };
 
 function NoteEditor({ item, kind, label, onSaved }: { item: ItemDetails; kind: NoteKind; label: string; onSaved: () => void }) {
