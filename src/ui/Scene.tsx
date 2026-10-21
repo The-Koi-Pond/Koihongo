@@ -190,20 +190,22 @@ function Sparkles() {
   );
 }
 
-/** The crescent moon with a faint glow, pinned to the banner's top-right corner (CSS). */
+/** The crescent moon with a faint glow, on the right, halfway between the banner's top and the mountain tops (CSS). */
 function Moon() {
   const mask = useId().replace(/:/g, "");
   return (
-    <svg className="banner-deco banner-moon" viewBox="0 0 48 48" aria-hidden="true">
-      <defs>
-        <mask id={mask}>
-          <rect width="48" height="48" fill="#fff"></rect>
-          <circle cx="14" cy="20" r="12" fill="#000"></circle>
-        </mask>
-      </defs>
-      <circle cx="24" cy="24" r="20" fill="#ffe08a" opacity="0.07"></circle>
-      <circle cx="24" cy="24" r="13" fill="#ffe08a" mask={`url(#${mask})`}></circle>
-    </svg>
+    <div className="banner-deco banner-moon-sky" aria-hidden="true">
+      <svg className="banner-moon" viewBox="0 0 48 48">
+        <defs>
+          <mask id={mask}>
+            <rect width="48" height="48" fill="#fff"></rect>
+            <circle cx="14" cy="20" r="12" fill="#000"></circle>
+          </mask>
+        </defs>
+        <circle cx="24" cy="24" r="20" fill="#ffe08a" opacity="0.07"></circle>
+        <circle cx="24" cy="24" r="13" fill="#ffe08a" mask={`url(#${mask})`}></circle>
+      </svg>
+    </div>
   );
 }
 

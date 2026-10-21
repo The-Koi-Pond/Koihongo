@@ -1061,12 +1061,25 @@ textarea {
 .banner.word { --kind: var(--word); }
 
 
-/* The moon (Scene.tsx): top-right corner, just under the banner's top row
-   (date, kind badge, "Stop here") so it never covers those controls. Its
-   svg has glow room around the crescent, so its box sits a little outside. */
+/* The moon's frame: the whole banner, padding included, so cqw/cqh measure
+   exactly the area the hills span. */
+.banner-moon-sky {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  container-type: size;
+  pointer-events: none;
+}
+
+/* The moon (Scene.tsx), on the right, centred halfway between the top of the
+   banner and the mountain tops below it. The hills (518×74, full width) peak
+   about 24 of their 74 rows down at the right edge, so the mountain tops sit
+   at height - width × 50/518; half of that, minus half the moon's 66px box.
+   It never rises above --moon-min-top, which keeps it clear of the corner
+   controls (date, kind badge, "Stop here"). */
 .banner-moon {
   position: absolute;
-  top: var(--moon-top, 64px);
+  top: max(var(--moon-min-top, 64px), calc((100cqh - 100cqw * 50 / 518) / 2 - 33px));
   right: var(--moon-right, 14px);
   width: 66px;
   height: 66px;
@@ -1074,14 +1087,14 @@ textarea {
   pointer-events: none;
 }
 
-/* Nothing in the corner (e.g. the practice quiz, which has no "Stop here"): the moon moves right up into it. */
+/* Nothing in the corner (e.g. the practice quiz, which has no "Stop here"): no minimum. */
 .banner:has(> .banner-top > .banner-top-end:empty) {
-  --moon-top: 4px;
+  --moon-min-top: 0px;
 }
 
-/* Today's banner is short and the date fills the corner: the moon sits level with the date, just left of it. */
+/* Today: the date fills the corner, so the moon sits just left of it. */
 .today-banner {
-  --moon-top: 0px;
+  --moon-min-top: 0px;
   --moon-right: 160px;
 }
 
