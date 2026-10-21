@@ -13,63 +13,67 @@ export function LevelCard({ status, kana, ranks }: { status?: LevelStatus; kana?
   if (!status) {
     return (
       <section className="card level-card" aria-busy="true">
-        <div className="level-main">
-          <div className="level-head">
-            <h2 className="tile-title">Progress</h2>
-            <div className="level-badge">
-              <span className="level-lv">LV</span>
-              <span className="level-num">&nbsp;</span>
+        <h2 className="tile-title">Progress</h2>
+        <div className="card-panel level-panel">
+          <div className="level-main">
+            <div className="level-head">
+              <div className="level-badge">
+                <span className="level-lv">LV</span>
+                <span className="level-num">&nbsp;</span>
+              </div>
             </div>
+            <ul className="progress-rows">
+              <GaugeRow label="KNJI" name="Kanji in this level" tally={{ passed: 0, learning: 0, total: 0 }} />
+              <GaugeRow label="WORD" name="Words in this level" tally={{ passed: 0, learning: 0, total: 0 }} />
+            </ul>
           </div>
-          <ul className="progress-rows">
-            <GaugeRow label="KNJI" name="Kanji in this level" tally={{ passed: 0, learning: 0, total: 0 }} />
-            <GaugeRow label="WORD" name="Words in this level" tally={{ passed: 0, learning: 0, total: 0 }} />
-          </ul>
+          <ProgressArt />
         </div>
-        <ProgressArt />
       </section>
     );
   }
   const toGo = Math.max(0, status.kanji.needed - status.kanji.passed);
   return (
     <section className="card level-card">
-      <div className="level-main">
-        <div className="level-head">
-          <h2 className="tile-title">Progress</h2>
-          <div className="level-badge" aria-label={`Level ${status.level}`}>
-            <span className="level-lv">LV</span>
-            <span className="level-num">{status.level}</span>
-          </div>
-          <p className="level-info">
-            <span>
-              <span className="region-chip" title={REGION_NOTE}>
-                {status.region}
-              </span>{" "}
-              region · level <span className="num">{status.regionLevel}</span> of <span className="num">{status.regionLevels}</span>
-            </span>
-            <span className="level-next">
-              {status.complete ? "Every level cleared!" : `${toGo} more kanji to level up`}
-            </span>
-          </p>
-          <RegionPips current={status.regionLevel} total={status.regionLevels} />
-        </div>
-        <ul className="progress-rows">
-          <GaugeRow label="KNJI" name="Kanji in this level" tally={status.kanji} goal={status.kanji.needed} />
-          {status.components.total > 0 && <GaugeRow label="PART" name="Components in this level" tally={status.components} />}
-          {status.words.total > 0 && <GaugeRow label="WORD" name="Words in this level" tally={status.words} />}
-          {kana && <GaugeRow label="KANA" name="Kana (until you've learned them all)" tally={kana} />}
-        </ul>
-        {ranks && RANK_ORDER.some((r) => ranks[r] > 0) && (
-          <p className="rank-tally" aria-label="Items by rank">
-            {[...RANK_ORDER].reverse().map((r) => (
-              <span key={r} className={ranks[r] ? "" : "none"}>
-                <RankBadge rank={r} /> <span className="num">{ranks[r]}</span>
+      <h2 className="tile-title">Progress</h2>
+      <div className="card-panel level-panel">
+        <div className="level-main">
+          <div className="level-head">
+            <div className="level-badge" aria-label={`Level ${status.level}`}>
+              <span className="level-lv">LV</span>
+              <span className="level-num">{status.level}</span>
+            </div>
+            <p className="level-info">
+              <span>
+                <span className="region-chip" title={REGION_NOTE}>
+                  {status.region}
+                </span>{" "}
+                region · level <span className="num">{status.regionLevel}</span> of <span className="num">{status.regionLevels}</span>
               </span>
-            ))}
-          </p>
-        )}
+              <span className="level-next">
+                {status.complete ? "Every level cleared!" : `${toGo} more kanji to level up`}
+              </span>
+            </p>
+            <RegionPips current={status.regionLevel} total={status.regionLevels} />
+          </div>
+          <ul className="progress-rows">
+            <GaugeRow label="KNJI" name="Kanji in this level" tally={status.kanji} goal={status.kanji.needed} />
+            {status.components.total > 0 && <GaugeRow label="PART" name="Components in this level" tally={status.components} />}
+            {status.words.total > 0 && <GaugeRow label="WORD" name="Words in this level" tally={status.words} />}
+            {kana && <GaugeRow label="KANA" name="Kana (until you've learned them all)" tally={kana} />}
+          </ul>
+          {ranks && RANK_ORDER.some((r) => ranks[r] > 0) && (
+            <p className="rank-tally" aria-label="Items by rank">
+              {[...RANK_ORDER].reverse().map((r) => (
+                <span key={r} className={ranks[r] ? "" : "none"}>
+                  <RankBadge rank={r} /> <span className="num">{ranks[r]}</span>
+                </span>
+              ))}
+            </p>
+          )}
+        </div>
+        <ProgressArt />
       </div>
-      <ProgressArt />
     </section>
   );
 }

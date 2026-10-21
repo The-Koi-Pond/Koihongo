@@ -160,28 +160,32 @@ export function Today({
       <div className="today-tiles">
         <section className="card">
           <h2 className="tile-title">Reviews</h2>
-          <p className="tile-big">
-            {reviews} <span className="tile-unit">{catchUp ? "left in today's share" : "due now"}</span>
-          </p>
-          {catchUp && (
-            <p className="catch-up small">
-              Catch-up mode: the rest is spread over about {plural(catchUp.moreDays, "more day")}.{" "}
-              <button className="link" onClick={() => go("extra-reviews")}>
-                Do a few more
-              </button>
+          <div className="card-panel">
+            <p className="tile-big">
+              {reviews} <span className="tile-unit">{catchUp ? "left in today's share" : "due now"}</span>
             </p>
-          )}
-          <Upcoming summary={summary} forecast={forecast} now={now.getTime()} />
+            {catchUp && (
+              <p className="catch-up small">
+                Catch-up mode: the rest is spread over about {plural(catchUp.moreDays, "more day")}.{" "}
+                <button className="link" onClick={() => go("extra-reviews")}>
+                  Do a few more
+                </button>
+              </p>
+            )}
+            <Upcoming summary={summary} forecast={forecast} now={now.getTime()} />
+          </div>
         </section>
 
         <section className="card">
           <h2 className="tile-title">Lessons</h2>
-          <p className="tile-big">
-            {lessons} <span className="tile-unit">new today</span>
-          </p>
-          <TrackPreview name="Kana" lessons={summary.lessons.filter((l) => l.track === "kana")} />
-          <TrackPreview name="Kanji path" lessons={summary.lessons.filter((l) => l.track === "main")} />
-          <p className="muted small">{lessonNote(summary)}</p>
+          <div className="card-panel">
+            <p className="tile-big">
+              {lessons} <span className="tile-unit">new today</span>
+            </p>
+            <TrackPreview name="Kana" lessons={summary.lessons.filter((l) => l.track === "kana")} />
+            <TrackPreview name="Kanji path" lessons={summary.lessons.filter((l) => l.track === "main")} />
+            <p className="muted small">{lessonNote(summary)}</p>
+          </div>
         </section>
       </div>
 
@@ -294,13 +298,17 @@ function TodayShell({ now }: { now: Date }) {
       <div className="today-tiles">
         <section className="card">
           <h2 className="tile-title">Reviews</h2>
-          <p className="tile-big">&nbsp;</p>
-          <p className="muted small">&nbsp;</p>
+          <div className="card-panel">
+            <p className="tile-big">&nbsp;</p>
+            <p className="muted small">&nbsp;</p>
+          </div>
         </section>
         <section className="card">
           <h2 className="tile-title">Lessons</h2>
-          <p className="tile-big">&nbsp;</p>
-          <p className="muted small">&nbsp;</p>
+          <div className="card-panel">
+            <p className="tile-big">&nbsp;</p>
+            <p className="muted small">&nbsp;</p>
+          </div>
         </section>
       </div>
       <LevelCard />

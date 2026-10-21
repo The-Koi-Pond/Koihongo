@@ -2534,7 +2534,7 @@ select {
   /* Grow from zero into leftover space (not from its natural height), so the page
      shrinks to the window instead of the page growing to fit the banner. */
   flex: 1 1 0;
-  min-height: 200px;
+  min-height: 160px;
   grid-template-rows: auto 1fr;
 }
 
@@ -2681,7 +2681,31 @@ select {
 }
 
 .today .card {
-  padding: 10px 18px 14px;
+  padding: 8px 14px 10px;
+}
+
+.today .card-panel {
+  margin-top: 6px;
+  padding: 8px 12px 9px;
+}
+
+@media (max-height: 640px) {
+  .today .card-panel {
+    margin-top: 4px;
+    padding: 5px 10px 6px;
+  }
+}
+
+/* The smallest windows: slimmer cards and panels still, so Today fits. */
+@media (max-height: 540px) {
+  .today .card {
+    padding: 6px 12px 6px;
+  }
+
+  .today .card-panel {
+    margin-top: 2px;
+    padding: 3px 10px 4px;
+  }
 }
 
 .today .card p {
@@ -2960,11 +2984,6 @@ select {
   margin-bottom: 8px;
 }
 
-.level-head .tile-title {
-  grid-column: 1 / -1;
-  margin: 0;
-}
-
 .level-badge {
   display: inline-flex;
   align-items: baseline;
@@ -3085,7 +3104,7 @@ select {
 
 /* Two columns: the level and gauges, then the text-art scroll in about a
    quarter of the width, so the gauges aren't stretched across the window. */
-.level-card {
+.level-panel {
   display: grid;
   grid-template-columns: minmax(0, 1fr) minmax(150px, 24%);
   column-gap: 24px;
@@ -3126,7 +3145,7 @@ select {
 
 /* No room in narrow or short windows: the gauges get the whole card. */
 @media (max-width: 820px), (max-height: 640px) {
-  .level-card {
+  .level-panel {
     display: block;
   }
 
@@ -3569,14 +3588,16 @@ select {
    --pat-x/--pat-y/--pat-w/--pat-h place the pattern: by default it fills each
    card, and on Today they point all three cards at one shared area, so the
    pattern runs on behind them (see useSharedCardPattern.ts).
-   Readability, both one setting to tweak: --card-veil, a translucent indigo
-   layer over the pattern (the dots get --card-dots-opacity), and
-   --card-text-shadow, a dark outline and glow around the light text. */
+   Readability: content sits in a reading panel (.card-panel, or .field-body
+   in item cards), a translucent indigo box with a dotted border, so the
+   pattern stays bright around it. Titles and labels sit on the pattern with
+   --card-text-shadow, a dark outline and glow. Cards without a panel get
+   --card-veil, an indigo layer over the whole pattern, instead. */
 .card,
 .split-card,
 .field {
   --card-line: #f2adf6;
-  --card-veil: rgb(38 30 110 / 0.28);
+  --card-veil: transparent; /* the reading panels (.card-panel, .field-body) do the darkening */
   --card-dots-opacity: 0.8;
   --card-text-shadow: 0 1px 0 rgb(28 20 80 / 0.9), 1px 0 0 rgb(28 20 80 / 0.6), -1px 0 0 rgb(28 20 80 / 0.6),
     0 0 3px rgb(28 20 80 / 0.85), 0 0 8px rgb(28 20 80 / 0.45);
@@ -3609,6 +3630,45 @@ select {
 
 .split-card > .field {
   background: transparent; /* the split card paints one background behind both halves */
+}
+
+/* The reading panel. */
+.card-panel,
+:is(.card, .split-card, .field) .field-body {
+  --card-text-shadow: 0 1px 0 rgb(20 14 60 / 0.75);
+  margin-top: 8px;
+  padding: 10px 14px 12px;
+  border: 2px solid rgb(206 196 255 / 0.35);
+  border-radius: 6px;
+  background: rgb(46 40 128 / 0.74);
+  box-shadow: inset 0 0 0 2px rgb(30 24 90 / 0.3);
+  outline: 1px dashed rgb(255 255 255 / 0.2);
+  outline-offset: -6px;
+  text-shadow: var(--card-text-shadow);
+}
+
+/* The pills under an item's big character have their own glassy background: no panel inside them. */
+.banner + .item-info > .overlap .field-body {
+  margin: 0;
+  padding: 0;
+  border: none;
+  background: none;
+  box-shadow: none;
+  outline: none;
+}
+
+/* No panel (e.g. the item page's progress strip, Settings): veil the whole pattern instead. */
+.card:not(:has(> .card-panel)) {
+  --card-veil: rgb(40 32 112 / 0.78);
+  --card-dots-opacity: 0.3; /* the dots sit above the veil, so they fade back too */
+}
+
+/* Item cards' small labels (MEANINGS, READINGS…) sit on the bright pattern: a crisp 1px outline. */
+.field h3 {
+  color: #fff;
+  text-shadow:
+    1px 0 0 #2a1f66, -1px 0 0 #2a1f66, 0 1px 0 #2a1f66, 0 -1px 0 #2a1f66,
+    1px 1px 0 #2a1f66, -1px 1px 0 #2a1f66, 1px -1px 0 #2a1f66, -1px -1px 0 #2a1f66;
 }
 
 .split-card > .field::before {
