@@ -3639,6 +3639,25 @@ select {
   background: transparent; /* the split card paints one background behind both halves */
 }
 
+/* Lessons, reviews and quizzes (.session): calm cards, so the pattern doesn't
+   distract while studying. Plain card colour with only a faint grid, no
+   gradient or dots. */
+.session :is(.card, .split-card, .field) {
+  --card-veil: transparent;
+  background:
+    linear-gradient(rgb(255 170 230 / 0.07) 0 2px, transparent 2px) var(--pat-x, 0px) var(--pat-y, 0px) / 20px 20px,
+    linear-gradient(90deg, rgb(255 170 230 / 0.07) 0 2px, transparent 2px) var(--pat-x, 0px) var(--pat-y, 0px) / 20px 20px,
+    var(--surface);
+}
+
+.session :is(.card, .split-card, .field)::before {
+  content: none;
+}
+
+.session .split-card > .field {
+  background: transparent;
+}
+
 /* The reading panel. */
 .card-panel,
 :is(.card, .split-card, .field) .field-body {
