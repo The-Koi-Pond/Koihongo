@@ -79,3 +79,9 @@ export async function migrate(db: Db): Promise<void> {
     await db.batch([...MIGRATIONS[v].map((sql) => ({ sql })), { sql: `PRAGMA user_version = ${v + 1}` }]);
   }
 }
+
+// Dev only: the app migrates once at start, so a live code update that adds a
+// migration must reload the whole page, or new code meets the old schema.
+// (Typed loosely: Node tests import this file too, where there's no Vite.)
+const hot = (import.meta as { hot?: { accept(cb: () => void): void; invalidate(): void } }).hot;
+hot?.accept(() => hot.invalidate());
