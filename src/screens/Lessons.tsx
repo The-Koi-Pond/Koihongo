@@ -4,6 +4,7 @@ import { tauriDb } from "../db/tauriDb.ts";
 import { cardTypesFor, startLessons, todaySummary, type Lesson } from "../srs/progress.ts";
 import { FIRST_REVIEW_DELAY_MS } from "../srs/scheduler.ts";
 import { answerCurrent, currentQuestion, spreadOutPairs, startSession, type Question, type Session } from "../srs/session.ts";
+import { FastTrackButton } from "../ui/FastTrack.tsx";
 import { ItemView } from "../ui/ItemView.tsx";
 import { DoneView } from "../ui/DoneView.tsx";
 import { QuestionCard } from "../ui/QuestionCard.tsx";
@@ -149,7 +150,11 @@ export function Lessons({ onExit, exitLabel = "Back to Today" }: { onExit: () =>
   const last = page === batch.length - 1;
   return (
     <div className="session with-bottom-bar">
-      {item ? <ItemView item={item} onChange={reload} /> : <p className="muted">Loading…</p>}
+      {item ? (
+        <ItemView item={item} onChange={reload} bannerEnd={<FastTrackButton itemKey={item.item_key} offLabel="I already know this" />} />
+      ) : (
+        <p className="muted">Loading…</p>
+      )}
 
       {/* Pinned to the bottom of the window, so Back/Next never move. */}
       <nav className="bottom-bar" aria-label="Lesson pages">

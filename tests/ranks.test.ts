@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 import { migrate } from "../src/db/migrations.ts";
+import { setFastTrack } from "../src/srs/fastTrack.ts";
 import { rankFor, rankTally, rankUpFor } from "../src/srs/ranks.ts";
 import { PASS_STABILITY_DAYS } from "../src/srs/scheduler.ts";
 import { openTestDb } from "./nodeDb.ts";
@@ -46,4 +47,13 @@ test("a right answer that strengthens the weaker card is a rank-up; a wrong one 
 test("items still being learned have no rank", async () => {
   const db = await dbWithCards([{ type: "meaning", stability: 0.5, due: 0 }]);
   assert.deepEqual(await rankTally(db), { B: 0, A: 0, S: 0, "★": 0 });
+});
+
+test("on fast track, the rank-up prediction uses Easy too", async () => {
+  const now = 100 * DAY;
+  // Stability 6 and due: Good lands at ~20 days (still B), Easy at ~33 (A).
+  const db = await dbWithCards([{ type: "meaning", stability: 6, due: now }]);
+  assert.equal(await rankUpFor(db, "kanji:木", "meaning", true, now), null);
+  await setFastTrack(db, "kanji:木", true, now);
+  assert.deepEqual(await rankUpFor(db, "kanji:木", "meaning", true, now), { from: "B", to: "A" });
 });

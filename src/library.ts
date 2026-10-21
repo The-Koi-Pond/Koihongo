@@ -25,6 +25,8 @@ export type LibraryItem = {
   status: ItemStatus;
   /** B, A, S or ★ once passed (see srs/ranks.ts). */
   rank: Rank | null;
+  /** 1 if the item is on fast track. */
+  fast: number;
   /** Lowercase text to search: label, meanings, readings. */
   search: string;
 };
@@ -45,6 +47,7 @@ export async function libraryItems(db: Db, keys?: string[]): Promise<LibraryItem
          ELSE 'available'
        END AS status,
        ${rankSql("cards.stability")} AS rank,
+       EXISTS (SELECT 1 FROM fast_track f WHERE f.item_key = p.item_key) AS fast,
        lower(coalesce(ka.character || ' ' || ka.romaji || ' ' || ka.accept || ' ' || ka.script,
                       c.display || ' ' || c.name,
                       k.character || ' ' || k.meanings || ' ' || k.on_readings || ' ' || k.kun_readings,

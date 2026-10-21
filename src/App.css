@@ -1860,6 +1860,53 @@ textarea {
   border-radius: 3px;
 }
 
+/* Fast track marker, bottom-left of a tile. */
+.tile-fast {
+  position: absolute;
+  left: 3px;
+  bottom: 2px;
+  display: grid;
+  color: var(--word);
+  filter: drop-shadow(0 0 2px rgb(0 0 0 / 0.6));
+}
+
+/* Fast track: a pill like "Stop here" in banners; filled butter while on. */
+.fast-track-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 14px;
+  border: 2px solid var(--panel-border);
+  border-radius: 999px;
+  background: rgb(38 40 102 / 0.65);
+  color: var(--text);
+  font-size: 0.9rem;
+}
+
+.fast-track-btn:hover {
+  border-color: var(--word);
+}
+
+.fast-track-btn.on {
+  background: var(--word);
+  border-color: var(--word);
+  color: var(--on-kind);
+  font-weight: 700;
+}
+
+.progress-line .fast-track-btn {
+  float: right;
+  margin-left: 12px;
+}
+
+.fast-track-note {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  color: var(--word);
+  font-size: 0.9rem;
+}
+
 .tile.kana { --kind: var(--kana); }
 .tile.component { --kind: var(--component); }
 .tile.word { --kind: var(--word); }

@@ -3,6 +3,7 @@ import { tauriDb } from "../db/tauriDb.ts";
 import { itemProgress, STATUS_NAME, type ItemProgress } from "../library.ts";
 import { ErrorView } from "../screens/Reviews.tsx";
 import { RANK_NAME, rankFor } from "../srs/ranks.ts";
+import { FastTrackButton } from "./FastTrack.tsx";
 import { RankBadge } from "./RankBadge.tsx";
 import { ItemView } from "./ItemView.tsx";
 import { useItem } from "./useItem.ts";
@@ -33,7 +34,7 @@ export function ItemPage({ itemKey, backLabel, onOpen, onBack }: { itemKey: stri
               ← {backLabel}
             </button>
           }
-          below={progress ? <ProgressLine progress={progress} onOpen={onOpen} /> : progress === null && <OffPath />}
+          below={progress ? <ProgressLine itemKey={itemKey} progress={progress} onOpen={onOpen} /> : progress === null && <OffPath />}
         />
       ) : (
         <p className="muted">Loading…</p>
@@ -50,12 +51,13 @@ function OffPath() {
   );
 }
 
-function ProgressLine({ progress, onOpen }: { progress: ItemProgress; onOpen: (key: string) => void }) {
+function ProgressLine({ itemKey, progress, onOpen }: { itemKey: string; progress: ItemProgress; onOpen: (key: string) => void }) {
   const missing = progress.requires.filter((r) => r.status !== "passed");
   const nextDue = Math.min(...progress.cards.map((c) => c.due));
   const rank = progress.cards.length ? rankFor(Math.min(...progress.cards.map((c) => c.stability))) : null;
   return (
     <div className="card progress-line">
+      <FastTrackButton itemKey={itemKey} />
       <p>
         {rank ? (
           <>
