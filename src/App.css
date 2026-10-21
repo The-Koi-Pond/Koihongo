@@ -3371,3 +3371,23 @@ select {
 .split-card > .field {
   border-image: none; /* the split card draws one frame around both halves */
 }
+
+/* Card texture, after Xel's pastel "STATS" sample but kept to night colours
+   so text stays readable: a faint pink grid, a pixel dither, two soft bokeh
+   circles and a slight pink tint at the top, over the card colour. */
+.card,
+.split-card,
+.field {
+  background:
+    radial-gradient(circle at 10% 24%, rgb(255 255 255 / 0.05) 0 26px, transparent 28px),
+    radial-gradient(circle at 90% 76%, rgb(196 170 255 / 0.09) 0 38px, transparent 40px),
+    linear-gradient(rgb(255 170 225 / 0.08) 2px, transparent 2px) 0 0 / 100% 36px,
+    linear-gradient(90deg, rgb(255 170 225 / 0.08) 2px, transparent 2px) 0 0 / 36px 100%,
+    repeating-conic-gradient(rgb(255 255 255 / 0.035) 0 25%, transparent 0 50%) 0 0 / 4px 4px,
+    linear-gradient(180deg, rgb(255 150 215 / 0.08), transparent 70%),
+    var(--surface);
+}
+
+.split-card > .field {
+  background: transparent; /* the split card paints one background behind both halves */
+}
