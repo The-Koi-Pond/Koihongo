@@ -1,7 +1,7 @@
 /* "Starry night" theme: twilight indigo with pastel glows. One theme (no light/dark split yet). */
 :root {
   --bg: #0b0a49; /* the darkest navy of Xel's bush art, so the banners melt into the page */
-  --surface: #30348a;
+  --surface: #3b40a3;
   --surface-2: #262a73;
   --chrome: #2c2f7c; /* title bar, bottom bars */
   --text: #f3f0ff;
