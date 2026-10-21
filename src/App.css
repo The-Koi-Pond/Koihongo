@@ -2667,7 +2667,7 @@ select {
 /* Kaomoji trimmings, matching the Progress card's cat art (MS Gothic, like it):
    a sparkle after the title, and an underline of symbols trimmed to its width. */
 .tile-title::after {
-  content: " ｡ﾟ☆";
+  content: " ｡ﾟ☆" / ""; /* "/ ''": decoration, so screen readers skip it */
   font-family: "MS Gothic", monospace;
   font-size: 15px;
   font-weight: 400;
@@ -2677,15 +2677,16 @@ select {
 }
 
 .tile-title::before {
-  content: "･ﾟ･｡･ﾟ☆ﾟ･｡･ﾟ･｡･ﾟ☆ﾟ･｡･ﾟ･｡･ﾟ☆ﾟ･｡･ﾟ･";
+  content: "•·················•·················•·················•·················•" / "";
   position: absolute;
   left: 0;
   right: 0;
   bottom: 0;
   overflow: hidden;
   white-space: nowrap;
-  font-family: "MS Gothic", monospace;
-  font-size: 10px;
+  /* Segoe UI's • is clearly bigger than its ·, which is the point of the pattern (MS Gothic draws them alike). */
+  font-family: "Segoe UI", sans-serif;
+  font-size: 11px;
   font-weight: 400;
   line-height: 1;
   color: #b9b7f0;
