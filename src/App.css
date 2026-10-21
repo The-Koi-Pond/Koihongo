@@ -2676,21 +2676,19 @@ select {
   text-shadow: none;
 }
 
+/* The •·····• underline, drawn with gradients rather than text so every dot
+   lands on whole pixels: 2px dots every 6px, and a 4px dot every 60px. */
 .tile-title::before {
-  content: "•·················•·················•·················•·················•" / "";
+  content: "";
   position: absolute;
   left: 0;
   right: 0;
-  bottom: 0;
-  overflow: hidden;
-  white-space: nowrap;
-  /* Segoe UI's • is clearly bigger than its ·, which is the point of the pattern (MS Gothic draws them alike). */
-  font-family: "Segoe UI", sans-serif;
-  font-size: 11px;
-  font-weight: 400;
-  line-height: 1;
-  color: #b9b7f0;
-  text-shadow: 0 0 6px rgb(255 214 238 / 0.4);
+  bottom: 3px;
+  height: 4px;
+  background:
+    linear-gradient(90deg, #ffd6ee 4px, transparent 4px) -1px 0 / 60px 4px repeat-x,
+    linear-gradient(90deg, #b9b7f0 2px, transparent 2px) 0 1px / 6px 2px repeat-x;
+  filter: drop-shadow(0 0 3px rgb(255 214 238 / 0.45));
 }
 
 .tile-head {
