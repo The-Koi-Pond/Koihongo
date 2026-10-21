@@ -3011,8 +3011,8 @@ select {
   min-width: 0;
 }
 
-/* The scroll fits the card instead of making it taller: size containment keeps
-   it from adding height, and its text sizes from the cell's height (cqh). */
+/* The art fits the card instead of making it taller: size containment keeps
+   it from adding height, and the svg scales to whatever the cell gets. */
 .level-art {
   display: grid;
   place-items: center;
@@ -3020,75 +3020,10 @@ select {
   min-height: 0;
 }
 
-/* Too short for even the 16px scroll: leave the space empty. */
-@container (max-height: 160px) {
-  .art-scroll {
-    display: none;
-  }
-}
-
-/* A hanging scroll: pale paper between two dark rods, a pixel-crisp outline. */
-.art-scroll {
-  position: relative;
-  display: grid;
-  justify-items: center;
-  gap: 8px;
-  padding: 14px 18px 12px;
-  background: #f3ecdc;
-  color: #2a1f66;
-  box-shadow:
-    0 0 0 3px #2a1f66,
-    6px 6px 0 3px rgb(11 10 73 / 0.55);
-  cursor: help;
-}
-
-.art-scroll::before,
-.art-scroll::after {
-  content: "";
-  position: absolute;
-  left: -10px;
-  right: -10px;
-  height: 8px;
-  background: #5a3a2e;
-  box-shadow: 0 0 0 3px #2a1f66;
-}
-
-.art-scroll::before { top: -10px; }
-.art-scroll::after { bottom: -10px; }
-
-.art-sky {
-  font-family: var(--font-pixel);
-  font-size: 0.85rem;
-  letter-spacing: 0.3em;
-  color: #c9a24a;
-}
-
-/* Top to bottom, columns right to left, in the pixel Japanese font at 2× its 16px grid. */
-.art-saying {
-  margin: 0;
-  writing-mode: vertical-rl;
-  font-family: var(--font-kana);
-  /* 16, 24 or 32px (whole steps of the font's pixel grid), as tall as fits: the
-     rest of the scroll (rods, padding, ☾ ✦, seal) takes about 120px. */
-  font-size: 24px;
-  font-size: clamp(16px, round(down, (100cqh - 120px) / 3.3, 8px), 32px);
-  line-height: 1.25;
-  letter-spacing: 0.06em;
-}
-
-/* A little red hanko-style seal. */
-.art-seal {
-  justify-self: start;
-  display: grid;
-  place-items: center;
-  width: 24px;
-  height: 24px;
-  border-radius: 3px;
-  background: #e0507a;
-  color: #fff;
-  font-family: var(--font-kana);
-  font-size: 16px;
-  line-height: 1;
+.braille-art {
+  width: 100%;
+  height: 100%;
+  filter: drop-shadow(0 0 6px rgb(255 214 238 / 0.25));
 }
 
 /* No room in narrow or short windows: the gauges get the whole card. */
