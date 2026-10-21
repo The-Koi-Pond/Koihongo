@@ -1023,6 +1023,30 @@ textarea {
 .banner-side.left { left: 0; }
 .banner-side.right { right: 0; }
 
+/* The moon (Scene.tsx): top-right corner, just under the banner's top row
+   (date, kind badge, "Stop here") so it never covers those controls. Its
+   svg has glow room around the crescent, so its box sits a little outside. */
+.banner-moon {
+  position: absolute;
+  top: var(--moon-top, 64px);
+  right: var(--moon-right, 14px);
+  width: 66px;
+  height: 66px;
+  z-index: 0;
+  pointer-events: none;
+}
+
+/* Nothing in the corner (e.g. the practice quiz, which has no "Stop here"): the moon moves right up into it. */
+.banner:has(> .banner-top > .banner-top-end:empty) {
+  --moon-top: 4px;
+}
+
+/* Today's banner is short and the date fills the corner: the moon sits level with the date, just left of it. */
+.today-banner {
+  --moon-top: 0px;
+  --moon-right: 160px;
+}
+
 /* Xel's pixel-art hills (assets/scenery/hills.png, 518×74), behind the
    treeline. One panorama, high at the sides and low in the middle, so it
    stretches to the banner's width rather than repeating. */

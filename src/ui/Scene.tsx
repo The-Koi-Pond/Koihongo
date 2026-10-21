@@ -1,10 +1,10 @@
 // The night scene behind banners (Today and item pages).
 //
 // Visual rule: scenery FRAMES the hero area (greeting, Start, the big character)
-// and never sits behind it. Mountains, moon and blossoms are separate pieces
-// pinned to the left and right edges, each capped in width, so the centre stays
-// clear at any window size. The sky itself is the .banner background in CSS,
-// with the horizon tinted by the item's --kind colour.
+// and never sits behind it. Hills and trees are Xel's pixel art along the
+// bottom; the moon sits in the top-right corner and the blossoms top-left, so
+// the centre stays clear at any window size. The sky itself is the .banner
+// background in CSS (Xel's sky.png).
 
 import { useId } from "react";
 import hills from "../assets/scenery/hills.png";
@@ -12,13 +12,14 @@ import bushesLeft from "../assets/scenery/newTreesLeft.png";
 import bushesRight from "../assets/scenery/newTreesRight.png";
 import treelineFront from "../assets/scenery/treeline-front.png";
 
-/** Everything decorative in a banner: stars, both side sceneries, the treeline, blossoms. */
+/** Everything decorative in a banner: stars, side sparkles, the moon, hills, trees, blossoms. */
 export function BannerScene() {
   return (
     <>
       <div className="banner-deco banner-stars" aria-hidden="true" />
       <SideScenery side="left" />
       <SideScenery side="right" />
+      <Moon />
       <div className="banner-deco banner-hills" style={{ backgroundImage: `url(${hills})` }} aria-hidden="true" />
       <Treeline />
       <div className="banner-deco banner-bushes left" style={{ backgroundImage: `url(${bushesLeft})` }} aria-hidden="true" />
@@ -38,10 +39,9 @@ function Sparkle({ x, y, size = 2 }: { x: number; y: number; size?: number }) {
   );
 }
 
-/** Sky details for one side: a shooting star on the left, the moon on the right, sparkles on both. */
+/** Sky details for one side: a shooting star on the left, sparkles on both. */
 function SideScenery({ side }: { side: "left" | "right" }) {
   const left = side === "left";
-  const moonMask = useId().replace(/:/g, "");
   return (
     <svg
       className={`banner-deco banner-side ${side}`}
@@ -64,18 +64,27 @@ function SideScenery({ side }: { side: "left" | "right" }) {
         </>
       ) : (
         <>
-          <defs>
-            <mask id={moonMask}>
-              <rect width="240" height="160" fill="#fff"></rect>
-              <circle cx="186" cy="30" r="12" fill="#000"></circle>
-            </mask>
-          </defs>
-          <circle cx="196" cy="34" r="20" fill="#ffe08a" opacity="0.07"></circle>
-          <circle cx="196" cy="34" r="13" fill="#ffe08a" mask={`url(#${moonMask})`}></circle>
           <Sparkle x={150} y={22} />
           <Sparkle x={222} y={70} size={1} />
         </>
       )}
+    </svg>
+  );
+}
+
+/** The crescent moon with a faint glow, pinned to the banner's top-right corner (CSS). */
+function Moon() {
+  const mask = useId().replace(/:/g, "");
+  return (
+    <svg className="banner-deco banner-moon" viewBox="0 0 48 48" aria-hidden="true">
+      <defs>
+        <mask id={mask}>
+          <rect width="48" height="48" fill="#fff"></rect>
+          <circle cx="14" cy="20" r="12" fill="#000"></circle>
+        </mask>
+      </defs>
+      <circle cx="24" cy="24" r="20" fill="#ffe08a" opacity="0.07"></circle>
+      <circle cx="24" cy="24" r="13" fill="#ffe08a" mask={`url(#${mask})`}></circle>
     </svg>
   );
 }
