@@ -71,7 +71,7 @@ function App() {
 
   return (
     <>
-      <NavBar screen={screen} go={navigate} summary={summary} locked={SESSIONS.includes(screen)} />
+      <NavBar screen={screen} go={navigate} summary={summary} />
       <main className={`app ${WIDE.includes(screen) ? "wide" : ""}`}>
         {error ? (
           <p className="error">Couldn't open your progress database: {error}</p>

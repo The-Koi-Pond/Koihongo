@@ -233,10 +233,6 @@ textarea {
   place-items: center;
 }
 
-.brand:disabled {
-  opacity: 1;
-}
-
 .brand-mark {
   display: grid;
   place-items: center;
@@ -254,10 +250,6 @@ textarea {
   align-items: center;
   gap: 2px;
   align-self: stretch;
-}
-
-.nav-group.locked {
-  opacity: 0.4;
 }
 
 .nav-slot {
