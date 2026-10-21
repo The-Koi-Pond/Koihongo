@@ -30,34 +30,35 @@ export function BannerScene() {
   );
 }
 
-/**
- * The sky's colour bands, from Xel's 146-row pixel strip (sky-gradient-v2):
- * the row each band starts at, and its colour. The banner itself is the top
- * colour, #0b0a49.
- */
-const SKY_ROWS = 146;
-const SKY_BANDS: [row: number, colour: string][] = [
-  [10, "#1b1862"],
-  [32, "#2e297d"],
-  [52, "#4a3398"],
-  [70, "#623fa7"],
-  [88, "#8f63cc"],
-  [104, "#b477c7"],
-  [120, "#ec95ca"],
-  [134, "#fbd7e0"],
-];
+/** The sky's colours, top to bottom, from Xel's pixel strip (the first is also the banner's own background). */
+const SKY_COLOURS = ["#0b0a49", "#1b1862", "#2e297d", "#4a3398", "#623fa7", "#8f63cc", "#b477c7", "#ec95ca", "#fbd7e0"];
+
+/** Each band is this many times taller than the one below it, so the bands crowd together near the horizon. */
+const SKY_SPREAD = 1.2;
+
+/** Each band after the first, with where it starts as a share of the banner's height. */
+const SKY_BANDS: [start: number, colour: string][] = (() => {
+  const heights = SKY_COLOURS.map((_, i) => SKY_SPREAD ** (SKY_COLOURS.length - 1 - i));
+  const total = heights.reduce((a, b) => a + b, 0);
+  let above = 0;
+  return SKY_COLOURS.map((colour, i): [number, string] => {
+    const start = above / total;
+    above += heights[i];
+    return [start, colour];
+  }).slice(1);
+})();
 
 /**
  * The sky, one layer per colour: each covers everything below where its band
  * starts, and its top edge is Xel's dither ramp (a CSS mask, always 2×, so
- * the pixels stay square). Bands start at the same share of the banner's
- * height as in the strip, so every banner shows the whole sky.
+ * the pixels stay square). Bands start at a share of the banner's height
+ * (SKY_BANDS), so every banner shows the whole sky.
  */
 function Sky() {
   return (
     <div className="banner-deco banner-sky" aria-hidden="true">
-      {SKY_BANDS.map(([row, colour]) => (
-        <div key={row} className="sky-band" style={{ top: `${(100 * row) / SKY_ROWS}%`, background: colour }} />
+      {SKY_BANDS.map(([start, colour]) => (
+        <div key={colour} className="sky-band" style={{ top: `${(100 * start).toFixed(2)}%`, background: colour }} />
       ))}
     </div>
   );
