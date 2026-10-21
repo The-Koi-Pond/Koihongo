@@ -2631,7 +2631,7 @@ select {
 }
 
 .today .card {
-  padding: 12px 18px 14px;
+  padding: 10px 18px 14px;
 }
 
 .today .card p {
@@ -2651,14 +2651,45 @@ select {
 /* Chunky pixel panel titles: pale face with a solid block shadow one font
    pixel (24px / 8 = 3px) straight down. */
 .tile-title {
-  margin: 0 0 2px;
+  position: relative;
+  width: fit-content;
+  margin: 0;
+  padding-bottom: 11px; /* room for the symbol underline (::before) */
   font-family: var(--font-title);
   font-weight: 700;
   font-size: 24px;
-  line-height: 1.2;
+  line-height: 1;
   color: #e8e6f0;
   text-transform: uppercase;
   text-shadow: 0 3px 0 #5a5fae;
+}
+
+/* Kaomoji trimmings, matching the Progress card's cat art (MS Gothic, like it):
+   a sparkle after the title, and an underline of symbols trimmed to its width. */
+.tile-title::after {
+  content: " ｡ﾟ☆";
+  font-family: "MS Gothic", monospace;
+  font-size: 15px;
+  font-weight: 400;
+  vertical-align: 0.5em;
+  color: var(--word);
+  text-shadow: none;
+}
+
+.tile-title::before {
+  content: "･ﾟ･｡･ﾟ☆ﾟ･｡･ﾟ･｡･ﾟ☆ﾟ･｡･ﾟ･｡･ﾟ☆ﾟ･｡･ﾟ･";
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  font-family: "MS Gothic", monospace;
+  font-size: 10px;
+  font-weight: 400;
+  line-height: 1;
+  color: #b9b7f0;
+  text-shadow: 0 0 6px rgb(255 214 238 / 0.4);
 }
 
 .tile-head {
@@ -3042,7 +3073,7 @@ select {
 }
 
 /* No room in narrow or short windows: the gauges get the whole card. */
-@media (max-width: 820px), (max-height: 580px) {
+@media (max-width: 820px), (max-height: 640px) {
   .level-card {
     display: block;
   }
@@ -3368,7 +3399,7 @@ select {
   }
 }
 
-@media (max-height: 580px) {
+@media (max-height: 640px) {
   :root {
     --statusbar-h: 28px;
     --statusbar-gap: 4px;
@@ -3382,8 +3413,19 @@ select {
 
   /* The next size down on Silkscreen's 8px grid, so short windows still fit; the shadow stays one font pixel. */
   .tile-title {
+    padding-bottom: 2px;
     font-size: 16px;
+    line-height: 1.2;
     text-shadow: 0 2px 0 #5a5fae;
+  }
+
+  /* No room for the symbol underline; the sparkle stays. */
+  .tile-title::before {
+    content: none;
+  }
+
+  .tile-title::after {
+    font-size: 12px;
   }
 
   .level-head {
