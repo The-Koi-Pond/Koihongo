@@ -7,6 +7,9 @@
 // with the horizon tinted by the item's --kind colour.
 
 import { useId } from "react";
+import hills from "../assets/scenery/hills.png";
+import bushesLeft from "../assets/scenery/newTreesLeft.png";
+import bushesRight from "../assets/scenery/newTreesRight.png";
 import treelineFront from "../assets/scenery/treeline-front.png";
 
 /** Everything decorative in a banner: stars, both side sceneries, the treeline, blossoms. */
@@ -16,7 +19,10 @@ export function BannerScene() {
       <div className="banner-deco banner-stars" aria-hidden="true" />
       <SideScenery side="left" />
       <SideScenery side="right" />
+      <div className="banner-deco banner-hills" style={{ backgroundImage: `url(${hills})` }} aria-hidden="true" />
       <Treeline />
+      <div className="banner-deco banner-bushes left" style={{ backgroundImage: `url(${bushesLeft})` }} aria-hidden="true" />
+      <div className="banner-deco banner-bushes right" style={{ backgroundImage: `url(${bushesRight})` }} aria-hidden="true" />
       <BlossomBranch />
     </>
   );
@@ -32,7 +38,7 @@ function Sparkle({ x, y, size = 2 }: { x: number; y: number; size?: number }) {
   );
 }
 
-/** Mountains for one side. Drawn for the left; the right is the same mountains mirrored, plus the moon. */
+/** Sky details for one side: a shooting star on the left, the moon on the right, sparkles on both. */
 function SideScenery({ side }: { side: "left" | "right" }) {
   const left = side === "left";
   const moonMask = useId().replace(/:/g, "");
@@ -44,24 +50,6 @@ function SideScenery({ side }: { side: "left" | "right" }) {
       shapeRendering="crispEdges"
       aria-hidden="true"
     >
-      <g transform={left ? undefined : "translate(240 0) scale(-1 1)"}>
-        {/* Far ridge */}
-        <polygon points="0,160 0,96 40,80 80,98 120,86 170,112 210,132 240,160" fill="#3d3591" opacity="0.9"></polygon>
-        {/* Main peak, its lit face, and the snow cap */}
-        <polygon points="0,160 0,122 30,98 70,62 84,54 96,52 108,56 122,64 160,98 200,130 232,160" fill="#5a4fb0"></polygon>
-        <polygon points="96,52 108,56 122,64 160,98 200,130 232,160 150,160 120,110 100,70" fill="#6c60c4"></polygon>
-        <polygon points="70,62 84,54 96,52 108,56 122,64 113,70 104,64 96,72 88,64 78,70" fill="#eef0ff"></polygon>
-        {/* Low pink clouds: stepped pixel puffs */}
-        <g fill="#f7b8de" opacity="0.6">
-          <rect x="16" y="102" width="12" height="3"></rect>
-          <rect x="30" y="104" width="8" height="3"></rect>
-          <rect x="10" y="105" width="32" height="3"></rect>
-          <rect x="4" y="108" width="44" height="4"></rect>
-          <rect x="158" y="116" width="10" height="3"></rect>
-          <rect x="152" y="119" width="26" height="3"></rect>
-          <rect x="146" y="122" width="40" height="3"></rect>
-        </g>
-      </g>
       {left ? (
         <>
           {/* Shooting star */}
@@ -93,11 +81,12 @@ function SideScenery({ side }: { side: "left" | "right" }) {
 }
 
 /**
- * Xel's pixel-art treeline along the whole bottom edge, under the hero area.
- * It's drawn in the page colour, so the banner melts into the page below.
+ * Xel's pixel-art treeline along the whole bottom edge, joining the two bush
+ * corners. Its shape is used as a stencil painted in the page colour, so the
+ * banner melts into the page below whatever that colour is.
  */
 function Treeline() {
-  return <div className="banner-deco banner-treeline" style={{ backgroundImage: `url(${treelineFront})` }} aria-hidden="true" />;
+  return <div className="banner-deco banner-treeline" style={{ maskImage: `url(${treelineFront})` }} aria-hidden="true" />;
 }
 
 // Blossom clusters: [x, y, size] along the top-left branch.

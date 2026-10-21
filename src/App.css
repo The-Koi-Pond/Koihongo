@@ -1,6 +1,6 @@
 /* "Starry night" theme: twilight indigo with pastel glows. One theme (no light/dark split yet). */
 :root {
-  --bg: #262866;
+  --bg: #0b0a49; /* the darkest navy of Xel's bush art, so the banners melt into the page */
   --surface: #30348a;
   --surface-2: #262a73;
   --chrome: #2c2f7c; /* title bar, bottom bars */
@@ -1024,32 +1024,72 @@ textarea {
 .banner-side.left { left: 0; }
 .banner-side.right { right: 0; }
 
-/* Xel's pixel-art treeline (assets/scenery/treeline-front.png, 338×64), the
-   front layer: drawn in the page colour so it melts into the page below,
-   scaled by whole pixels so it stays crisp, and repeated along the bottom. */
-.banner-treeline {
-  --px: 2;
+/* Xel's pixel-art hills (assets/scenery/hills.png, 518×74), behind the
+   treeline. One panorama, high at the sides and low in the middle, so it
+   stretches to the banner's width rather than repeating. */
+.banner-hills {
   position: absolute;
   left: 0;
   right: 0;
   bottom: 0;
-  height: calc(64px * var(--px));
-  background-repeat: repeat-x;
-  background-position: left bottom;
-  background-size: calc(338px * var(--px)) calc(64px * var(--px));
+  aspect-ratio: 518 / 74;
+  background-size: 100% 100%;
   image-rendering: pixelated;
+  z-index: 0;
+  pointer-events: none;
+}
+
+/* Xel's pixel-art treeline (assets/scenery/treeline-front.png, 338×64) at 1×,
+   repeated along the bottom to join the two bush corners. The PNG is only a
+   stencil (mask): it's painted in the page colour, so it melts into the page. */
+.banner-treeline {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 64px;
+  background: var(--bg);
+  mask-repeat: repeat-x;
+  mask-position: left bottom;
+  mask-size: 338px 64px;
   /* Above the bottom fade (.banner.bleed::after); the banner's content comes later in the page, so it stays on top. */
   z-index: 1;
   pointer-events: none;
 }
 
+/* Xel's pixel-art bushes (assets/scenery/newTrees{Left,Right}.png, 256×68),
+   the front-most layer: one in each bottom corner, rising toward the edge. */
+.banner-bushes {
+  --px: 2;
+  position: absolute;
+  bottom: 0;
+  width: calc(256px * var(--px));
+  height: calc(68px * var(--px));
+  max-width: 50%;
+  background-size: calc(256px * var(--px)) calc(68px * var(--px));
+  background-repeat: no-repeat;
+  image-rendering: pixelated;
+  z-index: 1;
+  pointer-events: none;
+}
+
+.banner-bushes.left {
+  left: 0;
+  background-position: left bottom;
+}
+
+.banner-bushes.right {
+  right: 0;
+  background-position: right bottom;
+}
+
 /* Today's banner is short and holds the Start button: 1× keeps the trees under it. */
-.today-banner .banner-treeline {
+.today-banner .banner-bushes {
   --px: 1;
 }
 
 @media (max-height: 700px) {
-  .banner-treeline {
+  .banner-bushes {
     --px: 1;
   }
 }
