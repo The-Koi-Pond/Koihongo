@@ -9,14 +9,14 @@
 import { useId } from "react";
 import treelineFront from "../assets/scenery/treeline-front.png";
 
-/** Everything decorative in a banner: stars, both side sceneries, low ridges, blossoms. */
+/** Everything decorative in a banner: stars, both side sceneries, the treeline, blossoms. */
 export function BannerScene() {
   return (
     <>
       <div className="banner-deco banner-stars" aria-hidden="true" />
       <SideScenery side="left" />
       <SideScenery side="right" />
-      <Ridges />
+      <Treeline />
       <BlossomBranch />
     </>
   );
@@ -93,20 +93,11 @@ function SideScenery({ side }: { side: "left" | "right" }) {
 }
 
 /**
- * A low far ridge across the whole bottom edge, then Xel's pixel-art treeline
- * in front. The treeline is drawn in the page colour, so
- * the banner melts into the page below. They stay in the bottom strip, under
- * the hero area.
+ * Xel's pixel-art treeline along the whole bottom edge, under the hero area.
+ * It's drawn in the page colour, so the banner melts into the page below.
  */
-function Ridges() {
-  return (
-    <>
-      <svg className="banner-deco banner-ridges" viewBox="0 0 400 40" preserveAspectRatio="none" shapeRendering="crispEdges" aria-hidden="true">
-        <polygon points="0,16 40,9 85,15 130,7 175,14 215,11 255,5 300,13 345,8 400,14 400,40 0,40" fill="#3d3893" opacity="0.75"></polygon>
-      </svg>
-      <div className="banner-deco banner-treeline" style={{ backgroundImage: `url(${treelineFront})` }} aria-hidden="true" />
-    </>
-  );
+function Treeline() {
+  return <div className="banner-deco banner-treeline" style={{ backgroundImage: `url(${treelineFront})` }} aria-hidden="true" />;
 }
 
 // Blossom clusters: [x, y, size] along the top-left branch.
