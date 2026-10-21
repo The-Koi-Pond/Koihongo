@@ -1,4 +1,3 @@
-import { TrendingUp } from "lucide-react";
 import type { LevelStatus, LevelUpNews, Tally } from "../levels.ts";
 import { RANK_ORDER, type Rank } from "../srs/ranks.ts";
 import { RankBadge } from "./RankBadge.tsx";
@@ -15,9 +14,7 @@ export function LevelCard({ status, kana, ranks }: { status?: LevelStatus; kana?
     return (
       <section className="card level-card" aria-busy="true">
         <div className="level-head">
-          <h2 className="tile-title">
-            <TrendingUp size={16} aria-hidden="true" /> Progress
-          </h2>
+          <h2 className="tile-title">Progress</h2>
           <div className="level-badge">
             <span className="level-lv">LV</span>
             <span className="level-num">&nbsp;</span>
@@ -34,9 +31,7 @@ export function LevelCard({ status, kana, ranks }: { status?: LevelStatus; kana?
   return (
     <section className="card level-card">
       <div className="level-head">
-        <h2 className="tile-title">
-          <TrendingUp size={16} aria-hidden="true" /> Progress
-        </h2>
+        <h2 className="tile-title">Progress</h2>
         <div className="level-badge" aria-label={`Level ${status.level}`}>
           <span className="level-lv">LV</span>
           <span className="level-num">{status.level}</span>
