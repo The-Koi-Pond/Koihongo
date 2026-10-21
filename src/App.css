@@ -3126,7 +3126,7 @@ select {
   position: relative; /* above the heart */
 }
 
-/* The dotted heart the cat sits in: round dots along a heart outline, a faint pink fill. */
+/* The dotted heart the cat sits in: round dots along a heart outline. */
 .level-art {
   position: relative;
 }
@@ -3142,7 +3142,7 @@ select {
 }
 
 .kaomoji-heart-frame path {
-  fill: rgb(255 179 220 / 0.08);
+  fill: none;
   stroke: #ffb3dc;
   stroke-width: 3px;
   stroke-linecap: round;
