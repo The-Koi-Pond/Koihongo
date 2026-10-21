@@ -1,13 +1,16 @@
 import { ArchiveRestore, FolderOpen, Gauge, HardDriveDownload, ScrollText } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { backupKind, createBackup, listBackups, openBackupsFolder, restoreBackup, AUTO_KEEP, type BackupInfo, type BackupKind } from "../backup.ts";
 import { migrate } from "../db/migrations.ts";
 import { tauriDb } from "../db/tauriDb.ts";
 import { DEFAULT_PACING, loadPacing, PACING_LIMITS, savePacing, type Pacing } from "../srs/settings.ts";
+import { useSharedCardPattern } from "../ui/useSharedCardPattern.ts";
 
 export function Settings({ onOpenSources }: { onOpenSources: () => void }) {
+  const page = useRef<HTMLDivElement>(null);
+  useSharedCardPattern(page);
   return (
-    <div className="settings">
+    <div className="settings" ref={page}>
       <h1>
         <span lang="ja">設定</span> Settings
       </h1>
