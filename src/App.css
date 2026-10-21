@@ -454,6 +454,13 @@ textarea {
   gap: 16px;
 }
 
+/* Library and Dictionary item pages. A grid, like .session: as a grid item the
+   item view gets a definite height, which the banner's character needs to size
+   itself from the banner (container query units resolve to 0 otherwise). */
+.item-body {
+  display: grid;
+}
+
 .glyph {
   color: var(--on-kind);
   border-radius: 14px;
@@ -1107,13 +1114,20 @@ textarea {
 .banner-glyph {
   align-self: center;
   font-weight: 700;
-  /* As big as the banner allows: its height minus the label row, info pill and
-     overlap padding (~185px), and its width split across the characters. */
-  font-size: clamp(2.5rem, min(calc((100cqh - 185px) / 1.1), calc(36cqw / var(--chars, 1))), 18rem);
+  /* As big as the banner allows: its content height minus what else shares it
+     (the label row and the character's own padding, ~60px; the facts pill adds
+     ~55px, below), and its width split across the characters. */
+  --glyph-reserve: 60px;
+  font-size: clamp(2.5rem, min(calc((100cqh - var(--glyph-reserve)) / 1.1), calc(36cqw / var(--chars, 1))), 18rem);
   line-height: 1.1;
   padding: 6px 0 10px;
   text-shadow: 0 6px 24px rgb(0 0 0 / 0.35);
   overflow-wrap: anywhere;
+}
+
+/* Kanji, word and component pages have a facts pill under the character. */
+.banner:has(.banner-facts) .banner-glyph {
+  --glyph-reserve: 115px;
 }
 
 .banner-facts {
@@ -1170,7 +1184,9 @@ textarea {
 .item-view > .banner {
   flex: 1 1 auto;
   container-type: size; /* lets the character size itself from the banner (cqh/cqw) */
-  min-height: 180px;
+  /* Pages that scroll anyway (kanji and words have lots of cards) leave no
+     spare height to grow into, so the banner keeps about half the window. */
+  min-height: clamp(260px, 50vh, 460px);
 }
 
 .banner.bleed::after {
