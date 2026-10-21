@@ -969,7 +969,10 @@ textarea {
   --kind: var(--kanji);
   box-sizing: border-box; /* min-heights include the padding */
   position: relative;
-  overflow: hidden;
+  /* Clips the scene, but lets decorations spill up to 48px past the edges:
+     the cherry branches hang down over the page background below. */
+  overflow: clip;
+  overflow-clip-margin: 48px;
   min-height: 250px;
   border-radius: 18px;
   padding: 18px 22px 20px;
@@ -1202,9 +1205,10 @@ textarea {
   transform: scaleX(-1);
 }
 
-/* Today's banner is short: the branches sit low and big, cropped by its top edge, like a foreground branch. */
+/* Today's banner is short: the branches hang 40px below it, over the page
+   background and behind the cards, which keeps their tops inside the banner. */
 .today-banner .banner-branch {
-  --branch-bottom: -24px;
+  --branch-bottom: -40px;
 }
 
 .banner > :not(.banner-deco) {
@@ -3577,6 +3581,7 @@ select {
   --card-text-shadow: 0 1px 0 rgb(28 20 80 / 0.9), 1px 0 0 rgb(28 20 80 / 0.6), -1px 0 0 rgb(28 20 80 / 0.6),
     0 0 3px rgb(28 20 80 / 0.85), 0 0 8px rgb(28 20 80 / 0.45);
   position: relative;
+  z-index: 2; /* above the cherry branches that hang down from the banner */
   isolation: isolate; /* keeps the dot layer (::before) above the background, below the content */
   text-shadow: var(--card-text-shadow);
   background:
