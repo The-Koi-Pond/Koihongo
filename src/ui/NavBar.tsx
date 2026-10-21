@@ -42,40 +42,28 @@ const ICON = { size: 19, strokeWidth: 1.75 };
 
 /**
  * The app's title bar (the window has no Windows frame): drag empty space to
- * move, double-click to maximise. Navigation is locked during lessons/reviews
- * so a stray click can't end a session; window controls always work.
+ * move, double-click to maximise. It always works, even mid-session: reviews
+ * save each answer as it's given, and a lesson round only counts once its quiz
+ * is done, so leaving early loses nothing (the round just comes back).
  */
-export function NavBar({
-  screen,
-  go,
-  summary,
-  locked,
-}: {
-  screen: Screen;
-  go: (s: Screen) => void;
-  summary?: TodaySummary;
-  locked: boolean;
-}) {
-  const navTitle = (label: string) => (locked ? "Finish or stop the session first" : label);
-
+export function NavBar({ screen, go, summary }: { screen: Screen; go: (s: Screen) => void; summary?: TodaySummary }) {
   return (
     <header className="titlebar" data-tauri-drag-region>
-      <button className="brand" onClick={() => go("today")} disabled={locked} title={navTitle("Koihongo")}>
+      <button className="brand" onClick={() => go("today")} title="Koihongo">
         <span lang="ja" className="brand-mark">
           鯉
         </span>
       </button>
 
-      <nav className={`nav-group ${locked ? "locked" : ""}`} aria-label="Main" data-tauri-drag-region>
+      <nav className="nav-group" aria-label="Main" data-tauri-drag-region>
         {SECTIONS.map(({ screen: s, icon: Icon, ja, en, short, soon }) => (
           <button
             key={s}
             className={`nav-tab ${screen === s ? "current" : ""}`}
             aria-current={screen === s ? "page" : undefined}
             aria-label={en}
-            title={navTitle(`${ja} ${en}${soon ? " (coming soon)" : ""}`)}
+            title={`${ja} ${en}${soon ? " (coming soon)" : ""}`}
             onClick={() => go(s)}
-            disabled={locked}
           >
             <Icon size={16} strokeWidth={2} aria-hidden="true" />
             <span className="nav-tab-label">{short ?? en}</span>
@@ -86,15 +74,14 @@ export function NavBar({
 
       <div className="titlebar-space" data-tauri-drag-region />
 
-      <div className={`nav-group ${locked ? "locked" : ""}`} data-tauri-drag-region>
-        <CountButton icon={RotateCcw} label="Reviews" count={summary?.reviewsToday} onClick={() => go("reviews")} locked={locked} />
-        <CountButton icon={GraduationCap} label="Lessons" count={summary?.lessons.length} onClick={() => go("lessons")} locked={locked} />
+      <div className="nav-group" data-tauri-drag-region>
+        <CountButton icon={RotateCcw} label="Reviews" count={summary?.reviewsToday} onClick={() => go("reviews")} />
+        <CountButton icon={GraduationCap} label="Lessons" count={summary?.lessons.length} onClick={() => go("lessons")} />
         <button
           className={`icon-btn ${screen === "settings" || screen === "sources" ? "current" : ""}`}
           aria-label="Settings"
-          title={navTitle("設定 Settings")}
+          title="設定 Settings"
           onClick={() => go("settings")}
-          disabled={locked}
         >
           <Settings {...ICON} />
         </button>
@@ -111,22 +98,20 @@ function CountButton({
   label,
   count,
   onClick,
-  locked,
 }: {
   icon: LucideIcon;
   label: string;
   count?: number;
   onClick: () => void;
-  locked: boolean;
 }) {
   const empty = !count;
   return (
     <button
       className="icon-btn"
       aria-label={`${label}: ${count ?? 0}`}
-      title={locked ? "Finish or stop the session first" : `${label}: ${count ?? 0}${empty ? "" : " (click to start)"}`}
+      title={`${label}: ${count ?? 0}${empty ? "" : " (click to start)"}`}
       onClick={onClick}
-      disabled={locked || empty}
+      disabled={empty}
     >
       <Icon {...ICON} />
       {!empty && <span className="badge">{count > 99 ? "99+" : count}</span>}
