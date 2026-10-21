@@ -71,6 +71,10 @@ Use **browser mode** with the Playwright tools: while `pnpm tauri dev` runs, ope
   - Built by `scripts/content/levels.ts`; your status comes from `src/levels.ts`; the card is `src/ui/LevelCard.tsx`.
   - A level clears when all but one of its kanji have passed. Levels are display only and never lock lessons.
   - The "LEVEL UP!" overlay shows once per new level, tracked by the `progress.seenLevel` setting.
+- **Ranks** (`src/srs/ranks.ts`), per item, from the weakest card's FSRS stability:
+  - B = passed (3 days), A = learned (30 days), S = mastered (180 days), ★ = burned (2 years).
+  - ★ items keep rare reviews; they're never retired. Forgetting drops the rank quietly.
+  - Shown as a "RANK UP!" flourish in reviews (predicted at grading time with the same scheduler step), chips on Library tiles and item pages, and a tally on Today.
 - The roadmap says to use the app daily for a while before phase 4 (grammar).
 - **Default mnemonics** (`scripts/content/mnemonics/`):
   - every kana and every component is done;

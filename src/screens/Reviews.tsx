@@ -1,7 +1,8 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { tauriDb } from "../db/tauriDb.ts";
 import { dueCards, recordReview, todaySummary } from "../srs/progress.ts";
-import { answerCurrent, currentQuestion, sessionStats, spreadOutPairs, startSession, type Session } from "../srs/session.ts";
+import { rankUpFor } from "../srs/ranks.ts";
+import { answerCurrent, currentQuestion, questionId, sessionStats, spreadOutPairs, startSession, type Session } from "../srs/session.ts";
 import { DoneView } from "../ui/DoneView.tsx";
 import { QuestionCard, SessionGauge } from "../ui/QuestionCard.tsx";
 import { useItem } from "../ui/useItem.ts";
@@ -49,6 +50,13 @@ export function Reviews({
 
   const question = session && !stopped ? currentQuestion(session) : undefined;
   const { item, error: itemError, reload } = useItem(question?.item_key);
+  const rankUp = useCallback(
+    (correct: boolean) =>
+      question && session && !(questionId(question) in session.firstTry)
+        ? rankUpFor(tauriDb, question.item_key, question.card_type, correct, Date.now())
+        : Promise.resolve(null),
+    [question, session],
+  );
 
   async function onDone(correct: boolean, answer: string) {
     if (!session || !question) return;
@@ -115,6 +123,7 @@ export function Reviews({
           onDone={onDone}
           top={<SessionGauge done={stats.answered} total={total} note={deadline ? "5 minutes" : undefined} />}
           onStop={() => setStopped(true)}
+          rankUp={rankUp}
         />
       ) : (
         <p className="muted">Loading…</p>

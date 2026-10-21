@@ -1,5 +1,7 @@
 import { TrendingUp } from "lucide-react";
 import type { LevelStatus, LevelUpNews, Tally } from "../levels.ts";
+import { RANK_ORDER, type Rank } from "../srs/ranks.ts";
+import { RankBadge } from "./RankBadge.tsx";
 
 const REGION_NOTE = "Approximate: based on the pre-2010 JLPT lists. The JLPT no longer publishes official lists.";
 
@@ -8,7 +10,7 @@ const REGION_NOTE = "Approximate: based on the pre-2010 JLPT lists. The JLPT no 
  * this level's kanji, components and words (plus kana until they're all learned).
  * Without a status (while Today loads) it draws the same layout, blank.
  */
-export function LevelCard({ status, kana }: { status?: LevelStatus; kana?: Tally | null }) {
+export function LevelCard({ status, kana, ranks }: { status?: LevelStatus; kana?: Tally | null; ranks?: Record<Rank, number> }) {
   if (!status) {
     return (
       <section className="card level-card" aria-busy="true">
@@ -58,6 +60,15 @@ export function LevelCard({ status, kana }: { status?: LevelStatus; kana?: Tally
         {status.words.total > 0 && <GaugeRow label="WORD" name="Words in this level" tally={status.words} />}
         {kana && <GaugeRow label="KANA" name="Kana (until you've learned them all)" tally={kana} />}
       </ul>
+      {ranks && RANK_ORDER.some((r) => ranks[r] > 0) && (
+        <p className="rank-tally" aria-label="Items by rank">
+          {[...RANK_ORDER].reverse().map((r) => (
+            <span key={r} className={ranks[r] ? "" : "none"}>
+              <RankBadge rank={r} /> <span className="num">{ranks[r]}</span>
+            </span>
+          ))}
+        </p>
+      )}
     </section>
   );
 }

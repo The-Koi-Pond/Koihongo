@@ -3,6 +3,7 @@
 import type { Db } from "./db/db.ts";
 import { getItemDetails } from "./items.ts";
 import type { ItemKind } from "./srs/progress.ts";
+import { rankSql, type Rank } from "./srs/ranks.ts";
 import { PASS_STABILITY_DAYS, type CardType } from "./srs/scheduler.ts";
 
 /** locked: needs other items first · available: ready for a lesson · learning: started, not passed · passed */
@@ -22,6 +23,8 @@ export type LibraryItem = {
   label: string;
   meaning: string;
   status: ItemStatus;
+  /** B, A, S or ★ once passed (see srs/ranks.ts). */
+  rank: Rank | null;
   /** Lowercase text to search: label, meanings, readings. */
   search: string;
 };
@@ -41,6 +44,7 @@ export async function libraryItems(db: Db, keys?: string[]): Promise<LibraryItem
                       WHERE r.item_key = p.item_key AND r.requires_key NOT IN (SELECT item_key FROM passed)) THEN 'locked'
          ELSE 'available'
        END AS status,
+       ${rankSql("cards.stability")} AS rank,
        lower(coalesce(ka.character || ' ' || ka.romaji || ' ' || ka.accept || ' ' || ka.script,
                       c.display || ' ' || c.name,
                       k.character || ' ' || k.meanings || ' ' || k.on_readings || ' ' || k.kun_readings,
