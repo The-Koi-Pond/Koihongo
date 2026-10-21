@@ -95,6 +95,10 @@ const CAT_ART = `☆ﾟ                  ﾟ☆
 function ProgressArt() {
   return (
     <aside className="level-art" aria-hidden="true">
+      {/* A dotted heart for the cat to sit in. */}
+      <svg className="kaomoji-heart-frame" viewBox="0 0 100 90">
+        <path d="M50 84 C20 62 4 44 4 26 C4 12 15 4 27 4 C37 4 45 10 50 18 C55 10 63 4 73 4 C85 4 96 12 96 26 C96 44 80 62 50 84 Z" />
+      </svg>
       <pre className="kaomoji-art" lang="ja">
         {[...CAT_ART].map((ch, i) =>
           "☆ﾟ｡".includes(ch) ? (

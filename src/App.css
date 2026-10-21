@@ -3133,6 +3133,32 @@ select {
   line-height: 1.15;
   white-space: pre;
   color: #f3eaff;
+  position: relative; /* above the heart */
+}
+
+/* The dotted heart the cat sits in: round dots along a heart outline, a faint pink fill. */
+.level-art {
+  position: relative;
+}
+
+.kaomoji-heart-frame {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: min(100cqw, 108cqh);
+  aspect-ratio: 100 / 90;
+  translate: -50% -46%;
+  overflow: visible;
+}
+
+.kaomoji-heart-frame path {
+  fill: rgb(255 179 220 / 0.08);
+  stroke: #ffb3dc;
+  stroke-width: 3px;
+  stroke-linecap: round;
+  stroke-dasharray: 0 8px;
+  vector-effect: non-scaling-stroke; /* dots stay 3px whatever the heart's size */
+  filter: drop-shadow(0 0 3px rgb(255 140 200 / 0.6));
 }
 
 .kaomoji-star {
@@ -3645,6 +3671,39 @@ select {
   outline: 1px dashed rgb(255 255 255 / 0.2);
   outline-offset: -6px;
   text-shadow: var(--card-text-shadow);
+}
+
+/* Sparkles on the pattern, in the title strip of cards with a reading panel:
+   a big gold four-pointed one and a small pink one, pixel art at 2×, gently
+   twinkling (still with reduced motion on). */
+.card:has(> .card-panel)::after {
+  content: "";
+  position: absolute;
+  top: 6px;
+  right: 22px;
+  width: 70px;
+  height: 30px;
+  pointer-events: none;
+  background:
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 13 13' shape-rendering='crispEdges'%3E%3Cg fill='%23fff1c2'%3E%3Crect x='6' width='1' height='13'/%3E%3Crect y='6' width='13' height='1'/%3E%3Crect x='5' y='4' width='3' height='5'/%3E%3Crect x='4' y='5' width='5' height='3'/%3E%3C/g%3E%3Crect x='6' y='6' width='1' height='1' fill='white'/%3E%3C/svg%3E") right 0 top 0 / 26px 26px no-repeat,
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 9 9' shape-rendering='crispEdges'%3E%3Cg fill='%23ffd6ee'%3E%3Crect x='4' y='1' width='1' height='7'/%3E%3Crect x='1' y='4' width='7' height='1'/%3E%3Crect x='3' y='3' width='3' height='3'/%3E%3C/g%3E%3C/svg%3E") left 0 bottom 0 / 18px 18px no-repeat;
+  /* A thin plum outline so the pale sparkles show on the pastel, then a warm glow. */
+  filter: drop-shadow(1px 0 0 #6b3fa0) drop-shadow(-1px 0 0 #6b3fa0) drop-shadow(0 1px 0 #6b3fa0) drop-shadow(0 -1px 0 #6b3fa0)
+    drop-shadow(0 0 4px rgb(255 214 120 / 0.9));
+  animation: card-twinkle 3.6s ease-in-out infinite;
+}
+
+/* Each card twinkles on its own beat. */
+.today-tiles > .card:nth-child(2)::after { animation-delay: -1.2s; }
+.level-card::after { animation-delay: -2.4s; }
+
+@keyframes card-twinkle {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.45; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .card:has(> .card-panel)::after { animation: none; }
 }
 
 /* The pills under an item's big character have their own glassy background: no panel inside them. */
