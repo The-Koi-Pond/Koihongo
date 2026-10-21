@@ -977,13 +977,31 @@ textarea {
   grid-template-rows: auto 1fr auto;
   justify-items: center;
   color: #fff;
-  /* Xel's pixel-art sky (assets/scenery/sky.png, 4×146) at exactly 2× both
-     ways, so its pixels stay square: anchored to the bottom (the horizon),
-     with its top colour filling any taller banner above it. Short banners
-     like Today's show only its lower part. */
-  background: #0b0a49 url("./assets/scenery/sky.png") left bottom / 8px 292px repeat-x;
+  /* The sky's top colour; the other bands are layered on top (.banner-sky). */
+  background: #0b0a49;
   image-rendering: pixelated;
   box-shadow: 0 8px 28px color-mix(in srgb, var(--kind) 30%, transparent);
+}
+
+/* The sky's colour bands (Sky in Scene.tsx), one layer each. A band fills
+   everything below where it starts; its top edge is Xel's dither ramp, as a
+   stencil: 4×8 pixels drawn at 2×, where these pixels show the new colour
+   (rows top to bottom: 1000, 0000, 0010, 0101, 1010, 1101, 1111, 0111). */
+.banner-sky {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+}
+
+.sky-band {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  mask:
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='4' height='8' shape-rendering='crispEdges'%3E%3Cpath d='M0 0h1v1H0zM2 2h1v1H2zM1 3h1v1H1zM3 3h1v1H3zM0 4h1v1H0zM2 4h1v1H2zM0 5h2v1H0zM3 5h1v1H3zM0 6h4v1H0zM1 7h3v1H1z'/%3E%3C/svg%3E") left top / 8px 16px repeat-x,
+    linear-gradient(#000 0 0) left 16px / 100% 100% no-repeat;
 }
 
 /* Faint stars across the whole sky. */
