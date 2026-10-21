@@ -1035,6 +1035,36 @@ textarea {
   z-index: 0;
 }
 
+/* Xel's pixel-art treeline (assets/scenery/treeline-front.png, 338×64), the
+   front layer: drawn in the page colour so it melts into the page below,
+   scaled by whole pixels so it stays crisp, and repeated along the bottom. */
+.banner-treeline {
+  --px: 2;
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: calc(64px * var(--px));
+  background-repeat: repeat-x;
+  background-position: left bottom;
+  background-size: calc(338px * var(--px)) calc(64px * var(--px));
+  image-rendering: pixelated;
+  /* Above the bottom fade (.banner.bleed::after); the banner's content comes later in the page, so it stays on top. */
+  z-index: 1;
+  pointer-events: none;
+}
+
+/* Today's banner is short and holds the Start button: 1× keeps the trees under it. */
+.today-banner .banner-treeline {
+  --px: 1;
+}
+
+@media (max-height: 700px) {
+  .banner-treeline {
+    --px: 1;
+  }
+}
+
 .banner-branch {
   position: absolute;
   top: 24%;
