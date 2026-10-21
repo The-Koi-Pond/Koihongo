@@ -1174,27 +1174,37 @@ textarea {
   }
 }
 
-/* Xel's pixel-art cherry branches, reaching in from the left edge, at whole-pixel
-   scales: blossoms-item.png (126×110) at 2× on item, lesson and review pages,
-   and the fuller blossoms-today.png (126×119) at 1× in Today's short banner. */
+/* Xel's pixel-art cherry branches, one in each bottom corner and in front of
+   the rest of the scene (the nearest layer): blossoms-left.png (S4, 126×119)
+   on the left, blossoms-right.png (S1, 126×110) flipped on the right, both
+   reaching inward. Whole-pixel scales: 2× on item, lesson and review pages,
+   1× in Today's short banner. */
 .banner-branch {
   --px: 2;
   position: absolute;
-  left: 0;
-  top: 18%;
+  bottom: var(--branch-bottom, 16%);
   width: calc(126px * var(--px));
-  height: calc(110px * var(--px));
-  background: url("./assets/scenery/blossoms-item.png") 0 0 / 100% 100% no-repeat;
   z-index: 0;
   pointer-events: none;
+  background: 0 0 / 100% 100% no-repeat;
+}
+
+.banner-branch.left {
+  left: 0;
+  height: calc(119px * var(--px));
+  background-image: url("./assets/scenery/blossoms-left.png");
+}
+
+.banner-branch.right {
+  right: 0;
+  height: calc(110px * var(--px));
+  background-image: url("./assets/scenery/blossoms-right.png");
+  transform: scaleX(-1);
 }
 
 .today-banner .banner-branch {
   --px: 1;
-  top: auto;
-  bottom: 6px; /* low, under the greeting */
-  height: calc(119px * var(--px));
-  background-image: url("./assets/scenery/blossoms-today.png");
+  --branch-bottom: 4px;
 }
 
 .banner > :not(.banner-deco) {

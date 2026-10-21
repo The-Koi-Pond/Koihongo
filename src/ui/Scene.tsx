@@ -2,7 +2,7 @@
 //
 // Visual rule: scenery FRAMES the hero area (greeting, Start, the big character)
 // and never sits behind it. Hills and trees are Xel's pixel art along the
-// bottom; the moon sits in the top-right corner and the blossoms top-left, so
+// bottom with cherry branches in front in both corners; the moon sits on the right, so
 // the centre stays clear at any window size. The sky is layered colour bands
 // with Xel's dither ramp between them, a pixel starfield, sparkles and a
 // horizon glow, all as picked in the sky playground.
@@ -26,7 +26,7 @@ export function BannerScene() {
       <Treeline />
       <div className="banner-deco banner-bushes left" style={{ backgroundImage: `url(${bushesLeft})` }} aria-hidden="true" />
       <div className="banner-deco banner-bushes right" style={{ backgroundImage: `url(${bushesRight})` }} aria-hidden="true" />
-      <BlossomBranch />
+      <BlossomBranches />
     </>
   );
 }
@@ -218,7 +218,12 @@ function Treeline() {
   return <div className="banner-deco banner-treeline" style={{ maskImage: `url(${treelineFront})` }} aria-hidden="true" />;
 }
 
-/** Xel's pixel-art cherry branch, reaching in from the left edge (which one, and its size, is in CSS). */
-function BlossomBranch() {
-  return <div className="banner-deco banner-branch" aria-hidden="true" />;
+/** Xel's pixel-art cherry branches, one in each bottom corner, in front of the scene (images and sizes in CSS). */
+function BlossomBranches() {
+  return (
+    <>
+      <div className="banner-deco banner-branch left" aria-hidden="true" />
+      <div className="banner-deco banner-branch right" aria-hidden="true" />
+    </>
+  );
 }
