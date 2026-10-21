@@ -36,6 +36,8 @@
   --statusbar-h: 34px;
   --statusbar-gap: 12px;
   --page-pad-bottom: 48px;
+  /* Space between cards and around them: kept small, so little of the page background shows. */
+  --card-gap: 8px;
 
   font-family: var(--font-body);
   font-size: 16px;
@@ -63,14 +65,14 @@ body {
 .app {
   max-width: 760px;
   margin: 0 auto;
-  padding: 28px 16px var(--page-pad-bottom);
+  padding: 28px var(--card-gap) var(--page-pad-bottom);
   display: grid;
   gap: 16px;
 }
 
-/* Item pages and the library grid use more of the window. */
+/* Item pages, Today and the library grid use more of the window. */
 .app.wide {
-  max-width: 1040px;
+  max-width: 1084px;
 }
 
 h1 {
@@ -941,7 +943,7 @@ textarea {
 .fit-page {
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: var(--card-gap);
   min-height: calc(100vh - var(--titlebar-h) - 28px - var(--page-pad-bottom));
 }
 
@@ -1326,7 +1328,7 @@ textarea {
 /* Full-width banner, flush under the title bar (item pages and Today). */
 .banner.bleed {
   margin: -28px calc(50% - 50vw) 0;
-  padding: 18px max(22px, calc(50vw - 498px)) 84px;
+  padding: 18px max(22px, calc(50vw - 520px)) 84px;
   border-radius: 0;
   box-shadow: none;
 }
@@ -1387,7 +1389,7 @@ textarea {
 
 /* The overlapping strip and the panel under it read as one card. */
 .item-info > .overlap + .split-card {
-  margin-top: -12px; /* cancel the grid gap */
+  margin-top: calc(-1 * var(--card-gap)); /* cancel the grid gap */
   border-top: none;
   border-top-left-radius: 0;
   border-top-right-radius: 0;
@@ -1662,7 +1664,7 @@ textarea {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   grid-auto-flow: dense;
-  gap: 12px;
+  gap: var(--card-gap);
 }
 
 .field {
@@ -2677,7 +2679,7 @@ select {
 .today-tiles {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 12px;
+  gap: var(--card-gap);
 }
 
 .today .card {
@@ -3429,12 +3431,6 @@ select {
     gap: 10px;
   }
 
-  .item-view,
-  .fit-page,
-  .today-tiles {
-    gap: 10px;
-  }
-
   .card,
   .field,
   .split-card > .field {
@@ -3570,10 +3566,7 @@ select {
     padding-bottom: 10px;
   }
 
-  .app,
-  .fit-page,
-  .item-view,
-  .today-tiles {
+  .app {
     gap: 8px;
   }
 
