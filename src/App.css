@@ -1174,30 +1174,27 @@ textarea {
   }
 }
 
+/* Xel's pixel-art cherry branches, reaching in from the left edge, at whole-pixel
+   scales: blossoms-item.png (126×110) at 2× on item, lesson and review pages,
+   and the fuller blossoms-today.png (126×119) at 1× in Today's short banner. */
 .banner-branch {
+  --px: 2;
   position: absolute;
-  top: 24%;
-  width: clamp(130px, 16vw, 230px);
+  left: 0;
+  top: 18%;
+  width: calc(126px * var(--px));
+  height: calc(110px * var(--px));
+  background: url("./assets/scenery/blossoms-item.png") 0 0 / 100% 100% no-repeat;
   z-index: 0;
+  pointer-events: none;
 }
 
-.banner-branch.left { left: 0; }
-
-.banner-branch .branches path {
-  fill: none;
-  stroke: #2b1520;
-  stroke-width: 5;
-  stroke-linecap: round;
-  opacity: 0.7;
-}
-
-.banner-branch .petal {
-  fill: #ffd8e6;
-  opacity: 0.85;
-}
-
-.banner-branch .blossom-centre {
-  fill: #f28fb3;
+.today-banner .banner-branch {
+  --px: 1;
+  top: auto;
+  bottom: 6px; /* low, under the greeting */
+  height: calc(119px * var(--px));
+  background-image: url("./assets/scenery/blossoms-today.png");
 }
 
 .banner > :not(.banner-deco) {

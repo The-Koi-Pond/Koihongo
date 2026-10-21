@@ -218,36 +218,7 @@ function Treeline() {
   return <div className="banner-deco banner-treeline" style={{ maskImage: `url(${treelineFront})` }} aria-hidden="true" />;
 }
 
-// Blossom clusters: [x, y, size] along the top-left branch.
-const BLOSSOMS: [number, number, number][] = [
-  [30, 58, 9], [52, 46, 7], [70, 66, 10], [92, 58, 7], [110, 84, 9], [128, 100, 7], [46, 84, 6], [16, 92, 7],
-];
-const BRANCHES = ["M-10 36 Q 40 48 72 66 T 136 104", "M40 52 Q 54 74 44 96", "M86 72 Q 104 70 112 86"];
-
-/** A five-petal blossom. */
-function Blossom({ x, y, size }: { x: number; y: number; size: number }) {
-  return (
-    <g transform={`translate(${x} ${y})`}>
-      {[0, 72, 144, 216, 288].map((angle) => (
-        <circle key={angle} cx={0} cy={-size * 0.55} r={size * 0.5} transform={`rotate(${angle})`} className="petal" />
-      ))}
-      <circle r={size * 0.22} className="blossom-centre" />
-    </g>
-  );
-}
-
-/** A cherry-blossom branch reaching in from the top-left corner. */
+/** Xel's pixel-art cherry branch, reaching in from the left edge (which one, and its size, is in CSS). */
 function BlossomBranch() {
-  return (
-    <svg className="banner-deco banner-branch left" viewBox="-10 20 160 110" preserveAspectRatio="xMinYMin meet" aria-hidden="true">
-      <g className="branches">
-        {BRANCHES.map((d) => (
-          <path key={d} d={d} />
-        ))}
-      </g>
-      {BLOSSOMS.map(([x, y, size], i) => (
-        <Blossom key={i} x={x} y={y} size={size} />
-      ))}
-    </svg>
-  );
+  return <div className="banner-deco banner-branch" aria-hidden="true" />;
 }
