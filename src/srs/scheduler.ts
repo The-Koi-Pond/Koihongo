@@ -67,9 +67,12 @@ export function newCard(itemKey: string, cardType: CardType, now: number): CardR
   };
 }
 
-/** Typed answers are simply right or wrong, so we use two ratings: Good and Again. */
-export function review(row: CardRow, correct: boolean, now: number): { card: CardRow; rating: Rating } {
-  const rating = correct ? Rating.Good : Rating.Again;
+/**
+ * Typed answers are simply right or wrong: Good or Again. Items on fast track
+ * (`easy`) get Easy for a right answer instead.
+ */
+export function review(row: CardRow, correct: boolean, now: number, easy = false): { card: CardRow; rating: Rating } {
+  const rating = correct ? (easy ? Rating.Easy : Rating.Good) : Rating.Again;
   const { card } = scheduler.next(toCard(row), new Date(now), rating);
   return {
     rating,

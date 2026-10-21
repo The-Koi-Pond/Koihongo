@@ -1,6 +1,7 @@
 // Your progress: which lessons are available, what's due, recording answers.
 
 import type { Db, Statement } from "../db/db.ts";
+import { isFastTracked } from "./fastTrack.ts";
 import { newCard, PASS_STABILITY_DAYS, retrievability, review, type CardRow, type CardType } from "./scheduler.ts";
 import { DEFAULT_PACING, LESSON_WINDOW, loadPacing, type Pacing } from "./settings.ts";
 
@@ -102,8 +103,11 @@ export async function recordReview(
 ): Promise<CardRow> {
   const [row] = await db.all<CardRow>("SELECT * FROM srs_cards WHERE item_key = ? AND card_type = ?", [itemKey, cardType]);
   if (!row) throw new Error(`No review card for ${itemKey} (${cardType})`);
-  const { card, rating } = review(row, correct, now);
+  const fast = await isFastTracked(db, itemKey);
+  const { card, rating } = review(row, correct, now, fast);
   await db.batch([
+    // A miss takes the item off fast track: back to the normal pace.
+    ...(fast && !correct ? [{ sql: "DELETE FROM fast_track WHERE item_key = ?", params: [itemKey] }] : []),
     {
       sql: `UPDATE srs_cards SET state = ?, due = ?, stability = ?, difficulty = ?, scheduled_days = ?,
             learning_steps = ?, reps = ?, lapses = ?, last_review = ? WHERE item_key = ? AND card_type = ?`,

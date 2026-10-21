@@ -75,6 +75,9 @@ Use **browser mode** with the Playwright tools: while `pnpm tauri dev` runs, ope
   - B = passed (3 days), A = learned (30 days), S = mastered (180 days), ★ = burned (2 years).
   - ★ items keep rare reviews; they're never retired. Forgetting drops the rank quietly.
   - Shown as a "RANK UP!" flourish in reviews (predicted at grading time with the same scheduler step), chips on Library tiles and item pages, and a tally on Today.
+- **Fast track** (`src/srs/fastTrack.ts`, user.db `fast_track`): right answers on a flagged item are rated Easy instead of Good, so it passes on its first review and needs about a third fewer reviews.
+  - Switched on via "I already know this" on lesson pages, "Too easy" after a right review answer, or the toggle on item pages.
+  - One wrong answer switches it off quietly. Library tiles show a small marker.
 - The roadmap says to use the app daily for a while before phase 4 (grammar).
 - **Default mnemonics** (`scripts/content/mnemonics/`):
   - every kana and every component is done;

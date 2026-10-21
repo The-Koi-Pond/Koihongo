@@ -58,6 +58,13 @@ const MIGRATIONS: string[][] = [
       value TEXT NOT NULL
     )`,
   ],
+  [
+    // Items on fast track: right answers count as Easy (see src/srs/fastTrack.ts).
+    `CREATE TABLE fast_track (
+      item_key TEXT PRIMARY KEY,
+      since    INTEGER NOT NULL
+    )`,
+  ],
 ];
 
 export const SCHEMA_VERSION = MIGRATIONS.length;

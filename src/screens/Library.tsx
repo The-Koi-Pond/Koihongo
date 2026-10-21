@@ -1,3 +1,4 @@
+import { FastForward } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { isRomaji, toHiragana } from "wanakana";
 import { tauriDb } from "../db/tauriDb.ts";
@@ -119,6 +120,11 @@ export function Library() {
                 <ItemHover itemKey={i.item_key} openOnClick={false}>
                   <button className={`tile ${i.kind} ${i.status}`} onClick={() => setSelected(i.item_key)}>
                     <span className="tile-kind">{KIND_NAME[i.kind]}</span>
+                    {i.fast === 1 && (
+                      <span className="tile-fast" title="On fast track">
+                        <FastForward size={11} strokeWidth={2.5} aria-label="On fast track" />
+                      </span>
+                    )}
                     {i.rank && (
                       <span className="tile-rank">
                         <RankBadge rank={i.rank} />

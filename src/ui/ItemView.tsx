@@ -20,15 +20,18 @@ export function ItemView({
   onChange,
   below,
   bannerStart,
+  bannerEnd,
 }: {
   item: ItemDetails;
   onChange: () => void;
   below?: React.ReactNode;
   bannerStart?: React.ReactNode;
+  /** Goes first in the banner's top-right corner (e.g. the lesson's fast-track button). */
+  bannerEnd?: React.ReactNode;
 }) {
   return (
     <div className={`item-view ${item.kind}`}>
-      <ItemBanner item={item} start={bannerStart} />
+      <ItemBanner item={item} start={bannerStart} end={bannerEnd} />
       <ItemInfo item={item} onChange={onChange} />
       {below}
     </div>
@@ -63,7 +66,7 @@ function bannerFacts(item: ItemDetails): { kicker: string; badge?: string; prima
   }
 }
 
-function ItemBanner({ item, start }: { item: ItemDetails; start?: React.ReactNode }) {
+function ItemBanner({ item, start, end }: { item: ItemDetails; start?: React.ReactNode; end?: React.ReactNode }) {
   const { kicker, badge, primary, secondary, speak } = bannerFacts(item);
   const label = itemLabel(item);
   return (
@@ -75,6 +78,7 @@ function ItemBanner({ item, start }: { item: ItemDetails; start?: React.ReactNod
           <p className="banner-kind">{kicker}</p>
         </div>
         <div className="banner-top-end">
+          {end}
           {item.kind === "kana" && item.counterpart && (
             // The same sound in the other script, tucked away until hovered or clicked.
             <InfoTip

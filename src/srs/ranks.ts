@@ -4,6 +4,7 @@
 // again. ★ items still come up for review, just every couple of years.
 
 import type { Db } from "../db/db.ts";
+import { isFastTracked } from "./fastTrack.ts";
 import { PASS_STABILITY_DAYS, review, type CardRow, type CardType } from "./scheduler.ts";
 
 export type Rank = "B" | "A" | "S" | "★";
@@ -43,7 +44,8 @@ export async function rankUpFor(db: Db, itemKey: string, cardType: CardType, cor
   const cards = await db.all<CardRow>("SELECT * FROM srs_cards WHERE item_key = ?", [itemKey]);
   if (cards.length === 0) return null;
   const from = rankFor(Math.min(...cards.map((c) => c.stability)));
-  const after = cards.map((c) => (c.card_type === cardType ? review(c, correct, now).card : c));
+  const fast = await isFastTracked(db, itemKey);
+  const after = cards.map((c) => (c.card_type === cardType ? review(c, correct, now, fast).card : c));
   const to = rankFor(Math.min(...after.map((c) => c.stability)));
   return to && order(to) > order(from) ? { from, to } : null;
 }

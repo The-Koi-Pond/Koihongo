@@ -1,9 +1,10 @@
-import { Check, X } from "lucide-react";
-import { useEffect, useState } from "react";
+import { Check, FastForward, X } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
 import { toKana } from "wanakana";
 import { tauriDb } from "../db/tauriDb.ts";
 import { acceptedAnswers, addSynonym, type ItemDetails } from "../items.ts";
 import { checkKana, checkMeaning, checkReading, type Verdict } from "../srs/answers.ts";
+import { isFastTracked, setFastTrack } from "../srs/fastTrack.ts";
 import type { RankUp } from "../srs/ranks.ts";
 import type { CardType } from "../srs/scheduler.ts";
 import { ItemInfo } from "./ItemInfo.tsx";
@@ -49,6 +50,7 @@ export function QuestionCard({
   const [verdict, setVerdict] = useState<Verdict>();
   const [showInfo, setShowInfo] = useState(false);
   const [overridden, setOverridden] = useState(false);
+  const inputRef = useRef<HTMLInputElement>(null);
   const accepted = acceptedAnswers(item);
   const ask = askFor(item, cardType);
   // Kanji/word readings are typed in romaji that turns into kana; kana questions are answered in romaji itself.
@@ -57,6 +59,17 @@ export function QuestionCard({
   const correct = overridden || verdict?.result === "correct";
   const label = itemLabel(item);
   const [rankNews, setRankNews] = useState<RankUp | null>(null);
+  // Reviews only (they pass rankUp): whether the item is on fast track.
+  const [fast, setFast] = useState<boolean>();
+
+  useEffect(() => {
+    if (!graded || !rankUp) return;
+    let cancelled = false;
+    isFastTracked(tauriDb, item.item_key).then((v) => !cancelled && setFast(v));
+    return () => {
+      cancelled = true;
+    };
+  }, [graded, rankUp, item.item_key]);
 
   useEffect(() => {
     if (!graded || !correct || !rankUp) return setRankNews(null);
@@ -67,7 +80,7 @@ export function QuestionCard({
     return () => {
       cancelled = true;
     };
-  }, [graded, correct, rankUp]);
+  }, [graded, correct, rankUp, fast]);
 
   function submit(e: React.FormEvent) {
     e.preventDefault();
@@ -87,6 +100,13 @@ export function QuestionCard({
     await addSynonym(tauriDb, item.item_key, answer, Date.now());
     setOverridden(true);
     onReload();
+    inputRef.current?.focus(); // the link is gone now; Enter should still move on
+  }
+
+  async function tooEasy() {
+    await setFastTrack(tauriDb, item.item_key, true, Date.now());
+    setFast(true);
+    inputRef.current?.focus();
   }
 
   const expected =
@@ -129,6 +149,7 @@ export function QuestionCard({
             </span>
             <input
               id="answer"
+              ref={inputRef}
               key={`${item.item_key}|${cardType}`}
               autoFocus
               autoComplete="off"
@@ -163,6 +184,21 @@ export function QuestionCard({
               {rankNews && (
                 <span className="rank-up">
                   <span lang="ja">{label}</span> ▸ <RankBadge rank={rankNews.to} /> RANK UP!
+                </span>
+              )}
+              {correct && fast === false && (
+                <button
+                  type="button"
+                  className="link"
+                  title="Put this item on fast track: right answers count as easy until you miss one"
+                  onClick={tooEasy}
+                >
+                  Too easy <FastForward size={13} strokeWidth={2.5} aria-hidden="true" />
+                </button>
+              )}
+              {correct && fast && (
+                <span className="fast-track-note" title="Right answers on this item count as easy">
+                  <FastForward size={13} strokeWidth={2.5} aria-hidden="true" /> fast track
                 </span>
               )}
               {verdict?.result === "wrong" && !overridden && cardType === "meaning" && answer.trim() && (

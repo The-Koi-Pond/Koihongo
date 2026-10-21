@@ -15,6 +15,7 @@ import {
 } from "../src/srs/progress.ts";
 import { FIRST_REVIEW_DELAY_MS, PASS_STABILITY_DAYS } from "../src/srs/scheduler.ts";
 import { DEFAULT_PACING, loadPacing, savePacing } from "../src/srs/settings.ts";
+import { isFastTracked, setFastTrack } from "../src/srs/fastTrack.ts";
 
 const { newPerDay: NEW_PER_DAY, pauseLessonsAtDue: PAUSE_LESSONS_AT_DUE } = DEFAULT_PACING;
 import { openTestDb } from "./nodeDb.ts";
@@ -249,4 +250,21 @@ test("today summary offers only today's catch-up share", async () => {
   assert.equal(s.reviewsDue, 40);
   assert.equal(s.reviewsToday, 30);
   assert.deepEqual(s.catchUp, { todayLeft: 30, waiting: 10, moreDays: 1 });
+});
+
+test("fast track: right answers count as Easy, so an item passes on its first review; a miss ends it", async () => {
+  const db = await freshDb();
+  await startLessons(db, [{ item_key: "component:木", kind: "component" }, { item_key: "component:化", kind: "component" }], T0);
+  await setFastTrack(db, "component:木", true, T0);
+  const due = T0 + FIRST_REVIEW_DELAY_MS;
+
+  const fast = await recordReview(db, "component:木", "meaning", true, "tree", due);
+  const normal = await recordReview(db, "component:化", "meaning", true, "person", due);
+  assert.ok(fast.stability >= PASS_STABILITY_DAYS, `fast-tracked item passes at once (${fast.stability})`);
+  assert.ok(normal.stability < PASS_STABILITY_DAYS, "a normal item needs another review");
+  const [log] = await db.all<{ rating: number }>("SELECT rating FROM review_log WHERE item_key = 'component:木'");
+  assert.equal(log.rating, 4, "logged as Easy");
+
+  await recordReview(db, "component:木", "meaning", false, "wood", fast.due);
+  assert.equal(await isFastTracked(db, "component:木"), false, "one miss takes it off fast track");
 });
