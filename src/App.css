@@ -3350,3 +3350,20 @@ select {
     min-height: 120px;
   }
 }
+
+/* Xel's pixel-art panel frame (assets/ui/frame.png, 196×75), drawn as a
+   9-slice at 2×: the 14px corners keep their art, the striped edges stretch
+   to any size. It's drawn over the plain border, which only sets the layout.
+   The PNG has a 1px empty margin, pushed outside so the frame meets the
+   panel's edge. Last in the file on purpose: the `border` shorthand in the
+   panels' own rules resets border-image. */
+.card,
+.split-card,
+.field {
+  border-image: url("./assets/ui/frame.png") 14 / 28px / 2px stretch;
+  image-rendering: pixelated;
+}
+
+.split-card > .field {
+  border-image: none; /* the split card draws one frame around both halves */
+}
