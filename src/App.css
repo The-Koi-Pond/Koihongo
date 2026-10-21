@@ -2630,6 +2630,258 @@ select {
   font-variant-numeric: tabular-nums;
 }
 
+/* Level card (Today's Progress): level badge, region, and this level's gauges. */
+
+.level-head {
+  display: grid;
+  grid-template-columns: auto auto 1fr auto;
+  align-items: center;
+  gap: 4px 14px;
+  margin-bottom: 8px;
+}
+
+.level-head .tile-title {
+  grid-column: 1 / -1;
+  margin: 0;
+}
+
+.level-badge {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 4px;
+  padding: 2px 12px 4px;
+  border: 2px solid var(--panel-border);
+  border-radius: 6px;
+  background: #1c1e5c;
+  box-shadow: 0 0 12px rgb(255 122 198 / 0.35), inset 0 2px 0 rgb(255 255 255 / 0.12);
+}
+
+.level-lv {
+  font-family: var(--font-pixel);
+  font-weight: 700;
+  font-size: 0.9rem;
+  color: var(--accent);
+}
+
+.level-num {
+  font-family: var(--font-num);
+  font-size: 1.9rem;
+  line-height: 1;
+  color: #fff;
+  text-shadow: 0 0 10px rgb(255 122 198 / 0.6);
+}
+
+.level-info {
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  font-size: 0.9rem;
+}
+
+.level-info .num,
+.level-up .num {
+  font-family: var(--font-num);
+}
+
+/* Tiny5 runs small next to body text. */
+.level-info .num {
+  font-size: 1.25em;
+  line-height: 1;
+}
+
+.level-next {
+  font-size: 0.8rem;
+  color: var(--muted);
+}
+
+.region-chip {
+  display: inline-block;
+  padding: 0 8px;
+  border-radius: 999px;
+  background: var(--kanji);
+  color: var(--on-kind);
+  /* Number font: Pixelify's 2 and 5 are hard to tell apart. */
+  font-family: var(--font-num);
+  font-size: 1.05rem;
+  line-height: 1.25;
+  cursor: help;
+}
+
+.region-pips {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 3px;
+  max-width: 220px;
+}
+
+.region-pips li {
+  width: 9px;
+  height: 9px;
+  border-radius: 2px;
+  background: #2a2d78;
+  box-shadow: inset 0 0 0 1px var(--panel-border);
+}
+
+.region-pips li.done {
+  background: var(--kanji);
+  box-shadow: none;
+}
+
+.region-pips li.here {
+  background: var(--accent);
+  box-shadow: 0 0 8px var(--accent);
+}
+
+.region-bar {
+  width: 160px;
+  height: 8px;
+  border-radius: 4px;
+  background: #2a2d78;
+  box-shadow: inset 0 0 0 1px var(--panel-border);
+  overflow: hidden;
+}
+
+.region-bar > div {
+  height: 100%;
+  min-width: 4px;
+  background: var(--kanji);
+  box-shadow: 0 0 8px var(--accent);
+}
+
+/* Percentages need less room than "132 / 224" did. */
+.level-card .progress-rows li {
+  grid-template-columns: auto minmax(0, 1fr) 3.4em;
+}
+
+/* Tiny5's glyphs are small for their nominal size: go up a lot to stay readable. */
+.level-card .progress-count {
+  font-size: 1.4rem;
+  line-height: 1;
+}
+
+/* Where the level is cleared, on the kanji gauge. */
+.gauge-goal {
+  position: absolute;
+  top: -2px;
+  bottom: -2px;
+  width: 2px;
+  margin-left: -1px;
+  background: var(--word);
+  box-shadow: 0 0 6px var(--word);
+  z-index: 1;
+}
+
+/* Level-up moment over the Today banner (beats `.banner > :not(.banner-deco)`). */
+.banner > .level-up {
+  position: absolute;
+  inset: 0;
+  z-index: 5;
+}
+
+.level-up {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  border: none;
+  border-radius: 0;
+  /* Solid enough to hide the Start button underneath for the moment. */
+  background: radial-gradient(ellipse at center, rgb(24 20 70 / 0.95) 0%, rgb(24 20 70 / 0.88) 55%, rgb(24 20 70 / 0.72) 100%);
+  backdrop-filter: blur(3px);
+  color: #fff;
+  cursor: pointer;
+  animation: level-up-in 420ms cubic-bezier(0.2, 1.4, 0.4, 1) both;
+}
+
+/* The whole overlay is the button, so no focus box around it. */
+.level-up:focus-visible {
+  outline: none;
+}
+
+.level-up-title {
+  font-family: var(--font-pixel);
+  font-weight: 700;
+  font-size: clamp(2rem, 7vw, 3.6rem);
+  letter-spacing: 0.04em;
+  background: linear-gradient(90deg, #ff8fd0, #ffe08a 50%, #8fdcff);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  filter: drop-shadow(0 3px 0 #1c1e5c) drop-shadow(0 0 18px rgb(255 122 198 / 0.6));
+}
+
+.level-up-level {
+  font-family: var(--font-pixel);
+  font-weight: 700;
+  font-size: 1.3rem;
+}
+
+.level-up-region {
+  padding: 2px 14px;
+  border-radius: 999px;
+  background: var(--kanji);
+  color: var(--on-kind);
+  font-weight: 700;
+}
+
+.level-up-hint {
+  font-size: 0.8rem;
+  opacity: 0.7;
+}
+
+.level-up-sparkles {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.level-up-sparkles i {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 8px;
+  height: 8px;
+  background: #ffe08a;
+  clip-path: polygon(50% 0, 62% 38%, 100% 50%, 62% 62%, 50% 100%, 38% 62%, 0 50%, 38% 38%);
+  animation: level-up-sparkle 900ms ease-out both;
+  animation-delay: calc(var(--i) * 40ms);
+  --angle: calc(var(--i) * 45deg);
+}
+
+@keyframes level-up-in {
+  from {
+    opacity: 0;
+    transform: scale(0.85);
+  }
+}
+
+@keyframes level-up-sparkle {
+  from {
+    transform: translate(-50%, -50%) rotate(var(--angle)) translateY(0) scale(0.4);
+    opacity: 1;
+  }
+  to {
+    transform: translate(-50%, -50%) rotate(var(--angle)) translateY(-150px) scale(1.4);
+    opacity: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .level-up,
+  .level-up-sparkles i {
+    animation: none;
+  }
+
+  .level-up-sparkles {
+    display: none;
+  }
+}
+
 /* Popovers */
 
 .hover-target {
@@ -2807,6 +3059,31 @@ select {
   :root {
     --statusbar-h: 28px;
     --statusbar-gap: 4px;
+  }
+
+  /* Level card: the LV badge says what the card is, so drop the title and
+     keep the header to one line. */
+  .level-card .tile-title {
+    display: none;
+  }
+
+  .level-head {
+    margin-bottom: 4px;
+  }
+
+  .level-num {
+    font-size: 1.4rem;
+  }
+
+  .level-badge {
+    padding: 0 10px 2px;
+  }
+
+  .level-info {
+    flex-direction: row;
+    flex-wrap: wrap;
+    align-items: baseline;
+    column-gap: 10px;
   }
 
   .banner-branch {

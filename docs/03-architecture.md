@@ -87,7 +87,8 @@ words               id, written, reading, other_forms, senses, priority, usually
 word_kanji          word → kanji
 sentences           id, japanese, english, kanji_words, unlisted (84,824)
 word_sentences      word → sentence, up to 20 per word (the app shows the 3 you can read best)
-path                position, item_key, kind                    (7,869 items)
+levels              level, region (N5…N1, approximate), position in region, kanji needed to clear   (267)
+path                position, item_key, kind, track, level      (7,869 items)
 path_requirements   item_key → requires_key   (an item unlocks when these are learned)
 mnemonics           item_key, kind, text      (Koihongo's default mnemonics)
 search              term, field, item_key, weight, rank

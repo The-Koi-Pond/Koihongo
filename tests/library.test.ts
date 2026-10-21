@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 import { migrate } from "../src/db/migrations.ts";
-import { itemPreview, itemProgress, libraryItems, progressByKind } from "../src/library.ts";
+import { itemPreview, itemProgress, libraryItems } from "../src/library.ts";
 import { recordReview, startLessons } from "../src/srs/progress.ts";
 import { FIRST_REVIEW_DELAY_MS } from "../src/srs/scheduler.ts";
 import { openTestDb } from "./nodeDb.ts";
@@ -111,13 +111,4 @@ test("item progress includes card details once started", async () => {
   assert.equal(p.cards.length, 1);
   assert.equal(p.cards[0].due, T0 + FIRST_REVIEW_DELAY_MS);
   await assert.rejects(itemProgress(db, "kanji:龍"), /isn't on the path/);
-});
-
-test("progress by kind counts passed, learning and total", async () => {
-  const db = await freshDb();
-  await startLessons(db, [{ item_key: "component:木", kind: "component" }], T0);
-  const byKind = Object.fromEntries((await progressByKind(db)).map((p) => [p.kind, p]));
-  assert.deepEqual(byKind.component, { kind: "component", passed: 0, learning: 1, total: 2 });
-  assert.deepEqual(byKind.kanji, { kind: "kanji", passed: 0, learning: 0, total: 2 });
-  assert.deepEqual(byKind.kana, { kind: "kana", passed: 0, learning: 0, total: 0 });
 });

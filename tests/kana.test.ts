@@ -21,7 +21,7 @@ async function freshDb() {
         ('を', 'wo', '["o"]', 'hiragana', 'basic', 'ヲ', NULL);
       INSERT INTO components VALUES ('木', '木', 'tree', 4);
       INSERT INTO kanji (character, meanings, on_readings, kun_readings, nanori, stroke_count) VALUES ('木', '["tree"]', '["モク"]', '["き"]', '[]', 4);
-      INSERT INTO path VALUES (1, 'kana:あ', 'kana', 'kana'), (2, 'kana:い', 'kana', 'kana'), (3, 'kana:か', 'kana', 'kana'),
+      INSERT INTO path (position, item_key, kind, track) VALUES (1, 'kana:あ', 'kana', 'kana'), (2, 'kana:い', 'kana', 'kana'), (3, 'kana:か', 'kana', 'kana'),
         (4, 'kana:が', 'kana', 'kana'), (5, 'kana:を', 'kana', 'kana'),
         (6, 'component:木', 'component', 'main'), (7, 'kanji:木', 'kanji', 'main');
       INSERT INTO path_requirements VALUES ('kana:が', 'kana:か'), ('kanji:木', 'component:木');

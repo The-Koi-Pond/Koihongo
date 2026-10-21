@@ -93,6 +93,17 @@ CREATE TABLE kana (
   example_form    TEXT                        -- the spelling of it to show (ウナギ rather than 鰻)
 );
 
+-- Game-style levels over the main track (scripts/content/levels.ts), grouped
+-- into regions named after approximate JLPT bands (N5 … N1). A level is
+-- cleared when `needed` of its kanji have passed.
+CREATE TABLE levels (
+  level         INTEGER PRIMARY KEY,
+  region        TEXT NOT NULL,
+  region_level  INTEGER NOT NULL,  -- position within the region, from 1
+  region_levels INTEGER NOT NULL,  -- levels in the region
+  needed        INTEGER NOT NULL
+);
+
 -- Default learning order. item_key is "kana:<char>", "component:<glyph>",
 -- "kanji:<char>" or "word:<id>"; user progress refers to items by this key.
 -- Each track (kana, main) has its own lesson queue and daily limit.
@@ -100,7 +111,8 @@ CREATE TABLE path (
   position INTEGER PRIMARY KEY,
   item_key TEXT NOT NULL UNIQUE,
   kind     TEXT NOT NULL CHECK (kind IN ('kana', 'component', 'kanji', 'word')),
-  track    TEXT NOT NULL DEFAULT 'main' CHECK (track IN ('kana', 'main'))
+  track    TEXT NOT NULL DEFAULT 'main' CHECK (track IN ('kana', 'main')),
+  level    INTEGER REFERENCES levels(level)  -- main track only
 );
 
 -- Koihongo's default mnemonics (scripts/content/mnemonics/), shown until the
