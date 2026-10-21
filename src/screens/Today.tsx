@@ -1,9 +1,10 @@
-import { GraduationCap, Play, RotateCcw, TrendingUp } from "lucide-react";
+import { GraduationCap, Play, RotateCcw } from "lucide-react";
 import { useEffect, useState } from "react";
 import { tauriDb } from "../db/tauriDb.ts";
-import { progressByKind, type KindProgress } from "../library.ts";
+import { kanaTally, levelStatus, levelUpToShow, markLevelSeen, type LevelStatus, type LevelUpNews, type Tally } from "../levels.ts";
 import { lessonAllowance, reviewForecast, type Lesson, type TodaySummary } from "../srs/progress.ts";
 import type { Screen } from "../ui/NavBar.tsx";
+import { LevelCard, LevelUp } from "../ui/LevelCard.tsx";
 import { BannerScene } from "../ui/Scene.tsx";
 import { StatusBar } from "../ui/StatusBar.tsx";
 
@@ -58,11 +59,15 @@ export function Today({
 }) {
   const [order, setOrder] = useState<StudyOrder>(loadOrder);
   const [forecast, setForecast] = useState<number[]>();
-  const [progress, setProgress] = useState<KindProgress[]>();
+  const [progress, setProgress] = useState<{ status: LevelStatus | null; kana: Tally | null }>();
+  const [levelUp, setLevelUp] = useState<LevelUpNews | null>(null);
 
   useEffect(() => {
     reviewForecast(tauriDb, Date.now()).then(setForecast);
-    progressByKind(tauriDb).then(setProgress);
+    Promise.all([levelStatus(tauriDb), kanaTally(tauriDb)]).then(async ([status, kana]) => {
+      setProgress({ status, kana });
+      if (status) setLevelUp(await levelUpToShow(tauriDb, status.level));
+    });
   }, []);
 
   const now = new Date();
@@ -103,6 +108,16 @@ export function Today({
           </div>
           <p className="today-date">{now.toLocaleDateString(undefined, { weekday: "short", day: "numeric", month: "short" })}</p>
         </div>
+
+        {levelUp && (
+          <LevelUp
+            news={levelUp}
+            onDone={() => {
+              markLevelSeen(tauriDb, levelUp.to);
+              setLevelUp(null);
+            }}
+          />
+        )}
 
         <div className="start-stack">
           {reviews || lessons ? (
@@ -169,7 +184,7 @@ export function Today({
         </section>
       </div>
 
-      <ProgressCard rows={progress} />
+      {progress.status && <LevelCard status={progress.status} kana={progress.kana} />}
       <StatusBar />
     </div>
   );
@@ -289,72 +304,8 @@ function TodayShell({ now }: { now: Date }) {
           <p className="muted small">&nbsp;</p>
         </section>
       </div>
-      <ProgressCard />
+      <LevelCard />
       <StatusBar />
     </div>
-  );
-}
-
-const KINDS = ["kana", "component", "kanji", "word"] as const;
-
-/** Passed and learning per kind; without rows (while loading) the bars are drawn empty. */
-function ProgressCard({ rows }: { rows?: KindProgress[] }) {
-  return (
-    <section className="card">
-      <div className="tile-head">
-        <h2 className="tile-title">
-          <TrendingUp size={16} aria-hidden="true" /> Progress
-        </h2>
-        <ul className="legend" aria-label="Legend">
-          <li>
-            <span className="swatch-bar passed" /> passed
-          </li>
-          <li>
-            <span className="swatch-bar learning" /> learning
-          </li>
-        </ul>
-      </div>
-      <ProgressBars rows={rows ?? KINDS.map((kind) => ({ kind, passed: 0, learning: 0, total: 0 }))} />
-    </section>
-  );
-}
-
-const KIND_LABEL = { kana: "Kana", component: "Components", kanji: "Kanji", word: "Words" } as const;
-/** JRPG-style stat labels: always four letters, so they line up like HP/MP. */
-const STAT_LABEL = { kana: "KANA", component: "PART", kanji: "KNJI", word: "WORD" } as const;
-
-/** Passed + learning out of the total, per kind. One hue (amount, not identity): rows are labelled by name. */
-function ProgressBars({ rows }: { rows: KindProgress[] }) {
-  return (
-    <ul className="progress-rows">
-      {rows.map((r) => {
-        const pct = (n: number) => (r.total ? (n / r.total) * 100 : 0);
-        return (
-          <li key={r.kind}>
-            {/* One fixed-width cell per letter, so every label is exactly the same width. */}
-            <span className="stat-label" title={KIND_LABEL[r.kind]} aria-label={KIND_LABEL[r.kind]}>
-              {[...STAT_LABEL[r.kind]].map((ch, i) => (
-                <span key={i} aria-hidden="true">
-                  {ch}
-                </span>
-              ))}
-            </span>
-            <div className="progress-track" title={`${r.passed} passed, ${r.learning} learning, of ${r.total.toLocaleString()}`}>
-              {r.passed > 0 && <div className="progress-fill passed" style={{ width: `${pct(r.passed)}%` }} />}
-              {r.learning > 0 && <div className="progress-fill learning" style={{ width: `${pct(r.learning)}%` }} />}
-            </div>
-            <span className="progress-count">
-              {r.total ? (
-                <>
-                  {(r.passed + r.learning).toLocaleString()} <span className="muted">/ {r.total.toLocaleString()}</span>
-                </>
-              ) : (
-                <>&nbsp;</>
-              )}
-            </span>
-          </li>
-        );
-      })}
-    </ul>
   );
 }

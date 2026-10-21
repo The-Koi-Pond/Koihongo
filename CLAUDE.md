@@ -67,6 +67,10 @@ Use **browser mode** with the Playwright tools: while `pnpm tauri dev` runs, ope
 - Phases 0–3 of the roadmap are done:
   - lessons and reviews, catch-up mode, Settings (pacing), daily backups with restore;
   - dictionary search, example sentences ranked by known words, "Explain this sentence" AI.
+- **Levels:** 267 game-style levels of about 8 kanji, grouped into approximate JLPT regions (N5 13, N4 23, N3 46, N2 46, N1 139).
+  - Built by `scripts/content/levels.ts`; your status comes from `src/levels.ts`; the card is `src/ui/LevelCard.tsx`.
+  - A level clears when all but one of its kanji have passed. Levels are display only and never lock lessons.
+  - The "LEVEL UP!" overlay shows once per new level, tracked by the `progress.seenLevel` setting.
 - The roadmap says to use the app daily for a while before phase 4 (grammar).
 - **Default mnemonics** (`scripts/content/mnemonics/`):
   - every kana and every component is done;

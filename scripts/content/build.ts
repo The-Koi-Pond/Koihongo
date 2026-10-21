@@ -12,6 +12,7 @@ import { strFromU8, unzipSync } from "fflate";
 import { describeComponent } from "./components.ts";
 import { allKana, CURATED_EXAMPLES, pickExample, type ExampleCandidate } from "./kana.ts";
 import { allMnemonics } from "./mnemonics/index.ts";
+import { planLevels } from "./levels.ts";
 import { buildPath, type PathKanji, type PathWord } from "./path.ts";
 import { NO_PRIORITY, parsePriorities } from "./priority.ts";
 import { entryTerms } from "../../src/searchTerms.ts";
@@ -316,9 +317,15 @@ async function main() {
     ...kana.map((k) => ({ key: `kana:${k.character}`, kind: "kana", track: "kana", requires: k.requires.map((r) => `kana:${r}`) })),
     ...path.map((p) => ({ ...p, track: "main" })),
   ];
-  const insertPath = db.prepare("INSERT INTO path (position, item_key, kind, track) VALUES (?, ?, ?, ?)");
+  // Levels and regions over the main track.
+  const oldJlpt = new Map(kanjiChars.map((c) => [`kanji:${c.literal}`, c.misc.jlptLevel]));
+  const { levels, itemLevel } = planLevels(path, (key) => oldJlpt.get(key) ?? null);
+  const insertLevel = db.prepare("INSERT INTO levels (level, region, region_level, region_levels, needed) VALUES (?, ?, ?, ?, ?)");
+  for (const l of levels) insertLevel.run(l.level, l.region, l.regionLevel, l.regionLevels, l.needed);
+
+  const insertPath = db.prepare("INSERT INTO path (position, item_key, kind, track, level) VALUES (?, ?, ?, ?, ?)");
   const insertRequirement = db.prepare("INSERT INTO path_requirements (item_key, requires_key) VALUES (?, ?)");
-  fullPath.forEach((p, i) => insertPath.run(i + 1, p.key, p.kind, p.track));
+  fullPath.forEach((p, i) => insertPath.run(i + 1, p.key, p.kind, p.track, itemLevel.get(p.key) ?? null));
   for (const p of fullPath) for (const r of p.requires) insertRequirement.run(p.key, r);
 
   // Default mnemonics. Kana and components only have one kind (sound or name).
@@ -358,6 +365,8 @@ async function main() {
   console.log(`  example sentences: ${sentences.length}, for ${wordsWithSentences.size} words (${pathWordsWithout} path words have none)`);
   console.log(`  dictionary search: ${searchRows} terms`);
   console.log(`  default mnemonics: ${Object.keys(mnemonics).length} items`);
+  const regionLevels = [...new Set(levels.map((l) => l.region))].map((r) => `${r} ${levels.filter((l) => l.region === r).length}`);
+  console.log(`  levels: ${levels.length} (${regionLevels.join(", ")})`);
 }
 
 await main();
