@@ -977,9 +977,11 @@ textarea {
   grid-template-rows: auto 1fr auto;
   justify-items: center;
   color: #fff;
-  /* Xel's pixel-art sky (assets/scenery/sky.png, 4×146): its dither repeats
-     sideways at 2×, and it stretches top to bottom to fill the banner. */
-  background: #2f2b86 url("./assets/scenery/sky.png") 0 0 / 8px 100% repeat-x;
+  /* Xel's pixel-art sky (assets/scenery/sky.png, 4×146) at exactly 2× both
+     ways, so its pixels stay square: anchored to the bottom (the horizon),
+     with its top colour filling any taller banner above it. Short banners
+     like Today's show only its lower part. */
+  background: #0b0a49 url("./assets/scenery/sky.png") left bottom / 8px 292px repeat-x;
   image-rendering: pixelated;
   box-shadow: 0 8px 28px color-mix(in srgb, var(--kind) 30%, transparent);
 }
