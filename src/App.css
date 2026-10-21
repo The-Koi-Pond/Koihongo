@@ -1024,17 +1024,6 @@ textarea {
 .banner-side.left { left: 0; }
 .banner-side.right { right: 0; }
 
-/* Low ridges along the bottom edge (Scene.tsx), under the hero area. */
-.banner-ridges {
-  position: absolute;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  width: 100%;
-  height: min(22%, 110px);
-  z-index: 0;
-}
-
 /* Xel's pixel-art treeline (assets/scenery/treeline-front.png, 338×64), the
    front layer: drawn in the page colour so it melts into the page below,
    scaled by whole pixels so it stays crisp, and repeated along the bottom. */
