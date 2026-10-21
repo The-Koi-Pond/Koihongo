@@ -1088,6 +1088,12 @@ textarea {
   --px: 1;
 }
 
+/* Today: a half-size treeline, low along the bottom, so it only joins the bushes' lowest tails. */
+.today-banner .banner-treeline {
+  height: 32px;
+  mask-size: 169px 32px;
+}
+
 @media (max-height: 700px) {
   .banner-bushes {
     --px: 1;
