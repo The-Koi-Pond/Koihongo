@@ -4,6 +4,7 @@ import { tauriDb } from "../db/tauriDb.ts";
 import { libraryItems, STATUS_NAME, type ItemStatus, type LibraryItem } from "../library.ts";
 import type { ItemKind } from "../srs/progress.ts";
 import { ItemPage } from "../ui/ItemPage.tsx";
+import { RankBadge } from "../ui/RankBadge.tsx";
 import { ItemHover, OpenItemContext } from "../ui/Popover.tsx";
 
 const PAGE = 300;
@@ -118,6 +119,11 @@ export function Library() {
                 <ItemHover itemKey={i.item_key} openOnClick={false}>
                   <button className={`tile ${i.kind} ${i.status}`} onClick={() => setSelected(i.item_key)}>
                     <span className="tile-kind">{KIND_NAME[i.kind]}</span>
+                    {i.rank && (
+                      <span className="tile-rank">
+                        <RankBadge rank={i.rank} />
+                      </span>
+                    )}
                     <span className={`tile-glyph ${[...i.label].length > 1 ? "multi" : ""}`} lang="ja">
                       {i.label}
                     </span>

@@ -5,6 +5,7 @@ import { kanaTally, levelStatus, levelUpToShow, markLevelSeen, type LevelStatus,
 import { lessonAllowance, reviewForecast, type Lesson, type TodaySummary } from "../srs/progress.ts";
 import type { Screen } from "../ui/NavBar.tsx";
 import { LevelCard, LevelUp } from "../ui/LevelCard.tsx";
+import { rankTally, type Rank } from "../srs/ranks.ts";
 import { BannerScene } from "../ui/Scene.tsx";
 import { StatusBar } from "../ui/StatusBar.tsx";
 
@@ -59,13 +60,13 @@ export function Today({
 }) {
   const [order, setOrder] = useState<StudyOrder>(loadOrder);
   const [forecast, setForecast] = useState<number[]>();
-  const [progress, setProgress] = useState<{ status: LevelStatus | null; kana: Tally | null }>();
+  const [progress, setProgress] = useState<{ status: LevelStatus | null; kana: Tally | null; ranks: Record<Rank, number> }>();
   const [levelUp, setLevelUp] = useState<LevelUpNews | null>(null);
 
   useEffect(() => {
     reviewForecast(tauriDb, Date.now()).then(setForecast);
-    Promise.all([levelStatus(tauriDb), kanaTally(tauriDb)]).then(async ([status, kana]) => {
-      setProgress({ status, kana });
+    Promise.all([levelStatus(tauriDb), kanaTally(tauriDb), rankTally(tauriDb)]).then(async ([status, kana, ranks]) => {
+      setProgress({ status, kana, ranks });
       if (status) setLevelUp(await levelUpToShow(tauriDb, status.level));
     });
   }, []);
@@ -184,7 +185,7 @@ export function Today({
         </section>
       </div>
 
-      {progress.status && <LevelCard status={progress.status} kana={progress.kana} />}
+      {progress.status && <LevelCard status={progress.status} kana={progress.kana} ranks={progress.ranks} />}
       <StatusBar />
     </div>
   );

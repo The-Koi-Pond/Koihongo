@@ -1,11 +1,13 @@
 import { Check, X } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { toKana } from "wanakana";
 import { tauriDb } from "../db/tauriDb.ts";
 import { acceptedAnswers, addSynonym, type ItemDetails } from "../items.ts";
 import { checkKana, checkMeaning, checkReading, type Verdict } from "../srs/answers.ts";
+import type { RankUp } from "../srs/ranks.ts";
 import type { CardType } from "../srs/scheduler.ts";
 import { ItemInfo } from "./ItemInfo.tsx";
+import { RankBadge } from "./RankBadge.tsx";
 import { BannerScene } from "./Scene.tsx";
 import { itemLabel } from "./useItem.ts";
 
@@ -30,6 +32,7 @@ export function QuestionCard({
   onDone,
   top,
   onStop,
+  rankUp,
 }: {
   item: ItemDetails;
   cardType: CardType;
@@ -39,6 +42,8 @@ export function QuestionCard({
   top?: React.ReactNode;
   /** Adds a "Stop here" button top-right. */
   onStop?: () => void;
+  /** Reviews: the rank-up a right answer would give, asked once it's graded (and again after "I was right"). */
+  rankUp?: (correct: boolean) => Promise<RankUp | null>;
 }) {
   const [answer, setAnswer] = useState("");
   const [verdict, setVerdict] = useState<Verdict>();
@@ -51,6 +56,18 @@ export function QuestionCard({
   const graded = verdict && verdict.result !== "retry";
   const correct = overridden || verdict?.result === "correct";
   const label = itemLabel(item);
+  const [rankNews, setRankNews] = useState<RankUp | null>(null);
+
+  useEffect(() => {
+    if (!graded || !correct || !rankUp) return setRankNews(null);
+    let cancelled = false;
+    rankUp(true)
+      .then((r) => !cancelled && setRankNews(r))
+      .catch(() => {}); // a missing flourish isn't worth an error
+    return () => {
+      cancelled = true;
+    };
+  }, [graded, correct, rankUp]);
 
   function submit(e: React.FormEvent) {
     e.preventDefault();
@@ -143,6 +160,11 @@ export function QuestionCard({
           {overridden && <p className="hint">Added “{answer.trim()}” as a synonym and counted as correct.</p>}
           {graded && (
             <p className="feedback-links">
+              {rankNews && (
+                <span className="rank-up">
+                  <span lang="ja">{label}</span> ▸ <RankBadge rank={rankNews.to} /> RANK UP!
+                </span>
+              )}
               {verdict?.result === "wrong" && !overridden && cardType === "meaning" && answer.trim() && (
                 <button type="button" className="link" onClick={acceptMine}>
                   I was right: accept “{answer.trim()}”

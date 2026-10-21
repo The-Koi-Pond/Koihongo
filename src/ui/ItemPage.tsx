@@ -2,6 +2,8 @@ import { useEffect, useState } from "react";
 import { tauriDb } from "../db/tauriDb.ts";
 import { itemProgress, STATUS_NAME, type ItemProgress } from "../library.ts";
 import { ErrorView } from "../screens/Reviews.tsx";
+import { RANK_NAME, rankFor } from "../srs/ranks.ts";
+import { RankBadge } from "./RankBadge.tsx";
 import { ItemView } from "./ItemView.tsx";
 import { useItem } from "./useItem.ts";
 
@@ -51,10 +53,19 @@ function OffPath() {
 function ProgressLine({ progress, onOpen }: { progress: ItemProgress; onOpen: (key: string) => void }) {
   const missing = progress.requires.filter((r) => r.status !== "passed");
   const nextDue = Math.min(...progress.cards.map((c) => c.due));
+  const rank = progress.cards.length ? rankFor(Math.min(...progress.cards.map((c) => c.stability))) : null;
   return (
     <div className="card progress-line">
       <p>
-        <span className={`swatch ${progress.status}`} /> <strong>{STATUS_NAME[progress.status]}</strong>
+        {rank ? (
+          <>
+            <RankBadge rank={rank} /> <strong>{RANK_NAME[rank]}</strong>
+          </>
+        ) : (
+          <>
+            <span className={`swatch ${progress.status}`} /> <strong>{STATUS_NAME[progress.status]}</strong>
+          </>
+        )}
         {progress.cards.length > 0 && (
           <span className="muted">
             {" "}
