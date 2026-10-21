@@ -1174,17 +1174,17 @@ textarea {
   }
 }
 
-/* Xel's pixel-art cherry branches, one in each bottom corner and in front of
-   the rest of the scene (the nearest layer): blossoms-left.png (S4, 126×119)
-   on the left, blossoms-right.png (S1, 126×110) flipped on the right, both
-   reaching inward. Whole-pixel scales: 2× on item, lesson and review pages,
-   1× in Today's short banner. */
+/* Xel's pixel-art cherry branches, one in each bottom corner: blossoms-left.png
+   (S4, 126×119) on the left, blossoms-right.png (S1, 126×110) flipped on the
+   right, both reaching inward, at 2×. They're the top layer of the scene, above
+   the treeline and the bottom fade; only the banner's UI (z-index 1 too, but
+   later in the page) sits above them. */
 .banner-branch {
   --px: 2;
   position: absolute;
   bottom: var(--branch-bottom, 16%);
   width: calc(126px * var(--px));
-  z-index: 0;
+  z-index: 1;
   pointer-events: none;
   background: 0 0 / 100% 100% no-repeat;
 }
@@ -1202,9 +1202,9 @@ textarea {
   transform: scaleX(-1);
 }
 
+/* Today's banner is short: the branches sit low and big, cropped by its top edge, like a foreground branch. */
 .today-banner .banner-branch {
-  --px: 1;
-  --branch-bottom: 4px;
+  --branch-bottom: -24px;
 }
 
 .banner > :not(.banner-deco) {
