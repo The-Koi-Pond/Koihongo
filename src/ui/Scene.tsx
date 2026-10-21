@@ -7,6 +7,7 @@
 // with the horizon tinted by the item's --kind colour.
 
 import { useId } from "react";
+import treelineFront from "../assets/scenery/treeline-front.png";
 
 /** Everything decorative in a banner: stars, both side sceneries, low ridges, blossoms. */
 export function BannerScene() {
@@ -92,17 +93,20 @@ function SideScenery({ side }: { side: "left" | "right" }) {
 }
 
 /**
- * Low ridges across the whole bottom edge, darker toward the front. The front
- * ridge is the page colour, so the banner melts into the page below. They stay
- * in the bottom strip, under the hero area.
+ * Low ridges across the whole bottom edge, darker toward the front, then Xel's
+ * pixel-art treeline in front. The treeline is drawn in the page colour, so
+ * the banner melts into the page below. They stay in the bottom strip, under
+ * the hero area.
  */
 function Ridges() {
   return (
-    <svg className="banner-deco banner-ridges" viewBox="0 0 400 40" preserveAspectRatio="none" shapeRendering="crispEdges" aria-hidden="true">
-      <polygon points="0,16 40,9 85,15 130,7 175,14 215,11 255,5 300,13 345,8 400,14 400,40 0,40" fill="#3d3893" opacity="0.75"></polygon>
-      <polygon points="0,24 55,18 110,25 160,19 205,24 250,17 300,23 350,18 400,22 400,40 0,40" fill="#302e80"></polygon>
-      <polygon points="0,31 70,27 140,32 200,28 270,33 330,28 400,31 400,40 0,40" fill="var(--bg)"></polygon>
-    </svg>
+    <>
+      <svg className="banner-deco banner-ridges" viewBox="0 0 400 40" preserveAspectRatio="none" shapeRendering="crispEdges" aria-hidden="true">
+        <polygon points="0,16 40,9 85,15 130,7 175,14 215,11 255,5 300,13 345,8 400,14 400,40 0,40" fill="#3d3893" opacity="0.75"></polygon>
+        <polygon points="0,24 55,18 110,25 160,19 205,24 250,17 300,23 350,18 400,22 400,40 0,40" fill="#302e80"></polygon>
+      </svg>
+      <div className="banner-deco banner-treeline" style={{ backgroundImage: `url(${treelineFront})` }} aria-hidden="true" />
+    </>
   );
 }
 
