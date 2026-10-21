@@ -57,6 +57,7 @@ Use **browser mode** with the Playwright tools: while `pnpm tauri dev` runs, ope
   - twilight indigo with pastel pink, cyan and butter glows, pixel fonts, glowing panels;
   - colours come from tokens on `:root`, and each kind has its own: kana pink, component cyan, kanji purple, word butter;
   - scenery frames the hero (the Start button, the big character) and never sits behind it;
+  - banners are a layered night scene (`src/ui/Scene.tsx`): Xel's pixel-art hills, trees and bushes; a royal-blue sky of 20 colour bands with Xel's dither ramp between them, a seeded pixel starfield, sparkles and a horizon glow, all picked in a sky playground (colours in `SKY_COLOURS`);
   - no city or skyline elements.
 - **Fonts:** Pixelify Sans (`--font-pixel`) for headings and labels, but its digits misread (150 looks like 180) and so does capital C. Numbers use **Tiny5** (`--font-num`, picked by Xel in a playground), so far on Today: the Start count, card numbers, progress counts and the clock. Other screens still use M PLUS Rounded (`--font-body`) for numbers; switch them to `--font-num` as they get reworked. Buttons like Check stay in the rounded font. Panel titles (`.tile-title`) use **Silkscreen Bold** (`--font-title`, also picked in a playground): 24px uppercase, pale grey with a solid block shadow one font pixel down. Silkscreen and Tiny5 are drawn on an 8px grid, so use sizes in multiples of 8 and shadow offsets in whole font pixels (size ÷ 8).
 - **Layout:** answering, opening details and similar actions must not shift the page.
