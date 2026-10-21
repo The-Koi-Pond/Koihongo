@@ -1,4 +1,3 @@
-import { useId } from "react";
 import type { LevelStatus, LevelUpNews, Tally } from "../levels.ts";
 import { RANK_ORDER, type Rank } from "../srs/ranks.ts";
 import { RankBadge } from "./RankBadge.tsx";
@@ -75,57 +74,38 @@ export function LevelCard({ status, kana, ranks }: { status?: LevelStatus; kana?
   );
 }
 
-/** Braille text art: a koi (鯉) seen from above, swimming through ripples. */
-const KOI_ART = `⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⣀⢤⢶⡀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
-⠀⠀⠀⠀⣀⢀⠄⠀⠀⠀⢀⣀⣀⣀⣠⢞⢕⢕⢵⠃⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
-⢠⠔⠉⢈⠤⠔⠐⡲⠦⣪⣥⣆⠂⠂⠋⣓⣳⣋⠁⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
-⠁⠀⡞⠁⠀⠀⢸⡁⣽⣿⣿⣿⡇⣁⣿⣿⣿⣿⣷⡢⡀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢔⠁⠉⠈⡆⠀⠀
-⣄⠀⠳⣀⠀⠀⠀⠑⢪⠟⠿⠟⠅⠌⢿⣿⣿⣿⡿⠄⠌⠦⡀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠁⠉⠈⠀⠀⠀
-⠀⠑⠢⢄⡉⡑⠒⠂⠒⠑⠢⢆⣂⣂⠂⠋⠛⣿⣿⣿⣦⠂⠓⢖⢖⡆⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
-⠀⠀⠀⠀⠀⠈⠁⠀⠀⠀⠀⠸⣕⢕⢽⠑⠛⠿⣿⣿⡿⡁⣁⣩⣯⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
-⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢗⢕⢕⠇⠀⠀⠀⣟⢦⡄⢾⣿⣿⢧⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
-⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠈⠓⠁⠀⠀⠀⠀⠑⠛⠈⠑⢎⠃⠊⢆⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
-⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠣⡁⡙⣤⣀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
-⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⣟⢖⢗⢕⢕⢦⢄⠀⠀⠀⠀⠀⠀⠀⠀
-⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢸⢕⢕⢕⢕⢕⢕⢕⢕⢦⡀⠀⠀⠀⠀⠀
-⠀⠀⠀⠀⠀⠀⠀⠀⠀⢠⡊⢈⢢⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢸⢕⢕⢕⡕⠓⠓⠓⠓⠓⠛⠀⠀⠀⠀⠀
-⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠁⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢸⢕⡵⠋⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
-⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠸⠋⠀⠀⠀⠀⡎⠀⠀⠀⠀⠀⠀⠈⡆⠀
-⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠈⠒⠤⠄⠤⠤⠠⠊⠀⠀`;
-
-/** Which dot each bit of a braille character stands for: [row, column] in its 4×2 cell. */
-const BRAILLE_DOTS: [row: number, col: number][] = [[0, 0], [1, 0], [2, 0], [0, 1], [1, 1], [2, 1], [3, 0], [3, 1]];
-
 /**
- * Text art for the card's right side. The art is stored as braille text, but
- * drawn dot by dot: Windows fonts give blank braille cells a different width,
- * which would skew the picture. Decoration only; it hides when the window is small.
+ * Kaomoji text art: a cat peeking over a がんばる ("I'll do my best") sign.
+ * Laid out for MS Gothic, where every full-width character is exactly two
+ * half-width ones wide, so the columns line up.
  */
+const CAT_ART = `☆ﾟ                  ﾟ☆
+  ｡       ∧＿∧     ｡
+         ( ･ω･ )
+      ┏━∪━∪━┓
+  ♡   ┃ がんばる ┃   ♡
+      ┗━━━━━┛
+ ﾟ｡☆              ☆｡ﾟ`;
+
+/** Text art for the card's right side. Decoration only; it hides when the window is small. */
 function ProgressArt() {
-  const fade = useId();
-  const lines = KOI_ART.split("\n");
-  const dots: [number, number][] = [];
-  lines.forEach((line, cy) =>
-    [...line].forEach((ch, cx) => {
-      const bits = ch.codePointAt(0)! - 0x2800;
-      BRAILLE_DOTS.forEach(([r, c], i) => bits & (1 << i) && dots.push([cx * 2 + c, cy * 4 + r]));
-    }),
-  );
   return (
     <aside className="level-art" aria-hidden="true">
-      <svg className="braille-art" viewBox={`0 0 ${lines[0].length * 2} ${lines.length * 4}`}>
-        <defs>
-          <linearGradient id={fade} x1="0" y1="0" x2="1" y2="1">
-            <stop offset="0" stopColor="#ffd6ee" />
-            <stop offset="1" stopColor="#b9b7f0" />
-          </linearGradient>
-        </defs>
-        <g fill={`url(#${fade})`}>
-          {dots.map(([x, y]) => (
-            <circle key={`${x},${y}`} cx={x + 0.5} cy={y + 0.5} r={0.36} />
-          ))}
-        </g>
-      </svg>
+      <pre className="kaomoji-art" lang="ja">
+        {[...CAT_ART].map((ch, i) =>
+          "☆ﾟ｡".includes(ch) ? (
+            <span key={i} className="kaomoji-star">
+              {ch}
+            </span>
+          ) : ch === "♡" ? (
+            <span key={i} className="kaomoji-heart">
+              {ch}
+            </span>
+          ) : (
+            ch
+          ),
+        )}
+      </pre>
     </aside>
   );
 }
