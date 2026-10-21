@@ -3,8 +3,8 @@
 // Visual rule: scenery FRAMES the hero area (greeting, Start, the big character)
 // and never sits behind it. Hills and trees are Xel's pixel art along the
 // bottom; the moon sits in the top-right corner and the blossoms top-left, so
-// the centre stays clear at any window size. The sky itself is the .banner
-// background in CSS (Xel's sky.png).
+// the centre stays clear at any window size. The sky is layered colour bands
+// with Xel's dither ramp between them (Sky, below).
 
 import { useId } from "react";
 import hills from "../assets/scenery/hills.png";
@@ -16,6 +16,7 @@ import treelineFront from "../assets/scenery/treeline-front.png";
 export function BannerScene() {
   return (
     <>
+      <Sky />
       <div className="banner-deco banner-stars" aria-hidden="true" />
       <SideScenery side="left" />
       <SideScenery side="right" />
@@ -26,6 +27,39 @@ export function BannerScene() {
       <div className="banner-deco banner-bushes right" style={{ backgroundImage: `url(${bushesRight})` }} aria-hidden="true" />
       <BlossomBranch />
     </>
+  );
+}
+
+/**
+ * The sky's colour bands, from Xel's 146-row pixel strip (sky-gradient-v2):
+ * the row each band starts at, and its colour. The banner itself is the top
+ * colour, #0b0a49.
+ */
+const SKY_ROWS = 146;
+const SKY_BANDS: [row: number, colour: string][] = [
+  [10, "#1b1862"],
+  [32, "#2e297d"],
+  [52, "#4a3398"],
+  [70, "#623fa7"],
+  [88, "#8f63cc"],
+  [104, "#b477c7"],
+  [120, "#ec95ca"],
+  [134, "#fbd7e0"],
+];
+
+/**
+ * The sky, one layer per colour: each covers everything below where its band
+ * starts, and its top edge is Xel's dither ramp (a CSS mask, always 2×, so
+ * the pixels stay square). Bands start at the same share of the banner's
+ * height as in the strip, so every banner shows the whole sky.
+ */
+function Sky() {
+  return (
+    <div className="banner-deco banner-sky" aria-hidden="true">
+      {SKY_BANDS.map(([row, colour]) => (
+        <div key={row} className="sky-band" style={{ top: `${(100 * row) / SKY_ROWS}%`, background: colour }} />
+      ))}
+    </div>
   );
 }
 
