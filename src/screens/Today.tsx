@@ -1,4 +1,4 @@
-import { GraduationCap, Play, RotateCcw } from "lucide-react";
+import { Play } from "lucide-react";
 import { useEffect, useState } from "react";
 import { tauriDb } from "../db/tauriDb.ts";
 import { kanaTally, levelStatus, levelUpToShow, markLevelSeen, type LevelStatus, type LevelUpNews, type Tally } from "../levels.ts";
@@ -155,9 +155,7 @@ export function Today({
 
       <div className="today-tiles">
         <section className="card">
-          <h2 className="tile-title">
-            <RotateCcw size={16} aria-hidden="true" /> Reviews
-          </h2>
+          <h2 className="tile-title">Reviews</h2>
           <p className="tile-big">
             {reviews} <span className="tile-unit">{catchUp ? "left in today's share" : "due now"}</span>
           </p>
@@ -173,9 +171,7 @@ export function Today({
         </section>
 
         <section className="card">
-          <h2 className="tile-title">
-            <GraduationCap size={16} aria-hidden="true" /> Lessons
-          </h2>
+          <h2 className="tile-title">Lessons</h2>
           <p className="tile-big">
             {lessons} <span className="tile-unit">new today</span>
           </p>
@@ -291,16 +287,12 @@ function TodayShell({ now }: { now: Date }) {
       </header>
       <div className="today-tiles">
         <section className="card">
-          <h2 className="tile-title">
-            <RotateCcw size={16} aria-hidden="true" /> Reviews
-          </h2>
+          <h2 className="tile-title">Reviews</h2>
           <p className="tile-big">&nbsp;</p>
           <p className="muted small">&nbsp;</p>
         </section>
         <section className="card">
-          <h2 className="tile-title">
-            <GraduationCap size={16} aria-hidden="true" /> Lessons
-          </h2>
+          <h2 className="tile-title">Lessons</h2>
           <p className="tile-big">&nbsp;</p>
           <p className="muted small">&nbsp;</p>
         </section>

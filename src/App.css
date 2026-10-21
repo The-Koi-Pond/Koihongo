@@ -26,6 +26,8 @@
   --font-kana: "DotGothic16", "M PLUS Rounded 1c", sans-serif;
   /* Pixel font for numbers: its digits stay distinct (Pixelify's 150 reads as 180). Chosen in a playground. */
   --font-num: "Tiny5", "M PLUS Rounded 1c", sans-serif;
+  /* Chunky panel titles (Silkscreen Bold, drawn on an 8px grid: use sizes in multiples of 8). Chosen in a playground. */
+  --font-title: "Silkscreen", var(--font-pixel);
   --font-body: "M PLUS Rounded 1c", "Yu Gothic UI", "Meiryo", system-ui, sans-serif;
 
   /* Fixed chrome heights, used to size pages to the window. */
@@ -2613,15 +2615,17 @@ select {
   }
 }
 
+/* Chunky pixel panel titles: pale face with a solid block shadow one font
+   pixel (24px / 8 = 3px) straight down. */
 .tile-title {
-  display: flex;
-  align-items: center;
-  gap: 6px;
   margin: 0 0 2px;
-}
-
-.tile-title svg {
-  color: var(--accent);
+  font-family: var(--font-title);
+  font-weight: 700;
+  font-size: 24px;
+  line-height: 1.2;
+  color: #e8e6f0;
+  text-transform: uppercase;
+  text-shadow: 0 3px 0 #5a5fae;
 }
 
 .tile-head {
