@@ -1,5 +1,5 @@
 import { Play } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { tauriDb } from "../db/tauriDb.ts";
 import { kanaTally, levelStatus, levelUpToShow, markLevelSeen, type LevelStatus, type LevelUpNews, type Tally } from "../levels.ts";
 import { lessonAllowance, reviewForecast, type Lesson, type TodaySummary } from "../srs/progress.ts";
@@ -8,6 +8,7 @@ import { LevelCard, LevelUp } from "../ui/LevelCard.tsx";
 import { rankTally, type Rank } from "../srs/ranks.ts";
 import { BannerScene } from "../ui/Scene.tsx";
 import { StatusBar } from "../ui/StatusBar.tsx";
+import { useSharedCardPattern } from "../ui/useSharedCardPattern.ts";
 
 export type StudyOrder = "reviews" | "lessons";
 
@@ -49,6 +50,7 @@ function fromNow(time: number, now: number): string {
 
 const plural = (n: number, word: string) => `${n} ${word}${n === 1 ? "" : "s"}`;
 
+
 export function Today({
   summary,
   go,
@@ -62,6 +64,8 @@ export function Today({
   const [forecast, setForecast] = useState<number[]>();
   const [progress, setProgress] = useState<{ status: LevelStatus | null; kana: Tally | null; ranks: Record<Rank, number> }>();
   const [levelUp, setLevelUp] = useState<LevelUpNews | null>(null);
+  const page = useRef<HTMLDivElement>(null);
+  useSharedCardPattern(page, !!(summary && forecast && progress));
 
   useEffect(() => {
     reviewForecast(tauriDb, Date.now()).then(setForecast);
@@ -97,7 +101,7 @@ export function Today({
   };
 
   return (
-    <div className="fit-page today with-status-bar">
+    <div className="fit-page today with-status-bar" ref={page}>
       <header className="banner bleed today-banner">
         <BannerScene />
         <div className="banner-top">
@@ -268,8 +272,10 @@ function Forecast({ data }: { data: number[] }) {
 /** The page while it loads: same layout, blank values, nothing clickable. */
 function TodayShell({ now }: { now: Date }) {
   const hello = greeting(now);
+  const page = useRef<HTMLDivElement>(null);
+  useSharedCardPattern(page, true);
   return (
-    <div className="fit-page today with-status-bar" aria-busy="true">
+    <div className="fit-page today with-status-bar" aria-busy="true" ref={page}>
       <header className="banner bleed today-banner">
         <BannerScene />
         <div className="banner-top">

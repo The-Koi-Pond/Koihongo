@@ -1,3 +1,5 @@
+import { useRef } from "react";
+import { useSharedCardPattern } from "./useSharedCardPattern.ts";
 import type { ItemDetails } from "../items.ts";
 import { ArrowLeftRight } from "lucide-react";
 import { Gloss } from "./Gloss.tsx";
@@ -29,8 +31,10 @@ export function ItemView({
   /** Goes first in the banner's top-right corner (e.g. the lesson's fast-track button). */
   bannerEnd?: React.ReactNode;
 }) {
+  const page = useRef<HTMLDivElement>(null);
+  useSharedCardPattern(page);
   return (
-    <div className={`item-view ${item.kind}`}>
+    <div className={`item-view ${item.kind}`} ref={page}>
       <ItemBanner item={item} start={bannerStart} end={bannerEnd} />
       <ItemInfo item={item} onChange={onChange} />
       {below}

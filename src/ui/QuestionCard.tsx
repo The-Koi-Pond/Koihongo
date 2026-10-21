@@ -10,6 +10,7 @@ import type { CardType } from "../srs/scheduler.ts";
 import { ItemInfo } from "./ItemInfo.tsx";
 import { RankBadge } from "./RankBadge.tsx";
 import { BannerScene } from "./Scene.tsx";
+import { useSharedCardPattern } from "./useSharedCardPattern.ts";
 import { itemLabel } from "./useItem.ts";
 
 const KIND_NAME = { kana: "Kana", component: "Component", kanji: "Kanji", word: "Word" } as const;
@@ -51,6 +52,8 @@ export function QuestionCard({
   const [showInfo, setShowInfo] = useState(false);
   const [overridden, setOverridden] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
+  const page = useRef<HTMLDivElement>(null);
+  useSharedCardPattern(page);
   const accepted = acceptedAnswers(item);
   const ask = askFor(item, cardType);
   // Kanji/word readings are typed in romaji that turns into kana; kana questions are answered in romaji itself.
@@ -119,7 +122,7 @@ export function QuestionCard({
   return (
     // One window-high column: banner on top takes whatever the answer dock and the
     // details (anchored to the bottom, sized to their content) leave over.
-    <div className={`item-view question-page ${item.kind}`}>
+    <div className={`item-view question-page ${item.kind}`} ref={page}>
       <header className={`banner bleed ${item.kind}`}>
         <BannerScene />
         <div className="banner-top">
