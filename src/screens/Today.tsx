@@ -7,7 +7,7 @@ import type { Screen } from "../ui/NavBar.tsx";
 import { LevelCard, LevelUp } from "../ui/LevelCard.tsx";
 import { rankTally, type Rank } from "../srs/ranks.ts";
 import { CardTitle } from "../ui/CardTitle.tsx";
-import { DONE_CAT, PanelCat, SLEEPY_CAT } from "../ui/CatArt.tsx";
+import { DONE_CAT, PanelCat, SleepyCat } from "../ui/CatArt.tsx";
 import { BannerScene } from "../ui/Scene.tsx";
 import { StatusBar } from "../ui/StatusBar.tsx";
 import { useSharedCardPattern } from "../ui/useSharedCardPattern.ts";
@@ -192,7 +192,7 @@ export function Today({
               )}
               <Upcoming summary={summary} forecast={forecast} now={now.getTime()} />
             </div>
-            {reviews === 0 && <PanelCat art={SLEEPY_CAT} />}
+            {reviews === 0 && <SleepyCat />}
           </div>
         </section>
 
