@@ -9,7 +9,14 @@ import { ItemPage } from "../ui/ItemPage.tsx";
 import { ItemHover, OpenItemContext } from "../ui/Popover.tsx";
 
 const PAGE = 300;
-const KIND_NAME: Record<ItemKind, string> = { kana: "kana", component: "component", kanji: "kanji", word: "word" };
+/** Sections of the tile grid, in this order. */
+const SECTIONS: { kind: ItemKind; name: string }[] = [
+  { kind: "kana", name: "Kana" },
+  { kind: "component", name: "Components" },
+  { kind: "kanji", name: "Kanji" },
+  { kind: "word", name: "Words" },
+];
+const ALL_PAGES: Record<ItemKind, number> = { kana: PAGE, component: PAGE, kanji: PAGE, word: PAGE };
 const KIND_TABS: { kind: ItemKind | "all"; name: string }[] = [
   { kind: "all", name: "All" },
   { kind: "kana", name: "Kana" },
@@ -25,7 +32,8 @@ export function Library() {
   const [kind, setKind] = useState<ItemKind | "all">("all");
   const [statuses, setStatuses] = useState<Set<ItemStatus>>(new Set());
   const [query, setQuery] = useState("");
-  const [shown, setShown] = useState(PAGE);
+  // How many tiles each section shows; "Show more" adds a page to that section.
+  const [shown, setShown] = useState<Record<ItemKind, number>>(ALL_PAGES);
   const [selected, setSelected] = useState<string>();
   const [version, setVersion] = useState(0);
 
@@ -95,7 +103,7 @@ export function Library() {
           value={query}
           onChange={(e) => {
             setQuery(e.target.value);
-            setShown(PAGE);
+            setShown(ALL_PAGES);
           }}
           placeholder="Search: 木, tree, moku, もく…"
         />
@@ -114,34 +122,46 @@ export function Library() {
         <p className="muted">Nothing matches.</p>
       ) : (
         <>
-          <ul className="tiles">
-            {matches.slice(0, shown).map((i) => (
-              <li key={i.item_key} style={{ gridColumn: `span ${tileSpan(i)}` }}>
-                <ItemHover itemKey={i.item_key} openOnClick={false}>
-                  <button className={`tile ${i.kind} ${i.status}`} onClick={() => setSelected(i.item_key)}>
-                    {/* The band: fast track on the left, the kind in the middle, the rank on the right. */}
-                    <span className="tile-kind">
-                      <span className="tile-fast">
-                        {i.fast === 1 && <FastForward size={9} strokeWidth={3} aria-label="On fast track" />}
-                      </span>
-                      {KIND_NAME[i.kind]}
-                      <span className="tile-rank" title={i.rank ? `${i.rank} rank: ${RANK_NAME[i.rank]}` : undefined}>
-                        {i.rank}
-                      </span>
-                    </span>
-                    <span className={`tile-glyph ${[...i.label].length > 1 ? "multi" : ""}`} lang="ja">
-                      {i.label}
-                    </span>
+          {/* One labelled section per kind, so a 日 component, kanji and word never look alike. */}
+          {SECTIONS.map(({ kind: k, name }) => {
+            const all = matches.filter((i) => i.kind === k);
+            if (all.length === 0) return null;
+            const tiles = all.slice(0, shown[k]);
+            return (
+              <section key={k} className="tile-section">
+                <h3>
+                  {name} <span className="num">{all.length}</span>
+                </h3>
+                <ul className="tiles">
+                  {tiles.map((i) => (
+                    <li key={i.item_key} style={{ gridColumn: `span ${tileSpan(i)}` }}>
+                      <ItemHover itemKey={i.item_key} openOnClick={false}>
+                        <button className={`tile ${i.kind} ${i.status}`} onClick={() => setSelected(i.item_key)}>
+                          {/* A slim band in the kind's colour: fast track on the left, rank on the right. */}
+                          <span className="tile-kind">
+                            <span className="tile-fast">
+                              {i.fast === 1 && <FastForward size={9} strokeWidth={3} aria-label="On fast track" />}
+                            </span>
+                            <span className="tile-rank" title={i.rank ? `${i.rank} rank: ${RANK_NAME[i.rank]}` : undefined}>
+                              {i.rank}
+                            </span>
+                          </span>
+                          <span className={`tile-glyph ${[...i.label].length > 1 ? "multi" : ""}`} lang="ja">
+                            {i.label}
+                          </span>
+                        </button>
+                      </ItemHover>
+                    </li>
+                  ))}
+                </ul>
+                {all.length > tiles.length && (
+                  <button className="show-more" onClick={() => setShown((n) => ({ ...n, [k]: n[k] + PAGE }))}>
+                    Show more {name.toLowerCase()} ({all.length - tiles.length} left)
                   </button>
-                </ItemHover>
-              </li>
-            ))}
-          </ul>
-          {matches.length > shown && (
-            <button className="show-more" onClick={() => setShown((n) => n + PAGE)}>
-              Show more ({matches.length - shown} left)
-            </button>
-          )}
+                )}
+              </section>
+            );
+          })}
         </>
       )}
     </>
