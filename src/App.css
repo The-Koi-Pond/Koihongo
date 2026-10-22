@@ -3327,8 +3327,39 @@ select {
   filter: drop-shadow(0 0 3px rgb(255 214 120 / 0.7));
 }
 
-.kaomoji-z {
+/* Reviews' sleeping cat (SleepyCat in CatArt.tsx): pixel art at 2×, with a
+   small z and a bigger Z (Tiny5, 16px and 24px) drifting up on the right. */
+.sleepy-cat {
+  position: relative;
+  padding: 18px 10px 0 0;
+}
+
+.sleepy-cat img {
+  display: block;
+  image-rendering: pixelated;
+}
+
+.sleepy-z {
+  position: absolute;
+  top: 0;
+  right: 4px;
+  font-family: var(--font-num);
+  font-size: 16px;
+  line-height: 1;
   color: #beaff8;
+  text-shadow: 0 2px 0 #1d1660;
+  animation: card-twinkle 3s ease-in-out infinite;
+}
+
+.sleepy-z > span {
+  position: relative;
+  top: -10px;
+  margin-left: 2px;
+  font-size: 24px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sleepy-z { animation: none; }
 }
 
 /* Today's Reviews/Lessons panels with a cat on the right (shown when the count is 0). */

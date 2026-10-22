@@ -1,8 +1,10 @@
+import sleepyCat from "../assets/ui/cat-sleepy.png";
+
 /**
- * Kaomoji cats for Today's cards. They're drawn in MS Gothic, where full-width
- * characters are exactly two half-width ones, so the columns line up. In the
- * art, ☆ becomes a gold pixel sparkle, ﾟ and ｡ dim twinkles, ♡ ♪ pink accents
- * and ｚ Ｚ sleepy lilac z's.
+ * Cats for Today's cards. The kaomoji ones are drawn in MS Gothic, where
+ * full-width characters are exactly two half-width ones, so the columns line
+ * up. In the art, ☆ becomes a gold pixel sparkle, ﾟ and ｡ dim twinkles, and
+ * ♡ ♪ pink accents.
  */
 
 /** The Progress card's cat, cheering you on from inside the dotted heart. */
@@ -13,13 +15,6 @@ export const GANBARU_CAT = `☆ﾟ                  ﾟ☆
   ♡   ┃ がんばる ┃   ♡
       ┗━━━━━┛
  ﾟ｡☆              ☆｡ﾟ`;
-
-/** Reviews, when none are due: "taking a little break". */
-export const SLEEPY_CAT = `    ∧＿∧   ｚＺ
-   ( -ω- )   ☆
-┏━∪━∪━┓
-┃ひとやすみ┃
-┗━━━━━┛`;
 
 /** Lessons, when there are none left today: "good work". */
 export const DONE_CAT = `    ∧＿∧    ♪
@@ -34,8 +29,6 @@ const ACCENT: Record<string, string> = {
   "｡": "kaomoji-star",
   "♡": "kaomoji-heart",
   "♪": "kaomoji-heart",
-  ｚ: "kaomoji-z",
-  Ｚ: "kaomoji-z",
 };
 
 /** The art as preformatted text, with its accent characters coloured. */
@@ -55,11 +48,26 @@ export function KaomojiArt({ art, className = "" }: { art: string; className?: s
   );
 }
 
-/** A cat on the right of a Today card's panel. Decoration only; it hides when the window is short. */
+/** A kaomoji cat on the right of a Today card's panel. Decoration only; it hides when the window is short. */
 export function PanelCat({ art }: { art: string }) {
   return (
     <aside className="panel-cat" aria-hidden="true">
       <KaomojiArt art={art} />
+    </aside>
+  );
+}
+
+/**
+ * Reviews, when none are due: Xel's pixel-art cat asleep (assets/ui/cat-sleepy.png,
+ * 56×33, lines recoloured lilac), shown at 2× with z's drifting up from it.
+ */
+export function SleepyCat() {
+  return (
+    <aside className="panel-cat sleepy-cat" aria-hidden="true">
+      <img src={sleepyCat} alt="" width={112} height={66} />
+      <span className="sleepy-z">
+        z<span>Z</span>
+      </span>
     </aside>
   );
 }
