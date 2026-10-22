@@ -1,20 +1,8 @@
 // Placeholder pages for planned sections (see docs/04-roadmap.md).
 
-export type PlannedSection = "grammar" | "reading";
+export type PlannedSection = "reading";
 
 const PLANS: Record<PlannedSection, { ja: string; en: string; phase: string; intro: string; planned: string[] }> = {
-  grammar: {
-    ja: "文法",
-    en: "Grammar",
-    phase: "Phase 4",
-    intro: "Grammar points in a beginner-to-intermediate order, reviewed in the same daily session as kanji.",
-    planned: [
-      "Plain-English explanations and sentence patterns",
-      "Example sentences built from vocabulary you've learned",
-      "Fill-in-the-blank reviews",
-      "Links between related grammar points",
-    ],
-  },
   reading: {
     ja: "読書",
     en: "Reading",

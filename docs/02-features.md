@@ -48,9 +48,9 @@ The one place you start every session. Fits the window without scrolling.
 
 ## D. Grammar (inspired by Bunpro)
 
-- **[later]** Grammar points in a beginner → intermediate order.
-- **[later]** Each point: plain explanation, structure pattern, example sentences, links to related points.
-- **[later]** Reviews: fill in the blank in a sentence.
+- **[v1]** Grammar points in a beginner → intermediate order (first 10 N5 points so far).
+- **[v1]** Each point: plain explanation, structure pattern, example sentences, links to related points.
+- **[later]** Reviews: fill in the blank in a sentence. Low ranks pick from options; higher ranks type it. Sentences come from templates whose slots are filled from words you've learned, so they vary.
 - **[later]** Grammar examples prefer vocabulary you've already learned.
 
 ## E0. Library

@@ -47,8 +47,12 @@ Each phase ends with something you can **use daily**. Don't start the next phase
 
 ## Phase 4: Grammar
 
-- Grammar point list and lessons (explanations written with AI help, reviewed by you).
-- Fill-in-the-blank reviews, merged into the same daily session.
+- ✅ Grammar section, read-only: the first 10 N5 points in textbook order (は…です, か, の, これ/この/ここ series, も, じゃないです, ね・よ, ます), each with a pattern, a plain explanation, highlighted examples and related points. Data in `src/grammar/points.ts`, pages in `src/screens/Grammar.tsx`. Drafts written with AI help; set `checked: true` on a point once Xel has read it.
+- Write the rest of N5 (を, に/へ, で, ました, たい, て-form, ている, adjectives…), after Xel has checked the style of the first 10.
+- Grammar lessons, unlocking once you know the words their examples use. Move the points into content.db then (the build can read the same file).
+- Fill-in-the-blank reviews, merged into the same daily session:
+  - **Answer style by rank:** pick from a few options at low ranks, type the missing piece in kana at higher ranks.
+  - **Varied sentences:** templates with slots (*[person]* は *[job]* です) filled each time from a small hand-picked list of words you've learned for that slot, so the same sentence doesn't come back word for word; a fixed fallback sentence while you know too few.
 
 ## Phase 5: Reading and mining
 
