@@ -16,13 +16,6 @@ export const GANBARU_CAT = `☆ﾟ                  ﾟ☆
       ┗━━━━━┛
  ﾟ｡☆              ☆｡ﾟ`;
 
-/** Lessons, when there are none left today: "good work". */
-export const DONE_CAT = `    ∧＿∧    ♪
-   ( ･ω･ )   ☆
-┏━∪━∪━┓
-┃ おつかれ ┃
-┗━━━━━┛`;
-
 const ACCENT: Record<string, string> = {
   "☆": "kaomoji-sparkle",
   ﾟ: "kaomoji-star",
@@ -48,11 +41,13 @@ export function KaomojiArt({ art, className = "" }: { art: string; className?: s
   );
 }
 
-/** A kaomoji cat on the right of a Today card's panel. Decoration only; it hides when the window is short. */
-export function PanelCat({ art }: { art: string }) {
+/** Lessons, when there are none left today: a happy little face (Xel's pick), with the heart in pink. */
+export function DoneFace() {
   return (
-    <aside className="panel-cat" aria-hidden="true">
-      <KaomojiArt art={art} />
+    <aside className="panel-cat done-face" aria-hidden="true">
+      <span>
+        (<span className="kaomoji-heart">♡</span>ˊ͈ ꒳ ˋ͈)
+      </span>
     </aside>
   );
 }
