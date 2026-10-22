@@ -4,6 +4,7 @@ import {
   BookOpenText,
   GraduationCap,
   House,
+  Keyboard,
   LibraryBig,
   Maximize2,
   Minimize2,
@@ -46,7 +47,19 @@ const ICON = { size: 19, strokeWidth: 1.75 };
  * save each answer as it's given, and a lesson round only counts once its quiz
  * is done, so leaving early loses nothing (the round just comes back).
  */
-export function NavBar({ screen, go, summary }: { screen: Screen; go: (s: Screen) => void; summary?: TodaySummary }) {
+export function NavBar({
+  screen,
+  go,
+  summary,
+  keyboardOpen,
+  onToggleKeyboard,
+}: {
+  screen: Screen;
+  go: (s: Screen) => void;
+  summary?: TodaySummary;
+  keyboardOpen: boolean;
+  onToggleKeyboard: () => void;
+}) {
   return (
     <header className="titlebar" data-tauri-drag-region>
       <button className="brand" onClick={() => go("today")} title="Koihongo">
@@ -77,6 +90,17 @@ export function NavBar({ screen, go, summary }: { screen: Screen; go: (s: Screen
       <div className="nav-group" data-tauri-drag-region>
         <CountButton icon={RotateCcw} label="Reviews" count={summary?.reviewsToday} onClick={() => go("reviews")} />
         <CountButton icon={GraduationCap} label="Lessons" count={summary?.lessons.length} onClick={() => go("lessons")} />
+        {/* Keeps the focus where it is (onMouseDown), so you can open it mid-answer. */}
+        <button
+          className={`icon-btn ${keyboardOpen ? "current" : ""}`}
+          aria-label="Kana keyboard"
+          aria-pressed={keyboardOpen}
+          title="かな Kana keyboard"
+          onMouseDown={(e) => e.preventDefault()}
+          onClick={onToggleKeyboard}
+        >
+          <Keyboard {...ICON} />
+        </button>
         <button
           className={`icon-btn ${screen === "settings" || screen === "sources" ? "current" : ""}`}
           aria-label="Settings"

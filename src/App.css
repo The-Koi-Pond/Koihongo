@@ -3930,3 +3930,102 @@ select {
   gap: 3px;
   color: var(--word);
 }
+
+/* The on-screen kana keyboard (KanaKeyboard.tsx): a floating gojūon chart in
+   the bottom-right corner, over the page, so opening it moves nothing. */
+.kana-keyboard {
+  --key: 34px;
+  position: fixed;
+  right: 16px;
+  bottom: calc(var(--statusbar-h) + 12px);
+  z-index: 50;
+  display: grid;
+  gap: 8px;
+  padding: 10px 12px 12px;
+  background: var(--surface);
+  border: 2px solid var(--panel-border);
+  border-radius: 12px;
+  box-shadow: var(--panel-glow), 0 12px 32px rgb(0 0 0 / 0.45);
+  user-select: none;
+}
+
+.kana-keyboard-head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  cursor: grab; /* drag to move */
+  touch-action: none;
+  font-family: var(--font-kana);
+  font-size: 0.85rem;
+  color: var(--muted);
+}
+
+.kana-keyboard-hint {
+  font-family: var(--font-body);
+  font-size: 0.75rem;
+  color: var(--hint);
+}
+
+.kana-key-close {
+  margin-left: auto;
+  display: grid;
+  place-items: center;
+  width: 24px;
+  height: 24px;
+  padding: 0;
+  border-radius: 6px;
+}
+
+/* Right to left like a printed chart: one column per consonant row, vowels down. */
+.kana-chart {
+  display: grid;
+  grid-template-rows: repeat(5, var(--key));
+  grid-auto-flow: column;
+  grid-auto-columns: var(--key);
+  gap: 3px;
+}
+
+.kana-key {
+  display: grid;
+  place-items: center;
+  min-width: var(--key);
+  height: var(--key);
+  padding: 0;
+  border-radius: 6px;
+  font-family: var(--font-kana);
+  font-size: 1.15rem;
+  line-height: 1;
+}
+
+.kana-key:hover {
+  border-color: var(--kana);
+  color: var(--kana);
+}
+
+.kana-key:active {
+  background: var(--kana);
+  color: var(--on-kind);
+}
+
+.kana-keyboard-row {
+  display: flex;
+  gap: 3px;
+}
+
+.kana-key.mod {
+  flex: 1;
+  background: var(--surface-2);
+}
+
+.kana-key.mod.wide {
+  flex: 2.4;
+  font-size: 0.85rem;
+}
+
+/* Stays in reach in short windows: keys shrink a little. */
+@media (max-height: 640px) {
+  .kana-keyboard {
+    --key: 28px;
+    bottom: 8px;
+  }
+}

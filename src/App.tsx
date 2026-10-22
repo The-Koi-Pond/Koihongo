@@ -1,4 +1,3 @@
-import { FindByPartsContext } from "./ui/findByParts.ts";
 import { useEffect, useState } from "react";
 import { autoBackupIfDue } from "./backup.ts";
 import { migrate } from "./db/migrations.ts";
@@ -12,6 +11,8 @@ import { Settings } from "./screens/Settings.tsx";
 import { Sources } from "./screens/Sources.tsx";
 import { Today, type StudyOrder } from "./screens/Today.tsx";
 import { todaySummary, type TodaySummary } from "./srs/progress.ts";
+import { FindByPartsContext } from "./ui/findByParts.ts";
+import { KanaKeyboard } from "./ui/KanaKeyboard.tsx";
 import { NavBar, type Screen } from "./ui/NavBar.tsx";
 import "./App.css";
 
@@ -34,6 +35,7 @@ function App() {
   const [summary, setSummary] = useState<TodaySummary>();
   // Screens still to come in a "Start" study session (e.g. lessons after reviews).
   const [chain, setChain] = useState<Screen[]>([]);
+  const [keyboardOpen, setKeyboardOpen] = useState(false);
 
   // Leaving a screen continues the study session, or goes home.
   const next = () => {
@@ -80,7 +82,8 @@ function App() {
 
   return (
     <>
-      <NavBar screen={screen} go={navigate} summary={summary} />
+      <NavBar screen={screen} go={navigate} summary={summary} keyboardOpen={keyboardOpen} onToggleKeyboard={() => setKeyboardOpen(!keyboardOpen)} />
+      {keyboardOpen && <KanaKeyboard onClose={() => setKeyboardOpen(false)} />}
       <FindByPartsContext.Provider value={SESSIONS.includes(screen) ? undefined : findByParts}>
         <main className={`app ${WIDE.includes(screen) ? "wide" : ""}`}>
           {error ? (
