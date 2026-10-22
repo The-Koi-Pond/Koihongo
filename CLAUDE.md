@@ -52,7 +52,7 @@ Use **browser mode** with the Playwright tools: while `pnpm tauri dev` runs, ope
 
 ## Conventions
 
-- **Git:** commit locally with a clear message, ending with the `Co-Authored-By` trailer. Never push, publish, or open issues or PRs unless Xel asks. The repo has Xel's identity in its local git config.
+- **Git:** commit locally with a clear message, ending with the `Co-Authored-By` trailer. Never push, publish, or open issues or PRs unless Xel asks. The repo is public at github.com/The-Koi-Pond/Koihongo (remote `origin`); its local git config uses Xel's private GitHub noreply address, so keep it that way and never commit a personal email.
 - **Visual style, "Starry night":**
   - twilight indigo with pastel pink, cyan and butter glows, pixel fonts, glowing panels;
   - colours come from tokens on `:root`, and each kind has its own: kana pink, component cyan, kanji purple, word butter;
