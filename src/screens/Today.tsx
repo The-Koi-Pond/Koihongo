@@ -151,7 +151,7 @@ export function Today({
           ) : (
             <p className="start-rest">
               <span>{catchUp ? "Today's share is done" : "All caught up"}</span>
-              {summary.nextReviewAt && <span className="start-detail">· next review {fromNow(summary.nextReviewAt, now.getTime())}</span>}
+              {summary.nextReviewAt && <span className="start-detail">Next review {fromNow(summary.nextReviewAt, now.getTime())}</span>}
             </p>
           )}
           <div className="start-options">
