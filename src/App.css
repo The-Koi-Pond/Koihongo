@@ -3159,9 +3159,11 @@ select {
 
 /* Level card (Today's Progress): level badge, region, and this level's gauges. */
 
+/* The badge and region text on the left, the level pips flush right (level
+   with the percentages below). */
 .level-head {
   display: grid;
-  grid-template-columns: auto auto 1fr auto;
+  grid-template-columns: auto minmax(0, 1fr) auto;
   align-items: center;
   gap: 4px 14px;
   margin-bottom: 8px;
@@ -3395,6 +3397,12 @@ select {
 }
 
 /* Today's Reviews/Lessons panels with a cat on the right (shown when the count is 0). */
+/* The Progress panel's corners hold the level pips and the percentages (and the heart has its own sparkles). */
+.card-panel.level-panel {
+  --panel-twinkles: none;
+  --panel-wisp: none;
+}
+
 .card-panel.with-cat {
   --panel-twinkles: none; /* the cat brings its own sparkle */
   display: grid;
@@ -3439,15 +3447,24 @@ select {
   }
 }
 
-/* How many items hold each rank, under the gauges. */
+/* How many items hold each rank: a last stat row under the gauges, on the
+   same columns (label, then the ranks starting where the bars do). */
 .rank-tally {
   margin: 8px 0 0;
-  display: flex;
-  justify-content: flex-end;
-  gap: 14px;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: center;
+  gap: 12px;
 }
 
-.rank-tally > span {
+.rank-tally > p {
+  margin: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 16px;
+}
+
+.rank-tally > p > span {
   display: inline-flex;
   align-items: center;
   gap: 5px;
@@ -3928,9 +3945,10 @@ select {
 /* Today's panels: a pixel cloud wisp low on the right and two little twinkles above it. */
 .card-panel {
   --panel-twinkles: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='18' height='13' shape-rendering='crispEdges'%3E%3Cg fill='%23a99cf0' opacity='.7'%3E%3Crect x='3' y='0' width='1' height='7'/%3E%3Crect x='0' y='3' width='7' height='1'/%3E%3Crect x='2' y='2' width='3' height='3'/%3E%3C/g%3E%3Cg fill='%23fd93bb' opacity='.6'%3E%3Crect x='15' y='9' width='1' height='3'/%3E%3Crect x='14' y='10' width='3' height='1'/%3E%3C/g%3E%3C/svg%3E") right 22px top 10px / 36px 26px no-repeat;
+  --panel-wisp: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='42' height='6' shape-rendering='crispEdges'%3E%3Cg fill='%234a46a8' opacity='.55'%3E%3Crect x='10' y='0' width='22' height='2'/%3E%3Crect x='2' y='2' width='36' height='2'/%3E%3Crect x='14' y='4' width='26' height='2'/%3E%3C/g%3E%3C/svg%3E") right 10px bottom 10px / 84px 12px no-repeat;
   background:
     var(--panel-twinkles),
-    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='42' height='6' shape-rendering='crispEdges'%3E%3Cg fill='%234a46a8' opacity='.55'%3E%3Crect x='10' y='0' width='22' height='2'/%3E%3Crect x='2' y='2' width='36' height='2'/%3E%3Crect x='14' y='4' width='26' height='2'/%3E%3C/g%3E%3C/svg%3E") right 10px bottom 10px / 84px 12px no-repeat,
+    var(--panel-wisp),
     url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='4' height='4' shape-rendering='crispEdges'%3E%3Crect width='1' height='1' fill='%23fff' opacity='.035'/%3E%3Crect x='2' y='2' width='1' height='1' fill='%23fff' opacity='.035'/%3E%3C/svg%3E") 0 0 / 4px 4px,
     #25235f;
 }
