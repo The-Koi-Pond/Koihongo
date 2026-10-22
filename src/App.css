@@ -668,6 +668,11 @@ textarea {
   --page-pad-bottom: 12px;
 }
 
+/* Library and Dictionary item pages: just the usual gap under the last card. */
+.app:has(.item-body) {
+  --page-pad-bottom: var(--card-gap);
+}
+
 .item-view.question-page {
   height: calc(100vh - var(--titlebar-h) - 28px - var(--page-pad-bottom));
   min-height: 0;
@@ -675,6 +680,7 @@ textarea {
 
 .item-view.question-page > .banner {
   flex: 1 1 0;
+  container-type: size; /* lets the character size itself from the banner (cqh/cqw) */
   min-height: clamp(170px, 26vh, 240px);
 }
 
@@ -1323,13 +1329,32 @@ textarea {
   box-shadow: 0 6px 24px rgb(0 0 0 / 0.25);
 }
 
+/* The space between the corner row and the bottom of the banner. The character
+   sizes itself from it (cqh/cqw), and its minimum (the panel at the smallest
+   character size) keeps the banner tall enough, so nothing spills out of it in
+   small windows. */
+.banner-stage {
+  align-self: stretch;
+  justify-self: stretch;
+  container-type: size;
+  display: grid;
+  place-items: center;
+  min-height: 68px;
+}
+
+.banner-stage:has(.banner-facts) {
+  min-height: 112px;
+}
+
+/* What the panel adds around the character (border, padding, the facts line),
+   plus a little air above and below. */
 .banner-window > .banner-glyph {
-  --glyph-reserve: 80px;
+  --glyph-reserve: 24px;
   padding-bottom: 4px;
 }
 
 .banner-window:has(.banner-facts) > .banner-glyph {
-  --glyph-reserve: 135px;
+  --glyph-reserve: 68px;
 }
 
 /* No pill of its own inside the panel. */
@@ -1386,9 +1411,13 @@ textarea {
 
 .item-view > .banner {
   flex: 1 1 auto;
-  container-type: size; /* lets the character size itself from the banner (cqh/cqw) */
-  /* Pages that scroll anyway (kanji and words have lots of cards) leave no
-     spare height to grow into, so the banner keeps about half the window. */
+  min-height: 260px;
+}
+
+/* Kanji and word pages scroll anyway (lots of cards), leaving no spare height
+   to grow into, so their banner keeps about half the window. Kana and
+   component pages usually fit, so theirs only keeps what its content needs. */
+.item-view:is(.kanji, .word):not(.question-page) > .banner {
   min-height: clamp(260px, 50vh, 460px);
 }
 
@@ -3526,7 +3555,8 @@ select {
     padding: 10px 14px 12px;
   }
 
-  .item-view > .banner {
+  .item-view > .banner,
+  .item-view:is(.kanji, .word):not(.question-page) > .banner {
     min-height: 140px;
     padding-bottom: 70px;
   }
@@ -3667,7 +3697,8 @@ select {
     margin-top: 4px;
   }
 
-  .item-view > .banner {
+  .item-view > .banner,
+  .item-view:is(.kanji, .word):not(.question-page) > .banner {
     min-height: 120px;
   }
 }
