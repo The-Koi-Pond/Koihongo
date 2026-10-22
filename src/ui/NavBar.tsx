@@ -64,7 +64,7 @@ export function NavBar({
   return (
     <header className="titlebar" data-tauri-drag-region>
       <button className="brand" onClick={() => go("today")} title="Koihongo">
-        <img className="brand-logo" src={logo} alt="Koihongo" width={80} height={32} />
+        <img className="brand-logo" src={logo} alt="Koihongo" width={73} height={30} />
       </button>
 
       <nav className="nav-group" aria-label="Main" data-tauri-drag-region>
