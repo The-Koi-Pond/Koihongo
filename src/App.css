@@ -2735,13 +2735,15 @@ select {
 }
 
 /* Shown instead of Start when nothing is due: a calm note, not a dead button. */
+/* "All caught up", with when the next review comes on a smaller line under it. */
 .start-rest {
   margin: 0;
   display: inline-flex;
+  flex-direction: column;
   align-items: center;
-  gap: 8px;
-  padding: 12px 24px;
-  border-radius: 999px;
+  gap: 2px;
+  padding: 10px 26px;
+  border-radius: 22px;
   background: rgb(0 0 0 / 0.28);
   border: 1px solid rgb(255 255 255 / 0.25);
   color: #fff;
@@ -2759,6 +2761,11 @@ select {
   font-family: var(--font-num);
   font-weight: 700;
   opacity: 0.8;
+}
+
+.start-rest .start-detail {
+  font-size: 0.85rem;
+  font-weight: 400;
 }
 
 /* Segmented "Reviews first | Lessons first" choice. */
