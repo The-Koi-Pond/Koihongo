@@ -1,3 +1,4 @@
+import { ChevronDown, ChevronRight } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { isRomaji, toHiragana } from "wanakana";
 import { tauriDb } from "../db/tauriDb.ts";
@@ -16,6 +17,25 @@ const SECTIONS: { kind: ItemKind; name: string }[] = [
   { kind: "word", name: "Words" },
 ];
 const ALL_PAGES: Record<ItemKind, number> = { kana: PAGE, component: PAGE, kanji: PAGE, word: PAGE };
+const COLLAPSED_KEY = "koihongo.libraryCollapsed";
+
+/** The sections you folded away, remembered per device; none if storage is unavailable. */
+function loadCollapsed(): Set<ItemKind> {
+  try {
+    return new Set(JSON.parse(localStorage.getItem(COLLAPSED_KEY) ?? "[]"));
+  } catch {
+    return new Set();
+  }
+}
+
+function saveCollapsed(kinds: Set<ItemKind>) {
+  try {
+    localStorage.setItem(COLLAPSED_KEY, JSON.stringify([...kinds]));
+  } catch {
+    // Not remembered this time; harmless.
+  }
+}
+
 const KIND_TABS: { kind: ItemKind | "all"; name: string }[] = [
   { kind: "all", name: "All" },
   { kind: "kana", name: "Kana" },
@@ -35,6 +55,15 @@ export function Library() {
   const [shown, setShown] = useState<Record<ItemKind, number>>(ALL_PAGES);
   const [selected, setSelected] = useState<string>();
   const [version, setVersion] = useState(0);
+  const [collapsed, setCollapsed] = useState<Set<ItemKind>>(loadCollapsed);
+
+  const toggleSection = (k: ItemKind) => {
+    const next = new Set(collapsed);
+    if (next.has(k)) next.delete(k);
+    else next.add(k);
+    setCollapsed(next);
+    saveCollapsed(next);
+  };
 
   useEffect(() => {
     libraryItems(tauriDb)
@@ -126,35 +155,43 @@ export function Library() {
             const all = matches.filter((i) => i.kind === k);
             if (all.length === 0) return null;
             const tiles = all.slice(0, shown[k]);
+            const open = !collapsed.has(k);
             return (
-              <section key={k} className="tile-section">
+              <section key={k} className={`tile-section ${open ? "" : "collapsed"}`}>
                 <h3>
-                  {name} <span className="num">{all.length}</span>
-                </h3>
-                <ul className="tiles">
-                  {tiles.map((i) => (
-                    <li key={i.item_key} style={{ gridColumn: `span ${tileSpan(i)}` }}>
-                      <ItemHover itemKey={i.item_key} openOnClick={false}>
-                        <button className={`tile ${i.kind} ${i.status}`} onClick={() => setSelected(i.item_key)}>
-                          {/* Fast track: a folded-down corner. Rank: a sticker on the top-right corner. */}
-                          {i.fast === 1 && <span className="tile-fast" title="On fast track" aria-label="On fast track" />}
-                          {i.rank && (
-                            <span className="tile-rank">
-                              <RankBadge rank={i.rank} />
-                            </span>
-                          )}
-                          <span className={`tile-glyph ${[...i.label].length > 1 ? "multi" : ""}`} lang="ja">
-                            {i.label}
-                          </span>
-                        </button>
-                      </ItemHover>
-                    </li>
-                  ))}
-                </ul>
-                {all.length > tiles.length && (
-                  <button className="show-more" onClick={() => setShown((n) => ({ ...n, [k]: n[k] + PAGE }))}>
-                    Show more {name.toLowerCase()} ({all.length - tiles.length} left)
+                  <button type="button" className="section-toggle" aria-expanded={open} onClick={() => toggleSection(k)}>
+                    {open ? <ChevronDown size={14} strokeWidth={2.5} aria-hidden="true" /> : <ChevronRight size={14} strokeWidth={2.5} aria-hidden="true" />}
+                    {name} <span className="num">{all.length}</span>
                   </button>
+                </h3>
+                {open && (
+                  <>
+                    <ul className="tiles">
+                      {tiles.map((i) => (
+                        <li key={i.item_key} style={{ gridColumn: `span ${tileSpan(i)}` }}>
+                          <ItemHover itemKey={i.item_key} openOnClick={false}>
+                            <button className={`tile ${i.kind} ${i.status}`} onClick={() => setSelected(i.item_key)}>
+                              {/* Fast track: a folded-down corner. Rank: a sticker on the top-right corner. */}
+                              {i.fast === 1 && <span className="tile-fast" title="On fast track" aria-label="On fast track" />}
+                              {i.rank && (
+                                <span className="tile-rank">
+                                  <RankBadge rank={i.rank} />
+                                </span>
+                              )}
+                              <span className={`tile-glyph ${[...i.label].length > 1 ? "multi" : ""}`} lang="ja">
+                                {i.label}
+                              </span>
+                            </button>
+                          </ItemHover>
+                        </li>
+                      ))}
+                    </ul>
+                    {all.length > tiles.length && (
+                      <button className="show-more" onClick={() => setShown((n) => ({ ...n, [k]: n[k] + PAGE }))}>
+                        Show more {name.toLowerCase()} ({all.length - tiles.length} left)
+                      </button>
+                    )}
+                  </>
                 )}
               </section>
             );
