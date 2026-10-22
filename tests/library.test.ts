@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import { test } from "node:test";
 import { migrate } from "../src/db/migrations.ts";
 import { itemPreview, itemProgress, libraryItems } from "../src/library.ts";
+import { setFastTrack } from "../src/srs/fastTrack.ts";
 import { recordReview, startLessons } from "../src/srs/progress.ts";
 import { FIRST_REVIEW_DELAY_MS } from "../src/srs/scheduler.ts";
 import { openTestDb } from "./nodeDb.ts";
@@ -84,6 +85,7 @@ test("previews summarise kanji, words and components with status", async () => {
     item_key: "kanji:木",
     kind: "kanji",
     status: "locked",
+    fast: false,
     label: "木",
     meanings: ["tree", "wood"],
     readings: ["モク", "き"],
@@ -91,6 +93,13 @@ test("previews summarise kanji, words and components with status", async () => {
   const word = await itemPreview(db, "word:1");
   assert.deepEqual([word.label, word.readings, word.meanings], ["休み", ["やすみ"], ["rest, holiday"]]);
   assert.deepEqual((await itemPreview(db, "component:化")).meanings, ["person"]);
+});
+
+test("previews say when an item is on fast track", async () => {
+  const db = await freshDb();
+  await setFastTrack(db, "component:木", true, T0);
+  assert.equal((await itemPreview(db, "component:木")).fast, true);
+  assert.equal((await itemPreview(db, "component:化")).fast, false);
 });
 
 test("previews work for kanji that aren't on the path", async () => {
