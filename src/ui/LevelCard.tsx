@@ -66,13 +66,17 @@ export function LevelCard({ status, kana, ranks }: { status?: LevelStatus; kana?
             {kana && <GaugeRow label="KANA" name="Kana (until you've learned them all)" tally={kana} />}
           </ul>
           {ranks && RANK_ORDER.some((r) => ranks[r] > 0) && (
-            <p className="rank-tally" aria-label="Items by rank">
-              {[...RANK_ORDER].reverse().map((r) => (
-                <span key={r} className={ranks[r] ? "" : "none"}>
-                  <RankBadge rank={r} /> <span className="num">{ranks[r]}</span>
-                </span>
-              ))}
-            </p>
+            // A stat row like the gauges above: the label, then the ranks where the bars start.
+            <div className="rank-tally">
+              <StatLabel label="RANK" name="Items by rank" />
+              <p aria-label="Items by rank">
+                {[...RANK_ORDER].reverse().map((r) => (
+                  <span key={r} className={ranks[r] ? "" : "none"}>
+                    <RankBadge rank={r} /> <span className="num">{ranks[r]}</span>
+                  </span>
+                ))}
+              </p>
+            </div>
           )}
         </div>
         <ProgressArt />
@@ -117,18 +121,25 @@ function RegionPips({ current, total }: { current: number; total: number }) {
 }
 
 /** A JRPG stat gauge; `goal` draws a tick where the level is cleared. */
+/** JRPG stat label: pixel caps, one fixed-width cell per letter, so every row's label is the same width. */
+function StatLabel({ label, name }: { label: string; name: string }) {
+  return (
+    <span className="stat-label" title={name} aria-label={name}>
+      {[...label].map((ch, i) => (
+        <span key={i} aria-hidden="true">
+          {ch}
+        </span>
+      ))}
+    </span>
+  );
+}
+
 function GaugeRow({ label, name, tally, goal }: { label: string; name: string; tally: Tally; goal?: number }) {
   const pct = (n: number) => (tally.total ? (n / tally.total) * 100 : 0);
   const detail = `${tally.passed} passed, ${tally.learning} learning, of ${tally.total}`;
   return (
     <li>
-      <span className="stat-label" title={name} aria-label={name}>
-        {[...label].map((ch, i) => (
-          <span key={i} aria-hidden="true">
-            {ch}
-          </span>
-        ))}
-      </span>
+      <StatLabel label={label} name={name} />
       <div className="progress-track" title={detail}>
         {tally.passed > 0 && <div className="progress-fill passed" style={{ width: `${pct(tally.passed)}%` }} />}
         {tally.learning > 0 && <div className="progress-fill learning" style={{ width: `${pct(tally.learning)}%` }} />}
