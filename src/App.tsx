@@ -3,6 +3,7 @@ import { autoBackupIfDue } from "./backup.ts";
 import { migrate } from "./db/migrations.ts";
 import { tauriDb } from "./db/tauriDb.ts";
 import { ComingSoon } from "./screens/ComingSoon.tsx";
+import { Decks } from "./screens/Decks.tsx";
 import { Grammar } from "./screens/Grammar.tsx";
 import { Dictionary } from "./screens/Dictionary.tsx";
 import { Lessons } from "./screens/Lessons.tsx";
@@ -103,6 +104,8 @@ function App() {
             <Library />
           ) : screen === "dictionary" ? (
             <Dictionary partsRequest={partsRequest} />
+          ) : screen === "decks" ? (
+            <Decks />
           ) : screen === "grammar" ? (
             <Grammar />
           ) : screen === "reading" ? (

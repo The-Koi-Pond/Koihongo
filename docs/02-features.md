@@ -42,7 +42,7 @@ The one place you start every session. Fits the window without scrolling.
 
 - **[v1]** Vocabulary unlocked by the kanji path (WaniKani-style).
 - **[v1]** Each word shows example sentences, ideally using only words you already know.
-- **[later]** Add any word from the dictionary to your reviews (Anki-style).
+- **[v1]** Add any word or kanji from the dictionary to one of your own flashcard decks (Anki-style, flip and rate), studied on its own or mixed into daily reviews.
 - **[later]** Pitch accent display.
 - **[later]** Audio for words and sentences.
 

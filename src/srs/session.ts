@@ -6,8 +6,14 @@ import type { CardType } from "./scheduler.ts";
 
 export type Question = { item_key: string; card_type: CardType };
 
-export type Session = {
-  queue: Question[];
+/** A deck card in a session: item_key "deck:<id>", card_type "flip" (see src/decks.ts). */
+export type DeckQuestion = { item_key: string; card_type: "flip" };
+
+/** Anything a session can ask: a path card or a deck card. */
+type AnyQuestion = Question | DeckQuestion;
+
+export type Session<Q extends AnyQuestion = Question> = {
+  queue: Q[];
   /** First-attempt result per card ("item_key|card_type"). */
   firstTry: Record<string, boolean>;
 };
@@ -15,19 +21,19 @@ export type Session = {
 /** A missed card comes back after this many other questions (or at the end). */
 export const REQUEUE_GAP = 4;
 
-export const questionId = (q: Question) => `${q.item_key}|${q.card_type}`;
+export const questionId = (q: AnyQuestion) => `${q.item_key}|${q.card_type}`;
 
-export function startSession(questions: Question[]): Session {
+export function startSession<Q extends AnyQuestion>(questions: Q[]): Session<Q> {
   return { queue: [...questions], firstTry: {} };
 }
 
-export const currentQuestion = (s: Session): Question | undefined => s.queue[0];
+export const currentQuestion = <Q extends AnyQuestion>(s: Session<Q>): Q | undefined => s.queue[0];
 
 /**
  * Applies the answer to the current question. `firstAttempt` tells the caller
  * whether to record this answer for scheduling.
  */
-export function answerCurrent(s: Session, correct: boolean): { session: Session; firstAttempt: boolean } {
+export function answerCurrent<Q extends AnyQuestion>(s: Session<Q>, correct: boolean): { session: Session<Q>; firstAttempt: boolean } {
   const [q, ...rest] = s.queue;
   if (!q) throw new Error("No question to answer");
   const id = questionId(q);
@@ -37,7 +43,7 @@ export function answerCurrent(s: Session, correct: boolean): { session: Session;
   return { session: { queue, firstTry }, firstAttempt };
 }
 
-export function sessionStats(s: Session): { answered: number; correctFirstTry: number; remaining: number } {
+export function sessionStats(s: Session<AnyQuestion>): { answered: number; correctFirstTry: number; remaining: number } {
   const results = Object.values(s.firstTry);
   return { answered: results.length, correctFirstTry: results.filter(Boolean).length, remaining: s.queue.length };
 }
@@ -46,9 +52,9 @@ export function sessionStats(s: Session): { answered: number; correctFirstTry: n
  * Interleaves cards so a meaning and reading of the same item aren't asked
  * back to back (the first gives the second away). Keeps the order otherwise.
  */
-export function spreadOutPairs(questions: Question[]): Question[] {
-  const out: Question[] = [];
-  const held: Question[] = [];
+export function spreadOutPairs<Q extends AnyQuestion>(questions: Q[]): Q[] {
+  const out: Q[] = [];
+  const held: Q[] = [];
   for (const q of questions) {
     if (out.length && out[out.length - 1].item_key === q.item_key) held.push(q);
     else out.push(q);

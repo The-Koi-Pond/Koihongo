@@ -327,9 +327,9 @@ textarea {
   position: relative; /* for the "soon" dot */
 }
 
-/* Narrower windows: icons only (the labels need about 1070px next to the
-   wordmark), with less padding. */
-@media (max-width: 1080px) {
+/* Narrower windows: icons only (the six labels need about 1170px next to
+   the wordmark), with less padding. */
+@media (max-width: 1180px) {
   .nav-tab-label {
     display: none;
   }
@@ -340,13 +340,20 @@ textarea {
 }
 
 /* Small windows: no room for the cursor; the highlight marks the current tab. */
-@media (max-width: 780px) {
+@media (max-width: 800px) {
   .titlebar .nav-tab {
     padding: 0 6px;
   }
 
   .titlebar .nav-tab.current::before { /* beats the cursor rule below */
     content: none;
+  }
+}
+
+/* The smallest windows: slimmer still (the wordmark drops to 3× here too). */
+@media (max-width: 720px) {
+  .titlebar .nav-tab {
+    padding: 0 4px;
   }
 }
 
@@ -4087,6 +4094,327 @@ select {
 :is(.card, .split-card, .field) :is(button, input, textarea, select, .chips > li, .mini-glyphs > li:not(.more), .rank-badge, .region-chip),
 .banner + .item-info > .split-card.overlap {
   text-shadow: none;
+}
+
+/* Decks (Decks.tsx): your own flashcards. */
+.decks-intro {
+  margin: -4px 0 14px;
+}
+
+.deck-new,
+.deck-rename {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+.deck-new input,
+.deck-rename input {
+  flex: 1;
+}
+
+.deck-new button {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.deck-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: var(--card-gap);
+}
+
+.deck-tile {
+  width: 100%;
+  height: 100%;
+  display: grid;
+  gap: 4px;
+  padding: 14px 16px;
+  text-align: left;
+  border: 2px solid var(--panel-border);
+  border-radius: 10px;
+  background: var(--surface);
+  color: var(--text);
+}
+
+.deck-tile:hover {
+  border-color: #fd93bb;
+}
+
+.deck-name {
+  font-size: 1.15rem;
+  font-weight: 700;
+}
+
+.deck-counts .num {
+  font-family: var(--font-num);
+  font-size: 1.15em;
+}
+
+.deck-counts .due {
+  color: #fd93bb;
+}
+
+.deck-daily {
+  font-size: 0.8rem;
+  color: var(--muted);
+}
+
+.deck-back {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  margin-bottom: 6px;
+}
+
+.deck-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.deck-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 16px;
+}
+
+.deck-actions .primary {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.deck-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+button.danger {
+  background: #d84d6e;
+  border-color: #d84d6e;
+  color: #fff;
+}
+
+.card-editor {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px 12px;
+  padding: 12px 14px;
+  margin-bottom: 14px;
+  border: 2px solid var(--panel-border);
+  border-radius: 10px;
+  background: var(--surface);
+}
+
+.card-editor label {
+  display: grid;
+  gap: 2px;
+}
+
+.card-editor textarea {
+  resize: vertical;
+  font-size: 1.05rem;
+}
+
+.card-editor-actions {
+  grid-column: 1 / -1;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+@media (max-width: 600px) {
+  .card-editor {
+    grid-template-columns: 1fr;
+  }
+}
+
+.deck-cards {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 6px;
+}
+
+.deck-card {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1.5fr) auto;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 12px;
+  border: 1px solid var(--panel-border);
+  border-radius: 8px;
+  background: rgb(0 0 0 / 0.12);
+}
+
+.deck-card.editing {
+  display: block;
+  padding: 0;
+  border: none;
+  background: none;
+}
+
+.deck-card-front {
+  font-size: 1.2rem;
+  white-space: pre-wrap;
+}
+
+.deck-card-back {
+  color: var(--muted);
+  white-space: pre-wrap;
+}
+
+.deck-card-tools {
+  display: flex;
+  gap: 4px;
+}
+
+/* The flip card (FlipCard.tsx), in daily reviews or studying a deck. */
+.flip-front-long {
+  align-self: center;
+  max-width: 34em;
+  padding: 12px 20px;
+  font-size: clamp(1.3rem, 3.2cqw, 2rem);
+  font-weight: 700;
+  text-align: center;
+  white-space: pre-wrap;
+  text-shadow: 0 4px 16px rgb(0 0 0 / 0.35);
+}
+
+.flip-dock {
+  display: grid;
+  justify-items: center;
+  gap: 12px;
+  padding: 18px 16px 20px;
+  border: 2px solid var(--panel-border);
+  border-radius: 12px;
+  background: var(--surface);
+}
+
+.flip-deck {
+  margin: 0;
+  font-size: 0.8rem;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.flip-show {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 28px;
+  font-size: 1.05rem;
+}
+
+.flip-key {
+  font-family: var(--font-num);
+  font-size: 0.75rem;
+  opacity: 0.75;
+}
+
+.flip-back {
+  margin: 0;
+  max-width: 40em;
+  font-size: 1.35rem;
+  text-align: center;
+  white-space: pre-wrap;
+}
+
+.flip-grades {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(90px, 140px));
+  gap: 8px;
+}
+
+.flip-grade {
+  display: grid;
+  gap: 2px;
+  justify-items: center;
+  padding: 8px 6px;
+  border: 2px solid var(--panel-border);
+  border-radius: 10px;
+  background: rgb(0 0 0 / 0.15);
+  color: var(--text);
+  font-weight: 700;
+}
+
+.flip-when {
+  font-family: var(--font-num);
+  font-size: 0.8rem;
+  font-weight: 400;
+  color: var(--muted);
+}
+
+.flip-grade.grade-again { border-color: #d84d6e; }
+.flip-grade.grade-hard { border-color: #e0a75a; }
+.flip-grade.grade-good { border-color: #6fd39b; }
+.flip-grade.grade-easy { border-color: #63a4fb; }
+
+.flip-grade:hover {
+  background: rgb(255 255 255 / 0.08);
+}
+
+@media (max-width: 520px) {
+  .flip-grades {
+    grid-template-columns: repeat(2, minmax(90px, 1fr));
+  }
+}
+
+/* "Add to deck" on item pages (AddToDeck.tsx): a button in the banner corner with a small menu. */
+.add-to-deck {
+  position: relative;
+}
+
+.add-to-deck-menu {
+  position: absolute;
+  top: calc(100% + 6px);
+  right: 0;
+  z-index: 10;
+  min-width: 200px;
+  display: grid;
+  gap: 2px;
+  padding: 8px;
+  border: 2px solid var(--panel-border);
+  border-radius: 10px;
+  background: #25235f;
+  box-shadow: 0 8px 24px rgb(0 0 0 / 0.4);
+  text-shadow: none;
+}
+
+.add-to-deck-menu p {
+  margin: 0 4px 4px;
+}
+
+.add-to-deck-menu button {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 6px 8px;
+  border: none;
+  border-radius: 6px;
+  background: none;
+  color: var(--text);
+  text-align: left;
+}
+
+.add-to-deck-menu button:hover {
+  background: rgb(255 255 255 / 0.08);
+}
+
+.add-to-deck-menu input {
+  margin-top: 4px;
+  width: 100%;
+  box-sizing: border-box;
 }
 
 /* Grammar (Grammar.tsx): the list of points, then each point's page, which

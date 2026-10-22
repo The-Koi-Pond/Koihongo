@@ -1,14 +1,31 @@
 import { useCallback, useEffect, useState } from "react";
+import type { Grade } from "ts-fsrs";
 import { tauriDb } from "../db/tauriDb.ts";
+import { byRisk, deckCardId, deckQuestion, dueDeckCards, getDeckCard, recordDeckReview, type DeckCard } from "../decks.ts";
 import { dueCards, recordReview, todaySummary } from "../srs/progress.ts";
 import { rankUpFor } from "../srs/ranks.ts";
-import { answerCurrent, currentQuestion, questionId, sessionStats, spreadOutPairs, startSession, type Session } from "../srs/session.ts";
+import { Rating } from "../srs/scheduler.ts";
+import {
+  answerCurrent,
+  currentQuestion,
+  questionId,
+  sessionStats,
+  spreadOutPairs,
+  startSession,
+  type DeckQuestion,
+  type Question,
+  type Session,
+} from "../srs/session.ts";
 import { DoneView } from "../ui/DoneView.tsx";
+import { FlipCard } from "../ui/FlipCard.tsx";
 import { QuestionCard, SessionGauge } from "../ui/QuestionCard.tsx";
 import { useItem } from "../ui/useItem.ts";
 
+type ReviewQuestion = Question | DeckQuestion;
+
 /**
- * Due reviews, most at-risk first. With `minutes`, wraps up once time is up.
+ * Due reviews, most at-risk first: path cards plus cards from decks that are
+ * in daily reviews (flip and rate). With `minutes`, wraps up once time is up.
  * During catch-up only today's share is asked, unless `extra` (or you pick
  * "Do extra anyway" at the end). `exitLabel` replaces "Back to Today" when
  * this is part of a longer study session.
@@ -25,7 +42,7 @@ export function Reviews({
   exitLabel?: string;
 }) {
   const [extra, setExtra] = useState(startExtra);
-  const [session, setSession] = useState<Session>();
+  const [session, setSession] = useState<Session<ReviewQuestion>>();
   const [total, setTotal] = useState(0);
   // Due reviews left out of this session by catch-up.
   const [waiting, setWaiting] = useState(0);
@@ -36,10 +53,18 @@ export function Reviews({
 
   useEffect(() => {
     const now = Date.now();
-    Promise.all([dueCards(tauriDb, now), todaySummary(tauriDb, now)])
-      .then(([cards, summary]) => {
+    Promise.all([dueCards(tauriDb, now), dueDeckCards(tauriDb, now), todaySummary(tauriDb, now)])
+      .then(([pathCards, deckCards, summary]) => {
+        // One queue, most likely to be forgotten first, whichever kind of card.
+        const cards = byRisk(
+          [
+            ...pathCards.map((c) => ({ ...c, q: { item_key: c.item_key, card_type: c.card_type } as ReviewQuestion })),
+            ...deckCards.map((c) => ({ ...c, q: deckQuestion(c.id) as ReviewQuestion })),
+          ],
+          now,
+        );
         const asked = extra ? cards : cards.slice(0, summary.reviewsToday);
-        const s = startSession(spreadOutPairs(asked.map((c) => ({ item_key: c.item_key, card_type: c.card_type }))));
+        const s = startSession(spreadOutPairs(asked.map((c) => c.q)));
         setSession(s);
         setTotal(s.queue.length);
         setWaiting(cards.length - asked.length);
@@ -49,26 +74,41 @@ export function Reviews({
   }, [extra]);
 
   const question = session && !stopped ? currentQuestion(session) : undefined;
-  const { item, error: itemError, reload } = useItem(question?.item_key);
+  const deckId = question ? deckCardId(question) : null;
+  const { item, error: itemError, reload } = useItem(question && deckId === null ? question.item_key : undefined);
+  const deckCard = useDeckCard(deckId);
   const rankUp = useCallback(
     (correct: boolean) =>
-      question && session && !(questionId(question) in session.firstTry)
+      question && question.card_type !== "flip" && session && !(questionId(question) in session.firstTry)
         ? rankUpFor(tauriDb, question.item_key, question.card_type, correct, Date.now())
         : Promise.resolve(null),
     [question, session],
   );
 
-  async function onDone(correct: boolean, answer: string) {
-    if (!session || !question) return;
+  /** Moves on after an answer; `record` saves it for scheduling (first attempts only). */
+  async function advance(correct: boolean, record: () => Promise<unknown>) {
+    if (!session) return;
     const { session: next, firstAttempt } = answerCurrent(session, correct);
     try {
-      if (firstAttempt) await recordReview(tauriDb, question.item_key, question.card_type, correct, answer, Date.now());
+      if (firstAttempt) await record();
     } catch (e) {
       return setError(String(e));
     }
     setSession(next);
     setTurn((t) => t + 1);
     if (deadline && Date.now() >= deadline) setStopped(true);
+  }
+
+  function onDone(correct: boolean, answer: string) {
+    if (question && question.card_type !== "flip") {
+      const { item_key, card_type } = question;
+      return advance(correct, () => recordReview(tauriDb, item_key, card_type, correct, answer, Date.now()));
+    }
+  }
+
+  // "Again" counts as a miss: the card comes back later in the session.
+  function onRate(rating: Grade) {
+    if (deckId !== null) return advance(rating !== Rating.Again, () => recordDeckReview(tauriDb, deckId, rating, Date.now()));
   }
 
   if (error || itemError) return <ErrorView message={error ?? itemError!} onExit={onExit} />;
@@ -112,16 +152,23 @@ export function Reviews({
     );
   }
 
+  const top = <SessionGauge done={stats.answered} total={total} note={deadline ? "5 minutes" : undefined} />;
   return (
     <div className="session">
-      {item ? (
+      {question.card_type === "flip" ? (
+        deckCard && deckCard.id === deckId ? (
+          <FlipCard key={turn} card={deckCard} top={top} onRate={onRate} onStop={() => setStopped(true)} />
+        ) : (
+          <p className="muted">Loading…</p>
+        )
+      ) : item ? (
         <QuestionCard
           key={turn}
           item={item}
           cardType={question.card_type}
           onReload={reload}
           onDone={onDone}
-          top={<SessionGauge done={stats.answered} total={total} note={deadline ? "5 minutes" : undefined} />}
+          top={top}
           onStop={() => setStopped(true)}
           rankUp={rankUp}
         />
@@ -130,6 +177,20 @@ export function Reviews({
       )}
     </div>
   );
+}
+
+/** The deck card with this id, loaded from the database (undefined while loading or for null). */
+export function useDeckCard(id: number | null): DeckCard | undefined {
+  const [card, setCard] = useState<DeckCard>();
+  useEffect(() => {
+    if (id === null) return setCard(undefined);
+    let cancelled = false;
+    getDeckCard(tauriDb, id).then((c) => !cancelled && setCard(c));
+    return () => {
+      cancelled = true;
+    };
+  }, [id]);
+  return card;
 }
 
 export function ErrorView({ message, onExit }: { message: string; onExit: () => void }) {
