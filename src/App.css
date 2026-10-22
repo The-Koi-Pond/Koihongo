@@ -3376,8 +3376,13 @@ select {
   padding-right: 6px;
 }
 
-.panel-cat .kaomoji-art {
-  font-size: 12px; /* 5 lines: about as tall as the count and two lines of text, so the panel doesn't grow */
+/* Lessons' happy face (DoneFace in CatArt.tsx); ꒳ and the ˊ͈ ˋ͈ eyes come from Windows' fallback fonts. */
+.done-face {
+  padding-right: 10px;
+  font-size: 22px;
+  white-space: nowrap;
+  color: #e3dcff;
+  text-shadow: 0 2px 0 #1d1660;
 }
 
 /* No room in narrow or short windows: the gauges get the whole card. */

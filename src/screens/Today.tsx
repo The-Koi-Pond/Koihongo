@@ -7,7 +7,7 @@ import type { Screen } from "../ui/NavBar.tsx";
 import { LevelCard, LevelUp } from "../ui/LevelCard.tsx";
 import { rankTally, type Rank } from "../srs/ranks.ts";
 import { CardTitle } from "../ui/CardTitle.tsx";
-import { DONE_CAT, PanelCat, SleepyCat } from "../ui/CatArt.tsx";
+import { DoneFace, SleepyCat } from "../ui/CatArt.tsx";
 import { BannerScene } from "../ui/Scene.tsx";
 import { StatusBar } from "../ui/StatusBar.tsx";
 import { useSharedCardPattern } from "../ui/useSharedCardPattern.ts";
@@ -207,7 +207,7 @@ export function Today({
               <TrackPreview name="Kanji path" lessons={summary.lessons.filter((l) => l.track === "main")} />
               <p className="muted small">{lessonNote(summary)}</p>
             </div>
-            {lessons === 0 && <PanelCat art={DONE_CAT} />}
+            {lessons === 0 && <DoneFace />}
           </div>
         </section>
       </div>
