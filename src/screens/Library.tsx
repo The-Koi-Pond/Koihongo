@@ -1,12 +1,11 @@
-import { FastForward } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { isRomaji, toHiragana } from "wanakana";
 import { tauriDb } from "../db/tauriDb.ts";
 import { libraryItems, STATUS_NAME, type ItemStatus, type LibraryItem } from "../library.ts";
 import type { ItemKind } from "../srs/progress.ts";
-import { RANK_NAME } from "../srs/ranks.ts";
 import { ItemPage } from "../ui/ItemPage.tsx";
 import { ItemHover, OpenItemContext } from "../ui/Popover.tsx";
+import { RankBadge } from "../ui/RankBadge.tsx";
 
 const PAGE = 300;
 /** Sections of the tile grid, in this order. */
@@ -137,15 +136,13 @@ export function Library() {
                     <li key={i.item_key} style={{ gridColumn: `span ${tileSpan(i)}` }}>
                       <ItemHover itemKey={i.item_key} openOnClick={false}>
                         <button className={`tile ${i.kind} ${i.status}`} onClick={() => setSelected(i.item_key)}>
-                          {/* A slim band in the kind's colour: fast track on the left, rank on the right. */}
-                          <span className="tile-kind">
-                            <span className="tile-fast">
-                              {i.fast === 1 && <FastForward size={9} strokeWidth={3} aria-label="On fast track" />}
+                          {/* Fast track: a folded-down corner. Rank: a sticker on the top-right corner. */}
+                          {i.fast === 1 && <span className="tile-fast" title="On fast track" aria-label="On fast track" />}
+                          {i.rank && (
+                            <span className="tile-rank">
+                              <RankBadge rank={i.rank} />
                             </span>
-                            <span className="tile-rank" title={i.rank ? `${i.rank} rank: ${RANK_NAME[i.rank]}` : undefined}>
-                              {i.rank}
-                            </span>
-                          </span>
+                          )}
                           <span className={`tile-glyph ${[...i.label].length > 1 ? "multi" : ""}`} lang="ja">
                             {i.label}
                           </span>
