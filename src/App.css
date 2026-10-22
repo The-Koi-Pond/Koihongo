@@ -252,19 +252,19 @@ textarea {
   place-items: center;
 }
 
-/* Xel's pixel wordmark (assets/ui/koihongo-wordmark.png, 48×7), at exactly
-   4× so every pixel stays crisp. */
+/* Xel's pixel wordmark (assets/ui/koihongo-wordmark.png: white letters, a
+   violet outline and a one-pixel navy shadow, 48×8), at exactly 4× so every
+   pixel stays crisp. */
 .brand-logo {
   display: block;
   image-rendering: pixelated;
 }
 
-/* Small windows: 3× (144×21), still crisp, so the tabs and buttons fit. */
+/* Small windows: 3× (144×24), still crisp, so the tabs and buttons fit. */
 @media (max-width: 720px) {
   .brand-logo {
     width: 144px;
-    height: 21px;
-    margin-bottom: 1px; /* centring an odd height would land it on a half pixel */
+    height: 24px;
   }
 }
 
