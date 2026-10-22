@@ -16,7 +16,6 @@ import {
   type LucideIcon,
 } from "lucide-react";
 import { useEffect, useState } from "react";
-import logo from "../assets/ui/koihongo-title.png";
 import type { TodaySummary } from "../srs/progress.ts";
 
 export type Screen =
@@ -64,7 +63,7 @@ export function NavBar({
   return (
     <header className="titlebar" data-tauri-drag-region>
       <button className="brand" onClick={() => go("today")} title="Koihongo">
-        <img className="brand-logo" src={logo} alt="Koihongo" width={73} height={30} />
+        <span className="brand-text">Koihongo</span>
       </button>
 
       <nav className="nav-group" aria-label="Main" data-tauri-drag-region>
