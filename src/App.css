@@ -252,18 +252,11 @@ textarea {
   place-items: center;
 }
 
-/* The name as a pixel wordmark: Silkscreen Bold at the card titles' size
-   (it only has capitals), pink, with a block shadow one font pixel
-   (24px / 8 = 3px) down. */
-.brand-text {
-  --brand-px: 3px;
-  font-family: var(--font-title);
-  font-weight: 700;
-  font-size: 24px;
-  line-height: 1;
-  color: #fd93bb;
-  text-shadow: 0 var(--brand-px) 0 #1d1660;
-  white-space: nowrap;
+/* Xel's pixel wordmark (assets/ui/koihongo-wordmark.png, 48×7), at exactly
+   4× so every pixel stays crisp. */
+.brand-logo {
+  display: block;
+  image-rendering: pixelated;
 }
 
 .nav-group {
