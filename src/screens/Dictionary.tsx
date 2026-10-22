@@ -15,7 +15,7 @@ const SENSES_SHOWN = 3;
 const DEBOUNCE_MS = 120;
 
 /** Look up any word or kanji, on your path or not. */
-export function Dictionary() {
+export function Dictionary({ partsRequest }: { partsRequest?: { parts: string[]; id: number } }) {
   const [query, setQuery] = useState("");
   const [results, setResults] = useState<DictionaryResults>();
   const [error, setError] = useState<string>();
@@ -23,6 +23,13 @@ export function Dictionary() {
   // "Find by parts": whether it's open, and the chosen components (kept while you look at a result).
   const [byParts, setByParts] = useState(false);
   const [chosen, setChosen] = useState<string[]>([]);
+
+  useEffect(() => {
+    if (!partsRequest) return;
+    setChosen(partsRequest.parts);
+    setByParts(true);
+    setSelected(undefined);
+  }, [partsRequest]);
 
   useEffect(() => {
     if (!query.trim()) {

@@ -1,3 +1,4 @@
+import { FindByPartsContext } from "./ui/findByParts.ts";
 import { useEffect, useState } from "react";
 import { autoBackupIfDue } from "./backup.ts";
 import { migrate } from "./db/migrations.ts";
@@ -40,9 +41,17 @@ function App() {
     setChain(rest);
     setScreen(following ?? "today");
   };
+  // A "Find by parts" request from an item page, for the Dictionary to apply (id: apply each one once).
+  const [partsRequest, setPartsRequest] = useState<{ parts: string[]; id: number }>();
   const navigate = (s: Screen) => {
     setChain([]);
+    setPartsRequest(undefined);
     setScreen(s);
+  };
+  const findByParts = (parts: string[]) => {
+    setChain([]);
+    setPartsRequest({ parts, id: Date.now() });
+    setScreen("dictionary");
   };
   const startStudy = (order: StudyOrder) => {
     const parts: Screen[] = [];
@@ -72,33 +81,35 @@ function App() {
   return (
     <>
       <NavBar screen={screen} go={navigate} summary={summary} />
-      <main className={`app ${WIDE.includes(screen) ? "wide" : ""}`}>
-        {error ? (
-          <p className="error">Couldn't open your progress database: {error}</p>
-        ) : !ready ? (
-          <p className="muted">Loading…</p>
-        ) : screen === "lessons" ? (
-          <Lessons onExit={next} exitLabel={exitLabel} />
-        ) : screen === "reviews" ? (
-          <Reviews onExit={next} exitLabel={exitLabel} />
-        ) : screen === "extra-reviews" ? (
-          <Reviews extra onExit={next} />
-        ) : screen === "quick-reviews" ? (
-          <Reviews minutes={5} onExit={next} />
-        ) : screen === "library" ? (
-          <Library />
-        ) : screen === "dictionary" ? (
-          <Dictionary />
-        ) : screen === "grammar" || screen === "reading" ? (
-          <ComingSoon section={screen} />
-        ) : screen === "settings" ? (
-          <Settings onOpenSources={() => setScreen("sources")} />
-        ) : screen === "sources" ? (
-          <Sources onExit={() => setScreen("settings")} />
-        ) : (
-          <Today summary={summary} go={navigate} onStart={startStudy} />
-        )}
-      </main>
+      <FindByPartsContext.Provider value={SESSIONS.includes(screen) ? undefined : findByParts}>
+        <main className={`app ${WIDE.includes(screen) ? "wide" : ""}`}>
+          {error ? (
+            <p className="error">Couldn't open your progress database: {error}</p>
+          ) : !ready ? (
+            <p className="muted">Loading…</p>
+          ) : screen === "lessons" ? (
+            <Lessons onExit={next} exitLabel={exitLabel} />
+          ) : screen === "reviews" ? (
+            <Reviews onExit={next} exitLabel={exitLabel} />
+          ) : screen === "extra-reviews" ? (
+            <Reviews extra onExit={next} />
+          ) : screen === "quick-reviews" ? (
+            <Reviews minutes={5} onExit={next} />
+          ) : screen === "library" ? (
+            <Library />
+          ) : screen === "dictionary" ? (
+            <Dictionary partsRequest={partsRequest} />
+          ) : screen === "grammar" || screen === "reading" ? (
+            <ComingSoon section={screen} />
+          ) : screen === "settings" ? (
+            <Settings onOpenSources={() => setScreen("sources")} />
+          ) : screen === "sources" ? (
+            <Sources onExit={() => setScreen("settings")} />
+          ) : (
+            <Today summary={summary} go={navigate} onStart={startStudy} />
+          )}
+        </main>
+      </FindByPartsContext.Provider>
     </>
   );
 }

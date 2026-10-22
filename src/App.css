@@ -3607,10 +3607,11 @@ select {
 
 /* Card background: Xel's pastel pattern in three layers, at 3× (one art pixel
    = 3px), as picked in the card pattern playground: a pink → lavender → blue →
-   mint → cream gradient; a faint white grid with a line every 30px (squares are
-   11×11 art pixels counting their shared borders); and dither dots on top that
-   ramp from sparse at the top of each square to dense at the bottom, in the
-   "stripes" arrangement from Xel's example (one 10×10 stencil, repeated).
+   mint → cream gradient; dither dots (::before) that ramp from sparse at the
+   top of each square to dense at the bottom, in the "stripes" arrangement from
+   Xel's example (one 10×10 stencil, repeated); and on top, a faint white grid
+   (::after) with a line every 30px (squares are 11×11 art pixels counting
+   their shared borders).
    --pat-x/--pat-y/--pat-w/--pat-h place the pattern: by default it fills each
    card, and on Today they point all three cards at one shared area, so the
    pattern runs on behind them (see useSharedCardPattern.ts).
@@ -3629,12 +3630,10 @@ select {
     0 0 3px rgb(28 20 80 / 0.85), 0 0 8px rgb(28 20 80 / 0.45);
   position: relative;
   z-index: 2; /* above the cherry branches that hang down from the banner */
-  isolation: isolate; /* keeps the dot layer (::before) above the background, below the content */
+  isolation: isolate; /* keeps the dot (::before) and grid (::after) layers above the background, below the content */
   text-shadow: var(--card-text-shadow);
   background:
     linear-gradient(var(--card-veil), var(--card-veil)),
-    linear-gradient(var(--card-line) 0 3px, transparent 3px) var(--pat-x, 0px) var(--pat-y, 0px) / 30px 30px,
-    linear-gradient(90deg, var(--card-line) 0 3px, transparent 3px) var(--pat-x, 0px) var(--pat-y, 0px) / 30px 30px,
     linear-gradient(#f099d0, #aaa8ff, #0a9ddb, #80ffdf, #f3edc9)
       var(--pat-x, 0px) var(--pat-y, 0px) / var(--pat-w, 100%) var(--pat-h, 100%) no-repeat;
 }
@@ -3654,6 +3653,21 @@ select {
   mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='10' shape-rendering='crispEdges'%3E%3Cpath d='M0 0h1v1H0zM4 0h1v1H4zM8 0h1v1H8zM0 4h1v1H0zM2 4h1v1H2zM4 4h1v1H4zM6 4h1v1H6zM8 4h1v1H8zM1 5h1v1H1zM5 5h1v1H5zM9 5h1v1H9zM0 6h1v1H0zM2 6h1v1H2zM4 6h1v1H4zM6 6h1v1H6zM8 6h1v1H8zM0 8h1v1H0zM2 8h1v1H2zM4 8h1v1H4zM6 8h1v1H6zM8 8h1v1H8zM1 9h1v1H1zM3 9h1v1H3zM5 9h1v1H5zM7 9h1v1H7zM9 9h1v1H9z'/%3E%3C/svg%3E") var(--pat-x, 0px) var(--pat-y, 0px) / 30px 30px repeat;
 }
 
+/* The grid, on its own layer above the dots. */
+.card::after,
+.split-card::after,
+.field::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  border-radius: inherit;
+  pointer-events: none;
+  background:
+    linear-gradient(var(--card-line) 0 3px, transparent 3px) var(--pat-x, 0px) var(--pat-y, 0px) / 30px 30px,
+    linear-gradient(90deg, var(--card-line) 0 3px, transparent 3px) var(--pat-x, 0px) var(--pat-y, 0px) / 30px 30px;
+}
+
 .split-card > .field {
   background: transparent; /* the split card paints one background behind both halves */
 }
@@ -3669,7 +3683,8 @@ select {
     var(--surface);
 }
 
-.session :is(.card, .split-card, .field)::before {
+.session :is(.card, .split-card, .field)::before,
+.session :is(.card, .split-card, .field)::after {
   content: none;
 }
 
@@ -3692,14 +3707,19 @@ select {
   text-shadow: var(--card-text-shadow);
 }
 
+.card-panel {
+  position: relative; /* for the sparkles above it */
+}
+
 /* Sparkles on the pattern, in the title strip of cards with a reading panel:
    a big gold four-pointed one and a small pink one, pixel art at 2×, gently
-   twinkling (still with reduced motion on). */
-.card:has(> .card-panel)::after {
+   twinkling (still with reduced motion on). They hang off the panel's top
+   edge, so they sit in the strip just above it. */
+.card > .card-panel::after {
   content: "";
   position: absolute;
-  top: 6px;
-  right: 22px;
+  bottom: calc(100% + 6px);
+  right: 6px;
   width: 70px;
   height: 30px;
   pointer-events: none;
@@ -3713,8 +3733,8 @@ select {
 }
 
 /* Each card twinkles on its own beat. */
-.today-tiles > .card:nth-child(2)::after { animation-delay: -1.2s; }
-.level-card::after { animation-delay: -2.4s; }
+.today-tiles > .card:nth-child(2) > .card-panel::after { animation-delay: -1.2s; }
+.level-card > .card-panel::after { animation-delay: -2.4s; }
 
 @keyframes card-twinkle {
   0%, 100% { opacity: 1; }
@@ -3722,7 +3742,7 @@ select {
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .card:has(> .card-panel)::after { animation: none; }
+  .card > .card-panel::after { animation: none; }
 }
 
 /* The pills under an item's big character have their own glassy background: no panel inside them. */
@@ -3738,7 +3758,8 @@ select {
 /* No panel (e.g. the item page's progress strip, Settings): veil the whole pattern instead. */
 .card:not(:has(> .card-panel)) {
   --card-veil: rgb(40 32 112 / 0.78);
-  --card-dots-opacity: 0.3; /* the dots sit above the veil, so they fade back too */
+  --card-dots-opacity: 0.3; /* the dots and grid sit above the veil, so they fade back too */
+  --card-line: rgb(255 255 255 / 0.12);
 }
 
 /* Item cards' small labels (MEANINGS, READINGS…) sit on the bright pattern: a crisp 1px outline. */
@@ -3749,7 +3770,8 @@ select {
     1px 1px 0 #2a1f66, -1px 1px 0 #2a1f66, 1px -1px 0 #2a1f66, -1px -1px 0 #2a1f66;
 }
 
-.split-card > .field::before {
+.split-card > .field::before,
+.split-card > .field::after {
   content: none;
 }
 
@@ -3760,7 +3782,9 @@ select {
 }
 
 .banner + .item-info > .split-card.overlap::before,
-.banner + .item-info > .split-card.overlap > .field::before {
+.banner + .item-info > .split-card.overlap::after,
+.banner + .item-info > .split-card.overlap > .field::before,
+.banner + .item-info > .split-card.overlap > .field::after {
   content: none;
 }
 
@@ -3865,4 +3889,26 @@ select {
 
 .parts-btn:disabled {
   opacity: 0.25;
+}
+
+/* A small pill in a card's header (e.g. "Find kanji with these parts"): its own
+   dark surface, so it reads on the bright card pattern. */
+.field-action {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 10px;
+  border: 1px solid rgb(206 196 255 / 0.45);
+  border-radius: 999px;
+  background: rgb(46 40 128 / 0.85);
+  color: var(--text);
+  font-size: 0.78rem;
+  text-decoration: none;
+  white-space: nowrap;
+  text-shadow: none;
+}
+
+.field-action:hover {
+  border-color: var(--accent);
+  color: var(--text);
 }

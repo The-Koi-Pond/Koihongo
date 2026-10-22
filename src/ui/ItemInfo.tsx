@@ -1,5 +1,5 @@
 import { BookOpen, Ear, Languages, Lightbulb, List, Pencil, PenLine, Quote, Search, Shapes, Sparkles, Tag, Tags, type LucideIcon, Volume2 } from "lucide-react";
-import { useState } from "react";
+import { useContext, useState } from "react";
 import { tauriDb } from "../db/tauriDb.ts";
 import { addSynonym, removeSynonym, saveNote, type ItemDetails, type Note, type NoteKind } from "../items.ts";
 import { Examples } from "./Examples.tsx";
@@ -7,6 +7,7 @@ import { Gloss } from "./Gloss.tsx";
 import { InfoTip } from "./InfoTip.tsx";
 import { MnemonicWorkshop } from "./MnemonicWorkshop.tsx";
 import { soundHint } from "../kanaSounds.ts";
+import { FindByPartsContext } from "./findByParts.ts";
 import { ItemHover } from "./Popover.tsx";
 import { SpeakButton } from "./SpeakButton.tsx";
 import { StrokeOrder } from "./StrokeOrder.tsx";
@@ -15,6 +16,7 @@ const KANA_ONLY = /^[\p{Script=Hiragana}\p{Script=Katakana}ー]+$/u;
 
 /** An item's details as a grid of cards. ItemView adds the hero panel for full pages. */
 export function ItemInfo({ item, onChange }: { item: ItemDetails; onChange: () => void }) {
+  const findByParts = useContext(FindByPartsContext);
   return (
     <div className="item-info">
       {item.kind === "kana" && (
@@ -57,7 +59,7 @@ export function ItemInfo({ item, onChange }: { item: ItemDetails; onChange: () =
 
       {item.kind === "component" && (
         <>
-          <Field label="Name" icon={Tag}>
+          <Field label="Name" icon={Tag} action={findByParts && <FindLink onClick={() => findByParts([item.item_key.slice("component:".length)])} text="Find all kanji with this part" />}>
             <span className="big-reading">{item.name}</span>
           </Field>
           {item.usedIn.length > 0 && (
@@ -84,7 +86,11 @@ export function ItemInfo({ item, onChange }: { item: ItemDetails; onChange: () =
               </p>
             )}
           </Field>
-          <Field label="Components" icon={Shapes}>
+          <Field
+            label="Components"
+            icon={Shapes}
+            action={findByParts && <FindLink onClick={() => findByParts(item.components.map((c) => c.glyph))} text="Find kanji with these parts" />}
+          >
             <Chips items={item.components.map((c) => ({ glyph: c.display, text: c.name, kind: "component", itemKey: `component:${c.glyph}` }))} />
           </Field>
           {item.strokeSvg && (
@@ -214,6 +220,15 @@ function Field({
       )}
       <div className="field-body">{children}</div>
     </section>
+  );
+}
+
+/** A small header link that opens the Dictionary's "Find by parts". */
+function FindLink({ onClick, text }: { onClick: () => void; text: string }) {
+  return (
+    <button type="button" className="field-action" onClick={onClick}>
+      <Search size={13} strokeWidth={2.5} aria-hidden="true" /> {text}
+    </button>
   );
 }
 
