@@ -1308,6 +1308,41 @@ textarea {
   backdrop-filter: blur(4px);
 }
 
+/* Item pages: the character and its name in a see-through panel, like the
+   reading panels in Today's cards (ItemBanner in ItemView.tsx). The panel's
+   padding and border take ~20px more height, so the character reserves that. */
+.banner-window {
+  align-self: center;
+  display: grid;
+  justify-items: center;
+  padding: 0 32px 12px;
+  border: 2px solid rgb(206 196 255 / 0.35);
+  border-radius: 10px;
+  background: rgb(46 40 128 / 0.55);
+  backdrop-filter: blur(4px);
+  box-shadow: 0 6px 24px rgb(0 0 0 / 0.25);
+}
+
+.banner-window > .banner-glyph {
+  --glyph-reserve: 80px;
+  padding-bottom: 4px;
+}
+
+.banner-window:has(.banner-facts) > .banner-glyph {
+  --glyph-reserve: 135px;
+}
+
+/* No pill of its own inside the panel. */
+.banner-window > .banner-facts {
+  padding: 0 0 2px;
+  background: none;
+  backdrop-filter: none;
+}
+
+.banner-window:not(:has(.banner-facts)) {
+  padding-bottom: 0;
+}
+
 .banner-primary {
   font-size: 1.15rem;
   font-weight: 700;
@@ -1864,11 +1899,6 @@ textarea {
 .synonyms {
   margin: 0 0 8px;
   padding-left: 1.2em;
-}
-
-.big-reading {
-  font-size: 1.4rem;
-  font-weight: 700;
 }
 
 /* Mnemonic workshop */
