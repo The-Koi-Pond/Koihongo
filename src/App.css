@@ -2856,51 +2856,48 @@ select {
   }
 }
 
-/* Chunky pixel panel titles: pale face with a solid block shadow one font
-   pixel (24px / 8 = 3px) straight down. */
+/* Today's card headers (CardTitle.tsx): a starry purple band across the card
+   with an icon, the chunky pixel title and two gold pixel sparkles after it.
+   The title's block shadow is one font pixel (24px / 8 = 3px) straight down. */
 .tile-title {
-  position: relative;
-  width: fit-content;
+  --title-px: 3px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
   margin: 0;
-  padding-bottom: 11px; /* room for the symbol underline (::before) */
+  padding: 7px 14px 9px;
+  border: 2px solid rgb(206 196 255 / 0.55);
+  border-radius: 8px;
+  background:
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='96' height='40' shape-rendering='crispEdges'%3E%3Cg fill='%23fff'%3E%3Crect x='7' y='6' width='1' height='1' opacity='.7'/%3E%3Crect x='29' y='27' width='1' height='1' opacity='.5'/%3E%3Crect x='44' y='9' width='2' height='2' opacity='.45'/%3E%3Crect x='61' y='31' width='1' height='1' opacity='.75'/%3E%3Crect x='78' y='15' width='1' height='1' opacity='.55'/%3E%3Crect x='18' y='19' width='1' height='1' opacity='.4'/%3E%3Crect x='88' y='33' width='1' height='1' opacity='.6'/%3E%3C/g%3E%3Cg fill='%23ffd6ee' opacity='.8'%3E%3Crect x='70' y='3' width='1' height='5'/%3E%3Crect x='68' y='5' width='5' height='1'/%3E%3C/g%3E%3Cg fill='%23beaff8' opacity='.8'%3E%3Crect x='36' y='30' width='1' height='3'/%3E%3Crect x='35' y='31' width='3' height='1'/%3E%3C/g%3E%3C/svg%3E") 0 0 / 96px 40px,
+    linear-gradient(90deg, #4a37b4, #6a52d0 55%, #7d63da);
+  box-shadow: inset 0 2px 0 rgb(255 255 255 / 0.14), 0 2px 0 rgb(30 20 90 / 0.35);
   font-family: var(--font-title);
   font-weight: 700;
   font-size: 24px;
   line-height: 1;
-  color: #fff;
+  color: #f1ecff;
   text-transform: uppercase;
-  /* On the pastel card pattern: a one-font-pixel (3px) outline plus the block shadow below. */
-  text-shadow:
-    -3px -3px 0 #5a5fae, 0 -3px 0 #5a5fae, 3px -3px 0 #5a5fae,
-    -3px 0 0 #5a5fae, 3px 0 0 #5a5fae,
-    -3px 3px 0 #5a5fae, 0 3px 0 #5a5fae, 3px 3px 0 #5a5fae,
-    -3px 6px 0 #5a5fae, 0 6px 0 #5a5fae, 3px 6px 0 #5a5fae;
+  text-shadow: 0 var(--title-px) 0 #2b1c92;
 }
 
-/* Kaomoji trimmings, matching the Progress card's cat art (MS Gothic, like it):
-   a sparkle after the title, and an underline of symbols trimmed to its width. */
+.tile-title-icon {
+  flex: none;
+  width: 1em;
+  height: 1em;
+  color: #e3dcff;
+  filter: drop-shadow(0 var(--title-px) 0 #2b1c92);
+}
+
+/* Two gold sparkles after the title (pixel art at 2×). */
 .tile-title::after {
-  content: " ｡ﾟ☆" / ""; /* "/ ''": decoration, so screen readers skip it */
-  font-family: "MS Gothic", monospace;
-  font-size: 15px;
-  font-weight: 400;
-  vertical-align: 0.5em;
-  color: var(--word);
-  text-shadow: var(--card-text-shadow, none);
-}
-
-/* The •·····• underline, drawn with gradients rather than text so every dot
-   lands on whole pixels: 2px dots every 6px, and a 4px dot every 60px. */
-.tile-title::before {
   content: "";
-  position: absolute;
-  left: 0;
-  right: 0;
-  bottom: 3px;
-  height: 4px;
-  background:
-    linear-gradient(90deg, #e0509a 4px, transparent 4px) -1px 0 / 60px 4px repeat-x,
-    linear-gradient(90deg, #6a5cc0 2px, transparent 2px) 0 1px / 6px 2px repeat-x;
+  flex: none;
+  width: 40px;
+  height: 18px;
+  margin-left: 2px;
+  background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 9' shape-rendering='crispEdges'%3E%3Cg fill='%23fee797'%3E%3Crect x='4' width='1' height='9'/%3E%3Crect y='4' width='9' height='1'/%3E%3Crect x='3' y='3' width='3' height='3'/%3E%3C/g%3E%3Crect x='4' y='4' width='1' height='1' fill='%23fff'/%3E%3Cg fill='%23fee797'%3E%3Crect x='15' y='2' width='1' height='5'/%3E%3Crect x='13' y='4' width='5' height='1'/%3E%3C/g%3E%3C/svg%3E") center / 40px 18px no-repeat;
+  filter: drop-shadow(0 2px 0 #2b1c92);
 }
 
 .tile-head {
@@ -3637,25 +3634,23 @@ select {
     display: none;
   }
 
-  /* The next size down on Silkscreen's 8px grid, so short windows still fit; the shadow stays one font pixel. */
-  .tile-title {
-    padding-bottom: 2px;
-    font-size: 16px;
-    line-height: 1.2;
-    text-shadow:
-      -2px -2px 0 #5a5fae, 0 -2px 0 #5a5fae, 2px -2px 0 #5a5fae,
-      -2px 0 0 #5a5fae, 2px 0 0 #5a5fae,
-      -2px 2px 0 #5a5fae, 0 2px 0 #5a5fae, 2px 2px 0 #5a5fae,
-      -2px 4px 0 #5a5fae, 0 4px 0 #5a5fae, 2px 4px 0 #5a5fae;
-  }
-
-  /* No room for the symbol underline; the sparkle stays. */
-  .tile-title::before {
+  /* ...and the sparkles that hang in its header strip. */
+  .card.level-card > .card-panel::after { /* beats .card > .card-panel::after, defined later */
     content: none;
   }
 
+  /* The next size down on Silkscreen's 8px grid, so short windows still fit; the shadow stays one font pixel. */
+  .tile-title {
+    --title-px: 2px;
+    gap: 8px;
+    padding: 4px 10px 6px;
+    font-size: 16px;
+  }
+
   .tile-title::after {
-    font-size: 12px;
+    width: 20px;
+    height: 9px;
+    background-size: 20px 9px;
   }
 
   .level-head {

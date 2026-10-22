@@ -1,4 +1,4 @@
-import { Play } from "lucide-react";
+import { GraduationCap, Play, RotateCcw } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { tauriDb } from "../db/tauriDb.ts";
 import { kanaTally, levelStatus, levelUpToShow, markLevelSeen, type LevelStatus, type LevelUpNews, type Tally } from "../levels.ts";
@@ -6,6 +6,7 @@ import { lessonAllowance, reviewForecast, type Lesson, type TodaySummary } from 
 import type { Screen } from "../ui/NavBar.tsx";
 import { LevelCard, LevelUp } from "../ui/LevelCard.tsx";
 import { rankTally, type Rank } from "../srs/ranks.ts";
+import { CardTitle } from "../ui/CardTitle.tsx";
 import { BannerScene } from "../ui/Scene.tsx";
 import { StatusBar } from "../ui/StatusBar.tsx";
 import { useSharedCardPattern } from "../ui/useSharedCardPattern.ts";
@@ -174,7 +175,7 @@ export function Today({
 
       <div className="today-tiles">
         <section className="card">
-          <h2 className="tile-title">Reviews</h2>
+          <CardTitle icon={RotateCcw}>Reviews</CardTitle>
           <div className="card-panel">
             <p className="tile-big">
               {reviews} <span className="tile-unit">{catchUp ? "left in today's share" : "due now"}</span>
@@ -192,7 +193,7 @@ export function Today({
         </section>
 
         <section className="card">
-          <h2 className="tile-title">Lessons</h2>
+          <CardTitle icon={GraduationCap}>Lessons</CardTitle>
           <div className="card-panel">
             <p className="tile-big">
               {lessons} <span className="tile-unit">new today</span>
@@ -306,14 +307,14 @@ function TodayShell({ now }: { now: Date }) {
       </header>
       <div className="today-tiles">
         <section className="card">
-          <h2 className="tile-title">Reviews</h2>
+          <CardTitle icon={RotateCcw}>Reviews</CardTitle>
           <div className="card-panel">
             <p className="tile-big">&nbsp;</p>
             <p className="muted small">&nbsp;</p>
           </div>
         </section>
         <section className="card">
-          <h2 className="tile-title">Lessons</h2>
+          <CardTitle icon={GraduationCap}>Lessons</CardTitle>
           <div className="card-panel">
             <p className="tile-big">&nbsp;</p>
             <p className="muted small">&nbsp;</p>
