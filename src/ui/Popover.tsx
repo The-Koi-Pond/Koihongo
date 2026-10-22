@@ -1,3 +1,4 @@
+import { FastForward } from "lucide-react";
 import { createContext, useContext, useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { tauriDb } from "../db/tauriDb.ts";
@@ -101,6 +102,14 @@ function PreviewBody({ preview, canOpen }: { preview: ItemPreview; canOpen: bool
           </>
         ) : (
           "Not on your learning path"
+        )}
+        {preview.fast && (
+          <>
+            {" · "}
+            <span className="popover-fast">
+              <FastForward size={12} strokeWidth={2.5} aria-hidden="true" /> Fast track
+            </span>
+          </>
         )}
         {canOpen && " · click to open"}
       </p>

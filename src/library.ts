@@ -73,13 +73,15 @@ export type ItemPreview = {
   readings: string[];
   /** null for items that exist (e.g. a rare kanji) but aren't on the path. */
   status: ItemStatus | null;
+  /** On fast track (right answers count as easy). */
+  fast: boolean;
 };
 
 /** The short summary a popover shows. */
 export async function itemPreview(db: Db, itemKey: string): Promise<ItemPreview> {
   const item = await getItemDetails(db, itemKey);
   const [onPath] = await libraryItems(db, [itemKey]);
-  const base = { item_key: itemKey, kind: item.kind, status: onPath?.status ?? null };
+  const base = { item_key: itemKey, kind: item.kind, status: onPath?.status ?? null, fast: onPath?.fast === 1 };
   switch (item.kind) {
     case "kana":
       return { ...base, label: item.character, meanings: [[item.romaji, ...item.accept].join(" / ")], readings: item.counterpart ? [item.counterpart] : [] };

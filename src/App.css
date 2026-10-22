@@ -3922,3 +3922,11 @@ select {
   border-color: var(--accent);
   color: var(--text);
 }
+
+/* "Fast track" in an item's hover card, in the butter of the tiles' folded corner. */
+.popover-fast {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  color: var(--word);
+}
