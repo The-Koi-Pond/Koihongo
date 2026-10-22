@@ -1,4 +1,4 @@
-import { BookOpen, Ear, Languages, Lightbulb, List, Pencil, PenLine, Quote, Search, Shapes, Sparkles, Tag, Tags, type LucideIcon, Volume2 } from "lucide-react";
+import { BookOpen, Ear, Languages, Lightbulb, List, Pencil, PenLine, Quote, Search, Shapes, Sparkles, Tags, type LucideIcon, Volume2 } from "lucide-react";
 import { useContext, useState } from "react";
 import { tauriDb } from "../db/tauriDb.ts";
 import { addSynonym, removeSynonym, saveNote, type ItemDetails, type Note, type NoteKind } from "../items.ts";
@@ -59,14 +59,13 @@ export function ItemInfo({ item, onChange }: { item: ItemDetails; onChange: () =
 
       {item.kind === "component" && (
         <>
-          <Field label="Name" icon={Tag}>
-            <span className="big-reading">{item.name}</span>
-          </Field>
-          {/* The first few kanji on your path that use it; "Find all" lists every one. */}
+          {/* The name shows under the character in the banner. Found in: the first few
+              kanji on your path that use it; "Find all" lists every one. */}
           {(item.usedIn.length > 0 || findByParts) && (
             <Field
               label="Found in"
               icon={Search}
+              wide
               action={findByParts && <FindLink onClick={() => findByParts([item.item_key.slice("component:".length)])} text="Find all kanji with this part" />}
             >
               {item.usedIn.length > 0 ? (

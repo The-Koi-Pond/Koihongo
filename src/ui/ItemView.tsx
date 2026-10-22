@@ -101,24 +101,27 @@ function ItemBanner({ item, start, end }: { item: ItemDetails; start?: React.Rea
           {badge && <p className="banner-badge">{badge}</p>}
         </div>
       </div>
-      {/* Sized in CSS from the banner's height and width (container query units); --chars lets long words shrink. */}
-      <div className="banner-glyph" lang="ja" style={{ "--chars": [...label].length } as React.CSSProperties}>
-        {label}
-      </div>
-      {(primary || secondary) && (
-        <div className="banner-facts">
-          {primary && (
-            <p className="banner-primary">
-              <Gloss text={primary} />
-            </p>
-          )}
-          {secondary && (
-            <p className="banner-secondary" lang="ja">
-              {secondary}
-            </p>
-          )}
+      {/* The character and its name in one see-through panel, so they read clearly over the scenery. */}
+      <div className="banner-window">
+        {/* Sized in CSS from the banner's height and width (container query units); --chars lets long words shrink. */}
+        <div className="banner-glyph" lang="ja" style={{ "--chars": [...label].length } as React.CSSProperties}>
+          {label}
         </div>
-      )}
+        {(primary || secondary) && (
+          <div className="banner-facts">
+            {primary && (
+              <p className="banner-primary">
+                <Gloss text={primary} />
+              </p>
+            )}
+            {secondary && (
+              <p className="banner-secondary" lang="ja">
+                {secondary}
+              </p>
+            )}
+          </div>
+        )}
+      </div>
     </header>
   );
 }
