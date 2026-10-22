@@ -2,6 +2,7 @@ import { ChartNoAxesColumnIncreasing } from "lucide-react";
 import type { LevelStatus, LevelUpNews, Tally } from "../levels.ts";
 import { RANK_ORDER, type Rank } from "../srs/ranks.ts";
 import { CardTitle } from "./CardTitle.tsx";
+import { GANBARU_CAT, KaomojiArt } from "./CatArt.tsx";
 import { RankBadge } from "./RankBadge.tsx";
 
 const REGION_NOTE = "Approximate: based on the pre-2010 JLPT lists. The JLPT no longer publishes official lists.";
@@ -80,19 +81,6 @@ export function LevelCard({ status, kana, ranks }: { status?: LevelStatus; kana?
   );
 }
 
-/**
- * Kaomoji text art: a cat peeking over a がんばる ("I'll do my best") sign.
- * Laid out for MS Gothic, where every full-width character is exactly two
- * half-width ones wide, so the columns line up.
- */
-const CAT_ART = `☆ﾟ                  ﾟ☆
-  ｡       ∧＿∧     ｡
-         ( ･ω･ )
-      ┏━∪━∪━┓
-  ♡   ┃ がんばる ┃   ♡
-      ┗━━━━━┛
- ﾟ｡☆              ☆｡ﾟ`;
-
 /** Text art for the card's right side. Decoration only; it hides when the window is small. */
 function ProgressArt() {
   return (
@@ -101,21 +89,8 @@ function ProgressArt() {
       <svg className="kaomoji-heart-frame" viewBox="0 0 100 90">
         <path d="M50 84 C20 62 4 44 4 26 C4 12 15 4 27 4 C37 4 45 10 50 18 C55 10 63 4 73 4 C85 4 96 12 96 26 C96 44 80 62 50 84 Z" />
       </svg>
-      <pre className="kaomoji-art" lang="ja">
-        {[...CAT_ART].map((ch, i) =>
-          "☆ﾟ｡".includes(ch) ? (
-            <span key={i} className="kaomoji-star">
-              {ch}
-            </span>
-          ) : ch === "♡" ? (
-            <span key={i} className="kaomoji-heart">
-              {ch}
-            </span>
-          ) : (
-            ch
-          ),
-        )}
-      </pre>
+      {/* A cat peeking over a がんばる ("I'll do my best") sign. */}
+      <KaomojiArt art={GANBARU_CAT} />
     </aside>
   );
 }

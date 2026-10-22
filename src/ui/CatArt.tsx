@@ -1,0 +1,65 @@
+/**
+ * Kaomoji cats for Today's cards. They're drawn in MS Gothic, where full-width
+ * characters are exactly two half-width ones, so the columns line up. In the
+ * art, ☆ becomes a gold pixel sparkle, ﾟ and ｡ dim twinkles, ♡ ♪ pink accents
+ * and ｚ Ｚ sleepy lilac z's.
+ */
+
+/** The Progress card's cat, cheering you on from inside the dotted heart. */
+export const GANBARU_CAT = `☆ﾟ                  ﾟ☆
+  ｡       ∧＿∧     ｡
+         ( ･ω･ )
+      ┏━∪━∪━┓
+  ♡   ┃ がんばる ┃   ♡
+      ┗━━━━━┛
+ ﾟ｡☆              ☆｡ﾟ`;
+
+/** Reviews, when none are due: "taking a little break". */
+export const SLEEPY_CAT = `    ∧＿∧   ｚＺ
+   ( -ω- )   ☆
+┏━∪━∪━┓
+┃ひとやすみ┃
+┗━━━━━┛`;
+
+/** Lessons, when there are none left today: "good work". */
+export const DONE_CAT = `    ∧＿∧    ♪
+   ( ･ω･ )   ☆
+┏━∪━∪━┓
+┃ おつかれ ┃
+┗━━━━━┛`;
+
+const ACCENT: Record<string, string> = {
+  "☆": "kaomoji-sparkle",
+  ﾟ: "kaomoji-star",
+  "｡": "kaomoji-star",
+  "♡": "kaomoji-heart",
+  "♪": "kaomoji-heart",
+  ｚ: "kaomoji-z",
+  Ｚ: "kaomoji-z",
+};
+
+/** The art as preformatted text, with its accent characters coloured. */
+export function KaomojiArt({ art, className = "" }: { art: string; className?: string }) {
+  return (
+    <pre className={`kaomoji-art ${className}`} lang="ja">
+      {[...art].map((ch, i) =>
+        ACCENT[ch] ? (
+          <span key={i} className={ACCENT[ch]}>
+            {ch}
+          </span>
+        ) : (
+          ch
+        ),
+      )}
+    </pre>
+  );
+}
+
+/** A cat on the right of a Today card's panel. Decoration only; it hides when the window is short. */
+export function PanelCat({ art }: { art: string }) {
+  return (
+    <aside className="panel-cat" aria-hidden="true">
+      <KaomojiArt art={art} />
+    </aside>
+  );
+}
