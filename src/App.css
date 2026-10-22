@@ -252,15 +252,18 @@ textarea {
   place-items: center;
 }
 
-/* Xel's pixel-art wordmark (73×30), enlarged to fill the bar's height (1px
-   clear above and below). 1.4× isn't a whole number, so some art pixels come
-   out a screen pixel wider than others. */
-.brand-logo {
-  display: block;
-  height: 42px;
-  /* 73 × 1.4 = 102.2, rounded so the nav tabs after it land on whole pixels. */
-  width: 102px;
-  image-rendering: pixelated;
+/* The name as a pixel wordmark: Silkscreen Bold at the card titles' size
+   (it only has capitals), pink, with a block shadow one font pixel
+   (24px / 8 = 3px) down. */
+.brand-text {
+  --brand-px: 3px;
+  font-family: var(--font-title);
+  font-weight: 700;
+  font-size: 24px;
+  line-height: 1;
+  color: #fd93bb;
+  text-shadow: 0 var(--brand-px) 0 #1d1660;
+  white-space: nowrap;
 }
 
 .nav-group {
