@@ -1,5 +1,7 @@
+import { ChartNoAxesColumnIncreasing } from "lucide-react";
 import type { LevelStatus, LevelUpNews, Tally } from "../levels.ts";
 import { RANK_ORDER, type Rank } from "../srs/ranks.ts";
+import { CardTitle } from "./CardTitle.tsx";
 import { RankBadge } from "./RankBadge.tsx";
 
 const REGION_NOTE = "Approximate: based on the pre-2010 JLPT lists. The JLPT no longer publishes official lists.";
@@ -13,7 +15,7 @@ export function LevelCard({ status, kana, ranks }: { status?: LevelStatus; kana?
   if (!status) {
     return (
       <section className="card level-card" aria-busy="true">
-        <h2 className="tile-title">Progress</h2>
+        <CardTitle icon={ChartNoAxesColumnIncreasing}>Progress</CardTitle>
         <div className="card-panel level-panel">
           <div className="level-main">
             <div className="level-head">
@@ -35,7 +37,7 @@ export function LevelCard({ status, kana, ranks }: { status?: LevelStatus; kana?
   const toGo = Math.max(0, status.kanji.needed - status.kanji.passed);
   return (
     <section className="card level-card">
-      <h2 className="tile-title">Progress</h2>
+      <CardTitle icon={ChartNoAxesColumnIncreasing}>Progress</CardTitle>
       <div className="card-panel level-panel">
         <div className="level-main">
           <div className="level-head">
