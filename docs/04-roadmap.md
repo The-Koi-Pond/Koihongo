@@ -45,6 +45,13 @@ Each phase ends with something you can **use daily**. Don't start the next phase
 - ✅ Example sentences, preferring words you know: up to 20 per word from the Tanaka Corpus; a word page shows the 3 with the fewest words you haven't started. 15,755 words have some; 399 path words (mostly newspaper words like 県立) still have none.
 - ✅ "Explain this sentence" AI helper: an Explain button on each example opens a chat that breaks the sentence down (kana and romaji, piece by piece, grammar notes, translation), using readings from our dictionary; follow-up questions welcome (`explainSystemPrompt` in `src/ai/prompts.ts`).
 
+## Flashcard decks ✅ (2026-10-23)
+
+- Your own decks (`src/decks.ts`, `src/screens/Decks.tsx`, user.db `decks`, `deck_cards`, `deck_review_log`): write cards with a free-text front and back, or "Add to deck" on any Library or Dictionary item page (front and back filled in from the item, as an editable copy).
+- Flip and rate, Anki-style (`src/ui/FlipCard.tsx`): Space shows the back, then Again / Hard / Good / Easy (keys 1–4), each showing when the card would come back. Scheduled with the same FSRS settings as path cards.
+- Each deck has an "In daily reviews" toggle (on by default): its due cards then mix into the normal review session, ordered by risk with everything else, and count in Today's review numbers and forecast. They don't slow down lessons (only the path backlog does). Any deck can also be studied on its own ("Study N due", or "Practice all" when nothing is due).
+- Later, if wanted: a new-cards-per-day limit per deck (new cards are due immediately now), images or audio on cards, Anki import.
+
 ## Phase 4: Grammar
 
 - ✅ Grammar section, read-only: the first 10 N5 points in textbook order (は…です, か, の, これ/この/ここ series, も, じゃないです, ね・よ, ます), each with a pattern, a plain explanation, highlighted examples and related points. Data in `src/grammar/points.ts`, pages in `src/screens/Grammar.tsx`. Drafts written with AI help; set `checked: true` on a point once Xel has read it.

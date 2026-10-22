@@ -9,6 +9,7 @@ export type Screen =
   | "today"
   | "library"
   | "dictionary"
+  | "decks"
   | "grammar"
   | "reading"
   | "settings"
@@ -22,6 +23,7 @@ const SECTIONS: { screen: Screen; icon: PixelIconName; ja: string; en: string; s
   { screen: "today", icon: "house", ja: "今日", en: "Today" },
   { screen: "library", icon: "books", ja: "図書館", en: "Library" },
   { screen: "dictionary", icon: "dictionary", ja: "辞書", en: "Dictionary", short: "Dict" },
+  { screen: "decks", icon: "cards", ja: "単語帳", en: "Decks" },
   { screen: "grammar", icon: "puzzle", ja: "文法", en: "Grammar" },
   { screen: "reading", icon: "openBook", ja: "読書", en: "Reading", soon: true },
 ];

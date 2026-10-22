@@ -13,7 +13,7 @@ Koihongo is Xel's personal Windows desktop app for learning Japanese from zero: 
 
 | Path | What |
 |---|---|
-| `src/screens/` | Today, Lessons, Reviews, Library, Dictionary, Grammar, Settings, Sources, ComingSoon (reading) |
+| `src/screens/` | Today, Lessons, Reviews, Library, Dictionary, Decks, Grammar, Settings, Sources, ComingSoon (reading) |
 | `src/ui/` | Shared UI: ItemView/ItemInfo (item pages), QuestionCard (quiz), Scene (banner scenery), AiChat, Examples, InfoTip… |
 | `src/srs/` | Scheduling (FSRS via ts-fsrs), sessions, answer checking, pacing settings |
 | `src/items.ts`, `library.ts`, `dictionary.ts`, `backup.ts` | Item details, statuses, dictionary search, backups |

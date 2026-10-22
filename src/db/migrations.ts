@@ -65,6 +65,45 @@ const MIGRATIONS: string[][] = [
       since    INTEGER NOT NULL
     )`,
   ],
+  [
+    // Your own flashcard decks (see src/decks.ts). in_daily: its due cards join daily reviews.
+    `CREATE TABLE decks (
+      id         INTEGER PRIMARY KEY,
+      name       TEXT NOT NULL,
+      in_daily   INTEGER NOT NULL DEFAULT 1,
+      created_at INTEGER NOT NULL
+    )`,
+    // A card: free text front and back, and its own FSRS state (same columns as srs_cards).
+    // item_key is set when it was made from a dictionary item (the text is a copy).
+    `CREATE TABLE deck_cards (
+      id             INTEGER PRIMARY KEY,
+      deck_id        INTEGER NOT NULL,
+      front          TEXT NOT NULL,
+      back           TEXT NOT NULL,
+      item_key       TEXT,
+      created_at     INTEGER NOT NULL,
+      state          INTEGER NOT NULL,
+      due            INTEGER NOT NULL,
+      stability      REAL NOT NULL,
+      difficulty     REAL NOT NULL,
+      scheduled_days INTEGER NOT NULL,
+      learning_steps INTEGER NOT NULL,
+      reps           INTEGER NOT NULL,
+      lapses         INTEGER NOT NULL,
+      last_review    INTEGER
+    )`,
+    `CREATE INDEX deck_cards_by_deck ON deck_cards(deck_id)`,
+    `CREATE INDEX deck_cards_by_due ON deck_cards(due)`,
+    // Every flip-and-rate answer (ts-fsrs Rating: 1 again, 2 hard, 3 good, 4 easy).
+    `CREATE TABLE deck_review_log (
+      id           INTEGER PRIMARY KEY,
+      card_id      INTEGER NOT NULL,
+      rating       INTEGER NOT NULL,
+      state_before INTEGER NOT NULL,
+      due_before   INTEGER NOT NULL,
+      reviewed_at  INTEGER NOT NULL
+    )`,
+  ],
 ];
 
 export const SCHEMA_VERSION = MIGRATIONS.length;

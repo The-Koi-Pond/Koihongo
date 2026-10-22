@@ -3,6 +3,7 @@ import { tauriDb } from "../db/tauriDb.ts";
 import { itemProgress, STATUS_NAME, type ItemProgress } from "../library.ts";
 import { ErrorView } from "../screens/Reviews.tsx";
 import { RANK_NAME, rankFor } from "../srs/ranks.ts";
+import { AddToDeck } from "./AddToDeck.tsx";
 import { FastTrackButton } from "./FastTrack.tsx";
 import { RankBadge } from "./RankBadge.tsx";
 import { ItemView } from "./ItemView.tsx";
@@ -34,7 +35,12 @@ export function ItemPage({ itemKey, backLabel, onOpen, onBack }: { itemKey: stri
               ← {backLabel}
             </button>
           }
-          bannerEnd={progress ? <ProgressPanel itemKey={itemKey} progress={progress} onOpen={onOpen} /> : progress === null && <OffPath />}
+          bannerEnd={
+            <>
+              {progress ? <ProgressPanel itemKey={itemKey} progress={progress} onOpen={onOpen} /> : progress === null && <OffPath />}
+              <AddToDeck item={item} />
+            </>
+          }
         />
       ) : (
         <p className="muted">Loading…</p>

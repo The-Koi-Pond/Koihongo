@@ -1,13 +1,13 @@
-// Review scheduling with FSRS (via ts-fsrs). Pure functions over srs_cards rows.
+// Review scheduling with FSRS (via ts-fsrs). Pure functions over card rows (srs_cards and deck_cards).
 
-import { createEmptyCard, fsrs, Rating, type Card, type State } from "ts-fsrs";
+import { createEmptyCard, fsrs, Rating, type Card, type Grade, type State } from "ts-fsrs";
+
+export { Rating };
 
 export type CardType = "meaning" | "reading";
 
-/** A row of user.db srs_cards. Times are unix milliseconds. */
-export type CardRow = {
-  item_key: string;
-  card_type: CardType;
+/** The FSRS state of any review card (path cards in srs_cards, deck cards in deck_cards). Times are unix milliseconds. */
+export type FsrsFields = {
   state: number;
   due: number;
   stability: number;
@@ -17,6 +17,12 @@ export type CardRow = {
   reps: number;
   lapses: number;
   last_review: number | null;
+};
+
+/** A row of user.db srs_cards. Times are unix milliseconds. */
+export type CardRow = FsrsFields & {
+  item_key: string;
+  card_type: CardType;
   started_at: number;
 };
 
@@ -34,7 +40,7 @@ export const FIRST_REVIEW_DELAY_MS = 4 * 60 * 60 * 1000;
 // session a day. Fuzz spreads out items learned together so they don't stay clumped.
 const scheduler = fsrs({ request_retention: 0.9, enable_short_term: false, enable_fuzz: true });
 
-function toCard(row: CardRow): Card {
+function toCard(row: FsrsFields): Card {
   return {
     due: new Date(row.due),
     stability: row.stability,
@@ -49,13 +55,12 @@ function toCard(row: CardRow): Card {
   };
 }
 
-export function newCard(itemKey: string, cardType: CardType, now: number): CardRow {
+/** A brand-new card's FSRS state, first due at `due`. */
+export function emptyFsrs(now: number, due: number): FsrsFields {
   const card = createEmptyCard(new Date(now));
   return {
-    item_key: itemKey,
-    card_type: cardType,
     state: card.state,
-    due: now + FIRST_REVIEW_DELAY_MS,
+    due,
     stability: card.stability,
     difficulty: card.difficulty,
     scheduled_days: card.scheduled_days,
@@ -63,8 +68,34 @@ export function newCard(itemKey: string, cardType: CardType, now: number): CardR
     reps: card.reps,
     lapses: card.lapses,
     last_review: null,
-    started_at: now,
   };
+}
+
+export function newCard(itemKey: string, cardType: CardType, now: number): CardRow {
+  return { item_key: itemKey, card_type: cardType, ...emptyFsrs(now, now + FIRST_REVIEW_DELAY_MS), started_at: now };
+}
+
+/** The card after a review graded `rating` (Again, Hard, Good or Easy). */
+export function schedule<T extends FsrsFields>(row: T, rating: Grade, now: number): T {
+  const { card } = scheduler.next(toCard(row), new Date(now), rating);
+  return {
+    ...row,
+    state: card.state,
+    due: card.due.getTime(),
+    stability: card.stability,
+    difficulty: card.difficulty,
+    scheduled_days: card.scheduled_days,
+    learning_steps: card.learning_steps,
+    reps: card.reps,
+    lapses: card.lapses,
+    last_review: now,
+  };
+}
+
+/** When the card would next be due after each rating, for showing under the rating buttons. */
+export function nextDues(row: FsrsFields, now: number): Record<Grade, number> {
+  const grades: Grade[] = [Rating.Again, Rating.Hard, Rating.Good, Rating.Easy];
+  return Object.fromEntries(grades.map((g) => [g, schedule(row, g, now).due])) as Record<Grade, number>;
 }
 
 /**
@@ -73,25 +104,10 @@ export function newCard(itemKey: string, cardType: CardType, now: number): CardR
  */
 export function review(row: CardRow, correct: boolean, now: number, easy = false): { card: CardRow; rating: Rating } {
   const rating = correct ? (easy ? Rating.Easy : Rating.Good) : Rating.Again;
-  const { card } = scheduler.next(toCard(row), new Date(now), rating);
-  return {
-    rating,
-    card: {
-      ...row,
-      state: card.state,
-      due: card.due.getTime(),
-      stability: card.stability,
-      difficulty: card.difficulty,
-      scheduled_days: card.scheduled_days,
-      learning_steps: card.learning_steps,
-      reps: card.reps,
-      lapses: card.lapses,
-      last_review: now,
-    },
-  };
+  return { rating, card: schedule(row, rating, now) };
 }
 
 /** Estimated chance (0–1) of remembering the card right now. */
-export function retrievability(row: CardRow, now: number): number {
+export function retrievability(row: FsrsFields, now: number): number {
   return scheduler.get_retrievability(toCard(row), new Date(now), false);
 }

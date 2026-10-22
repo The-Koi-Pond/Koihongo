@@ -15,6 +15,10 @@ export type Lesson = { item_key: string; kind: ItemKind; track: Track; position:
 const HOUR_MS = 60 * 60 * 1000;
 const DAY_MS = 24 * HOUR_MS;
 
+/** Due times of everything in daily reviews: path cards, plus cards from decks that are in daily reviews (src/decks.ts). */
+const DAILY_DUES = `SELECT due FROM srs_cards
+  UNION ALL SELECT c.due FROM deck_cards c JOIN decks d ON d.id = c.deck_id WHERE d.in_daily = 1`;
+
 /** Kana are learned by reading, components by meaning, kanji and words by both. */
 export function cardTypesFor(kind: ItemKind): CardType[] {
   if (kind === "kana") return ["reading"];
@@ -161,16 +165,29 @@ export type TodaySummary = {
 export async function todaySummary(db: Db, now: number): Promise<TodaySummary> {
   const pacing = await loadPacing(db);
   const dayStart = studyDayStart(now, pacing.dayStartsAtHour);
-  const [counts] = await db.all<{ due: number; next_day: number; kana_today: number; main_today: number; reviewed_today: number; next_due: number | null }>(
+  // `due` is path cards only: lessons slow down for a path backlog, not for your decks.
+  const [counts] = await db.all<{
+    due: number;
+    deck_due: number;
+    next_day: number;
+    kana_today: number;
+    main_today: number;
+    reviewed_today: number;
+    next_due: number | null;
+  }>(
     `SELECT
        (SELECT count(*) FROM srs_cards WHERE due <= ?) AS due,
-       (SELECT min(due) FROM srs_cards WHERE due > ?) AS next_due,
-       (SELECT count(*) FROM srs_cards WHERE due > ? AND due <= ?) AS next_day,
+       (SELECT count(*) FROM deck_cards c JOIN decks d ON d.id = c.deck_id WHERE d.in_daily = 1 AND c.due <= ?) AS deck_due,
+       (SELECT min(due) FROM (${DAILY_DUES}) WHERE due > ?) AS next_due,
+       (SELECT count(*) FROM (${DAILY_DUES}) WHERE due > ? AND due <= ?) AS next_day,
        (SELECT count(DISTINCT item_key) FROM srs_cards WHERE started_at >= ? AND item_key LIKE 'kana:%') AS kana_today,
        (SELECT count(DISTINCT item_key) FROM srs_cards WHERE started_at >= ? AND item_key NOT LIKE 'kana:%') AS main_today,
-       (SELECT count(*) FROM review_log WHERE reviewed_at >= ?) AS reviewed_today`,
-    [now, now, now, now + DAY_MS, dayStart, dayStart, dayStart],
+       (SELECT count(*) FROM review_log WHERE reviewed_at >= ?)
+         + (SELECT count(*) FROM deck_review_log l JOIN deck_cards c ON c.id = l.card_id JOIN decks d ON d.id = c.deck_id
+            WHERE d.in_daily = 1 AND l.reviewed_at >= ?) AS reviewed_today`,
+    [now, now, now, now, now + DAY_MS, dayStart, dayStart, dayStart, dayStart],
   );
+  const allDue = counts.due + counts.deck_due;
   const unlocked = await availableLessons(db);
   // Kana first, so a lesson round doesn't mix a kana row with kanji.
   const pick = (track: Track, allowed: number) => {
@@ -179,10 +196,10 @@ export async function todaySummary(db: Db, now: number): Promise<TodaySummary> {
   };
   const kana = pick("kana", lessonAllowance(counts.due, counts.kana_today, pacing.kanaPerDay, pacing.pauseLessonsAtDue));
   const main = pick("main", lessonAllowance(counts.due, counts.main_today, pacing.newPerDay, pacing.pauseLessonsAtDue));
-  const catchUp = catchUpPlan(counts.due, counts.reviewed_today, pacing.catchUpPerDay);
+  const catchUp = catchUpPlan(allDue, counts.reviewed_today, pacing.catchUpPerDay);
   return {
-    reviewsDue: counts.due,
-    reviewsToday: catchUp ? catchUp.todayLeft : counts.due,
+    reviewsDue: allDue,
+    reviewsToday: catchUp ? catchUp.todayLeft : allDue,
     catchUp,
     reviewsNext24h: counts.next_day,
     lessonsDoneToday: counts.kana_today + counts.main_today,
@@ -197,7 +214,7 @@ export async function todaySummary(db: Db, now: number): Promise<TodaySummary> {
 export async function reviewForecast(db: Db, now: number, hours = 24): Promise<number[]> {
   const rows = await db.all<{ hour: number; n: number }>(
     `SELECT CAST((due - ?) / ? AS INTEGER) AS hour, count(*) AS n
-     FROM srs_cards WHERE due > ? AND due <= ? GROUP BY hour`,
+     FROM (${DAILY_DUES}) WHERE due > ? AND due <= ? GROUP BY hour`,
     [now, HOUR_MS, now, now + hours * HOUR_MS],
   );
   const forecast = new Array<number>(hours).fill(0);
