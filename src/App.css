@@ -252,7 +252,7 @@ textarea {
   place-items: center;
 }
 
-/* Xel's pixel-art wordmark (80×32), shown at 1× so every pixel stays crisp. */
+/* Xel's pixel-art wordmark (73×30), shown at 1× so every pixel stays crisp. */
 .brand-logo {
   display: block;
   image-rendering: pixelated;
