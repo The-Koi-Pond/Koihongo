@@ -111,7 +111,6 @@ export function Today({
             </p>
             <p className="greeting-en">{hello.en}</p>
           </div>
-          <p className="today-date">{now.toLocaleDateString(undefined, { weekday: "short", day: "numeric", month: "short" })}</p>
         </div>
 
         {levelUp && (
@@ -289,7 +288,6 @@ function TodayShell({ now }: { now: Date }) {
             </p>
             <p className="greeting-en">{hello.en}</p>
           </div>
-          <p className="today-date">{now.toLocaleDateString(undefined, { weekday: "short", day: "numeric", month: "short" })}</p>
         </div>
         <div className="start-stack">
           <p className="start-rest placeholder">&nbsp;</p>

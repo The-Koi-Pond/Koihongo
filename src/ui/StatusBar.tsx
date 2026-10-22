@@ -12,7 +12,7 @@ function dayNumber(d: Date): number {
   return Math.floor(new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime() / 86_400_000);
 }
 
-/** The bar along the bottom of Today: a daily encouraging line and the time. */
+/** The bar along the bottom of Today: a daily encouraging line, and the date and time. */
 export function StatusBar() {
   const [now, setNow] = useState(() => new Date());
 
@@ -29,6 +29,8 @@ export function StatusBar() {
         {message.ja}
       </p>
       <time className="status-clock" dateTime={now.toISOString()}>
+        <span className="status-date">{now.toLocaleDateString(undefined, { weekday: "short", day: "numeric", month: "short" })}</span>
+        {" · "}
         {now.toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit" })}
       </time>
     </footer>
