@@ -4,8 +4,8 @@ import { isRomaji, toHiragana } from "wanakana";
 import { tauriDb } from "../db/tauriDb.ts";
 import { libraryItems, STATUS_NAME, type ItemStatus, type LibraryItem } from "../library.ts";
 import type { ItemKind } from "../srs/progress.ts";
+import { RANK_NAME } from "../srs/ranks.ts";
 import { ItemPage } from "../ui/ItemPage.tsx";
-import { RankBadge } from "../ui/RankBadge.tsx";
 import { ItemHover, OpenItemContext } from "../ui/Popover.tsx";
 
 const PAGE = 300;
@@ -119,17 +119,16 @@ export function Library() {
               <li key={i.item_key} style={{ gridColumn: `span ${tileSpan(i)}` }}>
                 <ItemHover itemKey={i.item_key} openOnClick={false}>
                   <button className={`tile ${i.kind} ${i.status}`} onClick={() => setSelected(i.item_key)}>
-                    <span className="tile-kind">{KIND_NAME[i.kind]}</span>
-                    {i.fast === 1 && (
-                      <span className="tile-fast" title="On fast track">
-                        <FastForward size={11} strokeWidth={2.5} aria-label="On fast track" />
+                    {/* The band: fast track on the left, the kind in the middle, the rank on the right. */}
+                    <span className="tile-kind">
+                      <span className="tile-fast">
+                        {i.fast === 1 && <FastForward size={9} strokeWidth={3} aria-label="On fast track" />}
                       </span>
-                    )}
-                    {i.rank && (
-                      <span className="tile-rank">
-                        <RankBadge rank={i.rank} />
+                      {KIND_NAME[i.kind]}
+                      <span className="tile-rank" title={i.rank ? `${i.rank} rank: ${RANK_NAME[i.rank]}` : undefined}>
+                        {i.rank}
                       </span>
-                    )}
+                    </span>
                     <span className={`tile-glyph ${[...i.label].length > 1 ? "multi" : ""}`} lang="ja">
                       {i.label}
                     </span>

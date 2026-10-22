@@ -2012,35 +2012,27 @@ textarea {
   overflow: hidden;
 }
 
-/* Rank chip in a tile's bottom-right corner. */
-.tile {
-  position: relative;
+/* The fast-track arrow and rank letter live in the tile's kind band, either
+   side of the label, in the band's own ink colour. */
+.tile-fast,
+.tile-rank {
+  display: grid;
+  align-items: center;
+  min-width: 0;
+}
+
+.tile-fast {
+  justify-items: start;
+  padding-left: 3px;
 }
 
 .tile-rank {
-  position: absolute;
-  right: 1px;
-  bottom: 1px;
-  font-size: 0.7rem;
-  line-height: 1;
-}
-
-/* Tighter chip in tiles, so it stays in the corner and clear of the character. */
-.tile-rank .rank-badge {
-  min-width: 1.3em;
-  height: 1.3em;
-  padding: 0 2px;
-  border-radius: 3px;
-}
-
-/* Fast track marker, bottom-left of a tile. */
-.tile-fast {
-  position: absolute;
-  left: 3px;
-  bottom: 2px;
-  display: grid;
-  color: var(--word);
-  filter: drop-shadow(0 0 2px rgb(0 0 0 / 0.6));
+  justify-items: end;
+  padding-right: 3px;
+  /* Tiny5, like numbers: in Pixelify a small B reads as 8. */
+  font-family: var(--font-num);
+  font-size: 0.6rem;
+  letter-spacing: 0;
 }
 
 /* Fast track: a pill like "Stop here" in banners; filled butter while on. */
@@ -2102,6 +2094,9 @@ textarea {
    and word never look alike. Content is centred in the space below it. */
 .tile-kind {
   align-self: stretch;
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: center;
   margin: 0 -2px;
   padding: 2px 0;
   font-size: 0.5rem;
@@ -2143,6 +2138,16 @@ textarea {
   background: var(--kind);
   border: 1px solid var(--kind);
   color: var(--on-kind);
+}
+
+/* The character stays white on passed tiles, with a 1px outline in a deeper
+   shade of the tile's colour so it reads even on the pale butter word tiles. */
+.tile.passed .tile-glyph {
+  --edge: color-mix(in srgb, var(--kind) 45%, #1a1040);
+  color: #fff;
+  text-shadow:
+    1px 0 0 var(--edge), -1px 0 0 var(--edge), 0 1px 0 var(--edge), 0 -1px 0 var(--edge),
+    1px 1px 0 var(--edge), -1px 1px 0 var(--edge), 1px -1px 0 var(--edge), -1px -1px 0 var(--edge);
 }
 
 .tile:hover {
