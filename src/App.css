@@ -3357,6 +3357,7 @@ select {
 /* ☆ in the art becomes a gold four-pointed pixel sparkle (the character keeps its two columns). */
 .kaomoji-sparkle {
   color: transparent;
+  text-shadow: none; /* or the panel's text shadow draws the hidden ☆ behind the sparkle */
   background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='9' height='9' shape-rendering='crispEdges'%3E%3Cg fill='%23fee797'%3E%3Crect x='4' width='1' height='9'/%3E%3Crect y='4' width='9' height='1'/%3E%3Crect x='3' y='3' width='3' height='3'/%3E%3C/g%3E%3Crect x='4' y='4' width='1' height='1' fill='%23fff'/%3E%3C/svg%3E") center / 0.9em 0.9em no-repeat;
   filter: drop-shadow(0 0 3px rgb(255 214 120 / 0.7));
 }
