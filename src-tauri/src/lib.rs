@@ -1,4 +1,5 @@
 mod ai;
+mod ai_api;
 mod backup;
 mod db;
 
@@ -24,6 +25,10 @@ pub fn run() {
             db::db_query,
             db::db_batch,
             ai::ai_complete,
+            ai::ai_claude_code_found,
+            ai_api::ai_key_status,
+            ai_api::ai_key_set,
+            ai_api::ai_key_delete,
             backup::backup_create,
             backup::backup_list,
             backup::backup_prune,

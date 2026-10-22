@@ -1,6 +1,6 @@
 # Koihongo: guide for agents
 
-Koihongo is Xel's personal Windows desktop app for learning Japanese from zero: WaniKani's components → kanji → words path, Anki-style FSRS reviews, Bunpro-style grammar later, plus optional AI help through the Claude Code CLI. The internal identifier is still `com.xel.nihongo` (the folder is `nihongo`) so `user.db` stays put.
+Koihongo is Xel's personal Windows desktop app for learning Japanese from zero: WaniKani's components → kanji → words path, Anki-style FSRS reviews, Bunpro-style grammar later, plus optional AI help (off by default; Claude Code, the Anthropic API or an OpenAI-compatible service, chosen in Settings). The internal identifier is still `com.xel.nihongo` (the folder is `nihongo`) so `user.db` stays put.
 
 ## Working with Xel
 

@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import { EXPLAIN_OPENER, explainSystemPrompt } from "../ai/prompts.ts";
 import { tauriDb } from "../db/tauriDb.ts";
 import { sentenceWords, type SentenceWord, type WordDetails } from "../items.ts";
+import { useAiSettings } from "../ai/settings.ts";
 import { AiChat } from "./AiChat.tsx";
 import { JapaneseText } from "./Popover.tsx";
 
@@ -11,6 +12,8 @@ type Sentence = WordDetails["sentences"][number];
 /** A word's example sentences, each with an "Explain" button that opens an AI breakdown under it. */
 export function Examples({ item }: { item: WordDetails }) {
   const [explaining, setExplaining] = useState<string>();
+  const ai = useAiSettings(tauriDb);
+  const aiOn = !!ai && ai.provider !== "off";
   return (
     <ul className="plain examples">
       {item.sentences.map((s) => (
@@ -26,7 +29,7 @@ export function Examples({ item }: { item: WordDetails }) {
               <br />
               <span className="muted">{s.english}</span>
             </div>
-            {explaining !== s.id && (
+            {aiOn && explaining !== s.id && (
               <button type="button" className="explain-btn" onClick={() => setExplaining(s.id)} title="Break this sentence down with AI">
                 <Sparkles size={14} strokeWidth={2} aria-hidden="true" /> Explain
               </button>
@@ -64,7 +67,7 @@ function Explainer({ item, sentence, onClose }: { item: WordDetails; sentence: S
       )}
       opener={EXPLAIN_OPENER}
       placeholder="Ask about it, e.g. why は and not が?"
-      footnote="AI explanations can be wrong, especially readings it wasn't given. Runs through your Claude Code login."
+      footnote="AI explanations can be wrong, especially readings it wasn't given."
       onClose={onClose}
     />
   );

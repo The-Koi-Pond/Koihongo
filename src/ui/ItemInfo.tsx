@@ -1,5 +1,6 @@
 import { BookOpen, Ear, Languages, Lightbulb, List, Pencil, PenLine, Quote, Search, Shapes, Sparkles, Tags, type LucideIcon, Volume2 } from "lucide-react";
 import { useContext, useState } from "react";
+import { useAiSettings } from "../ai/settings.ts";
 import { tauriDb } from "../db/tauriDb.ts";
 import { addSynonym, removeSynonym, saveNote, type ItemDetails, type Note, type NoteKind } from "../items.ts";
 import { Examples } from "./Examples.tsx";
@@ -290,6 +291,8 @@ function NoteEditor({
   const note = item.notes[kind];
   const [editing, setEditing] = useState(false);
   const [workshop, setWorkshop] = useState(false);
+  const ai = useAiSettings(tauriDb);
+  const aiOn = !!ai && ai.provider !== "off";
   const [text, setText] = useState(note?.text ?? "");
   const [error, setError] = useState<string>();
 
@@ -337,7 +340,7 @@ function NoteEditor({
             >
               <Pencil size={16} strokeWidth={1.75} />
             </button>
-            {kind !== "note" && !workshop && (
+            {aiOn && kind !== "note" && !workshop && (
               <button type="button" className="icon-action" aria-label="Ask AI" title="Ask AI" onClick={() => setWorkshop(true)}>
                 <Sparkles size={16} strokeWidth={1.75} />
               </button>

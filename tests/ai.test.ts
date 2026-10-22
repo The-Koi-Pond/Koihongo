@@ -1,8 +1,11 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { formatConversation } from "../src/ai/ai.ts";
+import { backendRequest, formatConversation } from "../src/ai/ai.ts";
+import { DEFAULT_AI, loadAiSettings, saveAiSettings, type AiSettings } from "../src/ai/settings.ts";
+import { migrate } from "../src/db/migrations.ts";
 import { describeItem, explainSystemPrompt, extractMnemonics, mnemonicOpener, mnemonicSystemPrompt } from "../src/ai/prompts.ts";
 import type { KanjiDetails } from "../src/items.ts";
+import { openTestDb } from "./nodeDb.ts";
 
 const mori: KanjiDetails = {
   kind: "kanji",
@@ -78,4 +81,53 @@ test("the sentence explainer gets the sentence, its word facts and what the lear
   assert.match(prompt, /- 休み \(やすみ\): rest; break\. The learner has studied this word\./);
   assert.match(prompt, /- 欲しい \(ほしい\): wanted; desired\. New to the learner\./);
   assert.match(prompt, /no markdown/);
+});
+
+const chat = { system: "sys", messages: [{ role: "user" as const, text: "hi" }] };
+
+test("AI settings: off until chosen, and saved values come back", async () => {
+  const db = openTestDb(() => {});
+  await migrate(db);
+  assert.equal((await loadAiSettings(db)).provider, "off");
+  const mine: AiSettings = { ...DEFAULT_AI, provider: "openai-compatible", compatPreset: "ollama", compatModel: " llama3.1 " };
+  await saveAiSettings(db, mine);
+  const back = await loadAiSettings(db);
+  assert.equal(back.provider, "openai-compatible");
+  assert.equal(back.compatModel, "llama3.1");
+});
+
+test("AI settings: unknown saved values fall back to safe ones", async () => {
+  const db = openTestDb(() => {});
+  await migrate(db);
+  await db.batch([
+    { sql: "INSERT INTO settings VALUES ('ai.provider', 'skynet')" },
+    { sql: "INSERT INTO settings VALUES ('ai.compatPreset', 'nope')" },
+  ]);
+  const s = await loadAiSettings(db);
+  assert.equal(s.provider, "off");
+  assert.equal(s.compatPreset, DEFAULT_AI.compatPreset);
+});
+
+test("AI requests: each helper gets what it needs, and off sends nothing", () => {
+  assert.throws(() => backendRequest(DEFAULT_AI, chat), /turned off/);
+
+  const cc = backendRequest({ ...DEFAULT_AI, provider: "claude-code" }, chat);
+  assert.equal(cc.model, "sonnet");
+  assert.equal(cc.prompt, "hi");
+
+  const api = backendRequest({ ...DEFAULT_AI, provider: "anthropic" }, chat);
+  assert.deepEqual(api, { provider: "anthropic", model: "claude-opus-5-5", system: "sys", messages: chat.messages });
+
+  const gemini = backendRequest({ ...DEFAULT_AI, provider: "openai-compatible", compatPreset: "gemini", compatModel: "m" }, chat);
+  assert.equal(gemini.keySlot, "gemini");
+  assert.match(gemini.baseUrl!, /^https:\/\/generativelanguage/);
+
+  const local = backendRequest({ ...DEFAULT_AI, provider: "openai-compatible", compatPreset: "ollama", compatModel: "m" }, chat);
+  assert.equal(local.keySlot, undefined, "local models get no key");
+
+  const custom = { ...DEFAULT_AI, provider: "openai-compatible" as const, compatPreset: "custom" as const, compatBaseUrl: "http://x/v1", compatModel: "m" };
+  assert.equal(backendRequest(custom, chat).keySlot, undefined, "no key unless one is saved");
+  assert.equal(backendRequest(custom, chat, true).keySlot, "custom");
+
+  assert.throws(() => backendRequest({ ...DEFAULT_AI, provider: "openai-compatible" }, chat), /No model/);
 });

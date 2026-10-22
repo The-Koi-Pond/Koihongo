@@ -4,6 +4,7 @@ import { backupKind, createBackup, listBackups, openBackupsFolder, restoreBackup
 import { migrate } from "../db/migrations.ts";
 import { tauriDb } from "../db/tauriDb.ts";
 import { DEFAULT_PACING, loadPacing, PACING_LIMITS, savePacing, type Pacing } from "../srs/settings.ts";
+import { AiSettingsCard } from "../ui/AiSettingsCard.tsx";
 import { useSharedCardPattern } from "../ui/useSharedCardPattern.ts";
 
 export function Settings({ onOpenSources }: { onOpenSources: () => void }) {
@@ -15,6 +16,7 @@ export function Settings({ onOpenSources }: { onOpenSources: () => void }) {
         <span lang="ja">設定</span> Settings
       </h1>
       <PacingCard />
+      <AiSettingsCard />
       <BackupsCard />
       <section className="card row space-between">
         <div>

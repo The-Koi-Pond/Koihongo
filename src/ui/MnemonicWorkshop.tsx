@@ -3,7 +3,7 @@ import { extractMnemonics, mnemonicOpener, mnemonicSystemPrompt, type MnemonicFo
 import type { ItemDetails } from "../items.ts";
 import { AiChat } from "./AiChat.tsx";
 
-/** Chat with Claude about a mnemonic; "Use this" saves a suggestion. */
+/** Chat with your AI helper about a mnemonic; "Use this" saves a suggestion. */
 export function MnemonicWorkshop({
   item,
   focus,
@@ -28,7 +28,7 @@ export function MnemonicWorkshop({
       system={mnemonicSystemPrompt(item, focus)}
       opener={mnemonicOpener(item, focus)}
       placeholder="e.g. make it about Pokémon, shorter, use the word 'shin'…"
-      footnote="AI suggestions can be wrong; saved ones are marked as AI-written. Runs through your Claude Code login."
+      footnote="AI suggestions can be wrong; saved ones are marked as AI-written."
       onClose={onClose}
       extras={(reply) =>
         extractMnemonics(reply).map((option) => (
