@@ -1119,10 +1119,9 @@ textarea {
   --moon-min-top: 0px;
 }
 
-/* Today: the date fills the corner, so the moon sits just left of it. */
+/* Today: nothing in the top-right corner (the date is in the status bar), so the moon can sit right up in it. */
 .today-banner {
   --moon-min-top: 0px;
-  --moon-right: 160px;
 }
 
 /* Xel's pixel-art hills (assets/scenery/hills.png, 518×74), behind the
@@ -2642,6 +2641,10 @@ select {
   font-weight: 600;
 }
 
+.status-date {
+  color: var(--muted);
+}
+
 .app:has(.with-status-bar) {
   padding-bottom: calc(var(--statusbar-h) + var(--statusbar-gap));
 }
@@ -2672,14 +2675,6 @@ select {
 .greeting-en {
   font-size: 0.85rem;
   opacity: 0.85;
-}
-
-.today-date {
-  font-size: 0.85rem;
-  font-weight: 600;
-  padding: 4px 12px;
-  border-radius: 999px;
-  background: rgb(0 0 0 / 0.25);
 }
 
 /* Start, with the order toggle and "Just 5 minutes" in a row beneath: a narrow
