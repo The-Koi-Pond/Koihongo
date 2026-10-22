@@ -252,16 +252,10 @@ textarea {
   place-items: center;
 }
 
-.brand-mark {
-  display: grid;
-  place-items: center;
-  width: 28px;
-  height: 28px;
-  border-radius: 8px;
-  background: linear-gradient(135deg, var(--accent), color-mix(in srgb, var(--accent) 55%, #f4c26b));
-  color: #fff;
-  font-size: 1rem;
-  box-shadow: 0 2px 8px color-mix(in srgb, var(--accent) 40%, transparent);
+/* Xel's pixel-art wordmark (80×32), shown at 1× so every pixel stays crisp. */
+.brand-logo {
+  display: block;
+  image-rendering: pixelated;
 }
 
 .nav-group {
