@@ -59,15 +59,24 @@ export function ItemInfo({ item, onChange }: { item: ItemDetails; onChange: () =
 
       {item.kind === "component" && (
         <>
-          <Field label="Name" icon={Tag} action={findByParts && <FindLink onClick={() => findByParts([item.item_key.slice("component:".length)])} text="Find all kanji with this part" />}>
+          <Field label="Name" icon={Tag}>
             <span className="big-reading">{item.name}</span>
           </Field>
-          {item.usedIn.length > 0 && (
-            <Field label="Found in" icon={Search}>
-              <Chips items={item.usedIn.map((k) => ({ glyph: k.character, text: k.meaning, kind: "kanji", itemKey: `kanji:${k.character}` }))} />
+          {/* The first few kanji on your path that use it; "Find all" lists every one. */}
+          {(item.usedIn.length > 0 || findByParts) && (
+            <Field
+              label="Found in"
+              icon={Search}
+              action={findByParts && <FindLink onClick={() => findByParts([item.item_key.slice("component:".length)])} text="Find all kanji with this part" />}
+            >
+              {item.usedIn.length > 0 ? (
+                <Chips items={item.usedIn.map((k) => ({ glyph: k.character, text: k.meaning, kind: "kanji", itemKey: `kanji:${k.character}` }))} />
+              ) : (
+                <p className="muted">No kanji on your path use it.</p>
+              )}
             </Field>
           )}
-          <NoteEditor item={item} kind="mnemonic_meaning" label="Mnemonic" onSaved={onChange} />
+          <MnemonicAndSynonyms item={item} label="Mnemonic" onChange={onChange} />
         </>
       )}
 
@@ -89,6 +98,7 @@ export function ItemInfo({ item, onChange }: { item: ItemDetails; onChange: () =
           <Field
             label="Components"
             icon={Shapes}
+            wide
             action={findByParts && <FindLink onClick={() => findByParts(item.components.map((c) => c.glyph))} text="Find kanji with these parts" />}
           >
             <Chips items={item.components.map((c) => ({ glyph: c.display, text: c.name, kind: "component", itemKey: `component:${c.glyph}` }))} />
@@ -98,7 +108,7 @@ export function ItemInfo({ item, onChange }: { item: ItemDetails; onChange: () =
               <StrokeOrder svg={item.strokeSvg} label={item.character} />
             </Field>
           )}
-          <NoteEditor item={item} kind="mnemonic_meaning" label="Meaning mnemonic" onSaved={onChange} />
+          <MnemonicAndSynonyms item={item} label="Meaning mnemonic" onChange={onChange} />
           <NoteEditor item={item} kind="mnemonic_reading" label="Reading note" onSaved={onChange} />
           {item.words.length > 0 && (
             <Field label="Words" icon={List} wide>
@@ -138,7 +148,7 @@ export function ItemInfo({ item, onChange }: { item: ItemDetails; onChange: () =
           <Field label="Kanji" icon={Languages}>
             <Chips items={item.kanji.map((k) => ({ glyph: k.character, text: k.meaning, kind: "kanji", itemKey: `kanji:${k.character}` }))} />
           </Field>
-          <NoteEditor item={item} kind="mnemonic_meaning" label="Meaning mnemonic" onSaved={onChange} />
+          <MnemonicAndSynonyms item={item} label="Meaning mnemonic" onChange={onChange} />
           <NoteEditor item={item} kind="mnemonic_reading" label="Reading note" onSaved={onChange} />
           {item.sentences.length > 0 && (
             <Field label="Examples" icon={Quote} wide>
@@ -148,7 +158,6 @@ export function ItemInfo({ item, onChange }: { item: ItemDetails; onChange: () =
         </>
       )}
 
-      {item.kind !== "kana" && <SynonymEditor item={item} onChange={onChange} />}
     </div>
   );
 }
@@ -256,7 +265,29 @@ const AUTHOR_NOTE: Record<Note["author"], string> = {
   default: "",
 };
 
-function NoteEditor({ item, kind, label, onSaved }: { item: ItemDetails; kind: NoteKind; label: string; onSaved: () => void }) {
+/** The meaning mnemonic and your synonyms side by side (both are about the meaning). */
+function MnemonicAndSynonyms({ item, label, onChange }: { item: ItemDetails; label: string; onChange: () => void }) {
+  return (
+    <div className="field-pair">
+      <NoteEditor item={item} kind="mnemonic_meaning" label={label} onSaved={onChange} wide={false} />
+      <SynonymEditor item={item} onChange={onChange} />
+    </div>
+  );
+}
+
+function NoteEditor({
+  item,
+  kind,
+  label,
+  onSaved,
+  wide = true,
+}: {
+  item: ItemDetails;
+  kind: NoteKind;
+  label: string;
+  onSaved: () => void;
+  wide?: boolean;
+}) {
   const note = item.notes[kind];
   const [editing, setEditing] = useState(false);
   const [workshop, setWorkshop] = useState(false);
@@ -275,7 +306,7 @@ function NoteEditor({ item, kind, label, onSaved }: { item: ItemDetails; kind: N
   }
 
   return (
-    <Field label={label} icon={Lightbulb} wide>
+    <Field label={label} icon={Lightbulb} wide={wide}>
       {editing ? (
         <div className="note-edit">
           <textarea value={text} onChange={(e) => setText(e.target.value)} rows={3} autoFocus />

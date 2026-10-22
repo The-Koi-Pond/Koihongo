@@ -15,20 +15,18 @@ const GROUP_NAME = { basic: "basic", dakuten: "゛/゜ marks", combo: "combinati
  * Full item page, sized to the window: the detail cards anchor to the bottom,
  * and the scenic banner takes the remaining height, with the character scaled
  * to fit it. `bannerStart` goes in the banner's top-left corner (e.g. a back
- * button); `below` goes under the cards.
+ * button).
  */
 export function ItemView({
   item,
   onChange,
-  below,
   bannerStart,
   bannerEnd,
 }: {
   item: ItemDetails;
   onChange: () => void;
-  below?: React.ReactNode;
   bannerStart?: React.ReactNode;
-  /** Goes first in the banner's top-right corner (e.g. the lesson's fast-track button). */
+  /** Goes first in the banner's top-right corner (e.g. the lesson's fast-track button, or your progress on Library pages). */
   bannerEnd?: React.ReactNode;
 }) {
   const page = useRef<HTMLDivElement>(null);
@@ -37,7 +35,6 @@ export function ItemView({
     <div className={`item-view ${item.kind}`} ref={page}>
       <ItemBanner item={item} start={bannerStart} end={bannerEnd} />
       <ItemInfo item={item} onChange={onChange} />
-      {below}
     </div>
   );
 }

@@ -8,7 +8,7 @@ import { RankBadge } from "./RankBadge.tsx";
 import { ItemView } from "./ItemView.tsx";
 import { useItem } from "./useItem.ts";
 
-/** A browsable item page (Library, Dictionary): the item, a back button, and your progress on it. */
+/** A browsable item page (Library, Dictionary): the item, a back button, and your progress on it (top right). */
 export function ItemPage({ itemKey, backLabel, onOpen, onBack }: { itemKey: string; backLabel: string; onOpen: (key: string) => void; onBack: () => void }) {
   const { item, error, reload } = useItem(itemKey);
   // null: the item exists but isn't on the learning path (most dictionary words).
@@ -34,7 +34,7 @@ export function ItemPage({ itemKey, backLabel, onOpen, onBack }: { itemKey: stri
               ← {backLabel}
             </button>
           }
-          below={progress ? <ProgressLine itemKey={itemKey} progress={progress} onOpen={onOpen} /> : progress === null && <OffPath />}
+          bannerEnd={progress ? <ProgressPanel itemKey={itemKey} progress={progress} onOpen={onOpen} /> : progress === null && <OffPath />}
         />
       ) : (
         <p className="muted">Loading…</p>
@@ -45,36 +45,39 @@ export function ItemPage({ itemKey, backLabel, onOpen, onBack }: { itemKey: stri
 
 function OffPath() {
   return (
-    <div className="card progress-line">
-      <p className="muted">Not on your learning path. (Adding any dictionary word to your reviews is planned.)</p>
+    <div className="item-progress">
+      <p>Not on your learning path</p>
+      <p className="muted">Adding any dictionary word to your reviews is planned.</p>
     </div>
   );
 }
 
-function ProgressLine({ itemKey, progress, onOpen }: { itemKey: string; progress: ItemProgress; onOpen: (key: string) => void }) {
+/** Your progress on the item, in a small panel in the banner's top-right corner. */
+function ProgressPanel({ itemKey, progress, onOpen }: { itemKey: string; progress: ItemProgress; onOpen: (key: string) => void }) {
   const missing = progress.requires.filter((r) => r.status !== "passed");
   const nextDue = Math.min(...progress.cards.map((c) => c.due));
   const rank = progress.cards.length ? rankFor(Math.min(...progress.cards.map((c) => c.stability))) : null;
   return (
-    <div className="card progress-line">
-      <FastTrackButton itemKey={itemKey} />
-      <p>
-        {rank ? (
-          <>
-            <RankBadge rank={rank} /> <strong>{RANK_NAME[rank]}</strong>
-          </>
-        ) : (
-          <>
-            <span className={`swatch ${progress.status}`} /> <strong>{STATUS_NAME[progress.status]}</strong>
-          </>
-        )}
-        {progress.cards.length > 0 && (
-          <span className="muted">
-            {" "}
-            · learned {new Date(Math.min(...progress.cards.map((c) => c.started_at))).toLocaleDateString()} · next review {describeDue(nextDue)}
-          </span>
-        )}
-      </p>
+    <div className="item-progress">
+      <div className="item-progress-head">
+        <p>
+          {rank ? (
+            <>
+              <RankBadge rank={rank} /> <strong>{RANK_NAME[rank]}</strong>
+            </>
+          ) : (
+            <>
+              <span className={`swatch ${progress.status}`} /> <strong>{STATUS_NAME[progress.status]}</strong>
+            </>
+          )}
+        </p>
+        <FastTrackButton itemKey={itemKey} />
+      </div>
+      {progress.cards.length > 0 && (
+        <p className="muted">
+          Learned {new Date(Math.min(...progress.cards.map((c) => c.started_at))).toLocaleDateString()} · next review {describeDue(nextDue)}
+        </p>
+      )}
       {progress.status === "locked" && missing.length > 0 && (
         <p className="muted">
           Unlocks after:{" "}
