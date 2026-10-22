@@ -256,6 +256,9 @@ textarea {
 .brand-logo {
   display: block;
   image-rendering: pixelated;
+  /* Sits a little high rather than centred: 3px from the top of the bar. */
+  position: relative;
+  top: -4px;
 }
 
 .nav-group {
