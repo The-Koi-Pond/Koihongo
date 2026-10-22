@@ -31,11 +31,32 @@ function saveOrder(order: StudyOrder) {
   }
 }
 
-function greeting(now: Date): { ja: string; en: string } {
+type Flair = { mark: string; tone: "pink" | "gold" | "lilac" };
+
+/** The greeting for the time of day, with a little flair after it (symbols DotGothic16 has, so they stay pixel art). */
+function greeting(now: Date): { ja: string; en: string; flair: Flair[] } {
   const h = now.getHours();
-  if (h >= 5 && h < 11) return { ja: "おはよう", en: "Good morning" };
-  if (h >= 11 && h < 18) return { ja: "こんにちは", en: "Good afternoon" };
-  return { ja: "こんばんは", en: "Good evening" };
+  if (h >= 5 && h < 11)
+    return { ja: "おはよう", en: "Good morning", flair: [{ mark: "♪", tone: "pink" }, { mark: "◆", tone: "lilac" }, { mark: "★", tone: "gold" }] };
+  if (h >= 11 && h < 18)
+    return { ja: "こんにちは", en: "Good afternoon", flair: [{ mark: "♥", tone: "pink" }, { mark: "◆", tone: "lilac" }, { mark: "★", tone: "gold" }] };
+  return { ja: "こんばんは", en: "Good evening", flair: [{ mark: "★彡", tone: "gold" }, { mark: "♥", tone: "pink" }] };
+}
+
+/** The greeting in kana; the English shows on hover. */
+function Greeting({ hello }: { hello: ReturnType<typeof greeting> }) {
+  return (
+    <p lang="ja" className="greeting-ja" title={hello.en}>
+      {hello.ja}
+      <span className="greeting-flair" aria-hidden="true">
+        {hello.flair.map((f, i) => (
+          <span key={i} className={f.tone}>
+            {f.mark}
+          </span>
+        ))}
+      </span>
+    </p>
+  );
 }
 
 /** "in 3h 20m", "in 2 days" */
@@ -105,12 +126,7 @@ export function Today({
       <header className="banner bleed today-banner">
         <BannerScene />
         <div className="banner-top">
-          <div>
-            <p lang="ja" className="greeting-ja">
-              {hello.ja}
-            </p>
-            <p className="greeting-en">{hello.en}</p>
-          </div>
+          <Greeting hello={hello} />
         </div>
 
         {levelUp && (
@@ -282,12 +298,7 @@ function TodayShell({ now }: { now: Date }) {
       <header className="banner bleed today-banner">
         <BannerScene />
         <div className="banner-top">
-          <div>
-            <p lang="ja" className="greeting-ja">
-              {hello.ja}
-            </p>
-            <p className="greeting-en">{hello.en}</p>
-          </div>
+          <Greeting hello={hello} />
         </div>
         <div className="start-stack">
           <p className="start-rest placeholder">&nbsp;</p>

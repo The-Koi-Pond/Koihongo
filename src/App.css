@@ -2672,9 +2672,28 @@ select {
   text-shadow: 0 2px 10px rgb(0 0 0 / 0.3);
 }
 
-.greeting-en {
-  font-size: 0.85rem;
-  opacity: 0.85;
+/* Little symbols after the greeting (Greeting in Today.tsx); the last one twinkles. */
+.greeting-flair {
+  margin-left: 0.25em;
+  font-size: 0.75em;
+  font-weight: 400;
+  letter-spacing: 0.1em;
+  vertical-align: 0.2em;
+  /* A crisp 1px dark outline, so they hold up over the blossoms. */
+  text-shadow: 1px 0 #1d1660, -1px 0 #1d1660, 0 1px #1d1660, 0 -1px #1d1660, 0 2px 0 #1d1660;
+}
+
+.greeting-flair .pink { color: #fd93bb; }
+.greeting-flair .gold { color: #fee797; }
+.greeting-flair .lilac { color: #beaff8; }
+
+.greeting-flair > :last-child {
+  display: inline-block;
+  animation: card-twinkle 2.4s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .greeting-flair > :last-child { animation: none; }
 }
 
 /* Start, with the order toggle and "Just 5 minutes" in a row beneath: a narrow
@@ -3666,7 +3685,6 @@ select {
     display: none;
   }
 
-  .greeting-en,
   .forecast {
     display: none; /* the "N more in the next 24 hours" line stays */
   }
