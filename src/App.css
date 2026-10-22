@@ -4089,6 +4089,124 @@ select {
   text-shadow: none;
 }
 
+/* Grammar (Grammar.tsx): the list of points, then each point's page, which
+   reuses the item page's banner and calm cards. */
+.grammar-intro {
+  margin: -4px 0 14px;
+}
+
+.grammar-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: var(--card-gap);
+}
+
+.grammar-tile {
+  width: 100%;
+  height: 100%;
+  display: grid;
+  grid-template-columns: auto 1fr;
+  column-gap: 12px;
+  align-items: baseline;
+  padding: 12px 14px;
+  text-align: left;
+  border: 2px solid var(--panel-border);
+  border-radius: 10px;
+  background: var(--surface);
+  color: var(--text);
+}
+
+.grammar-tile:hover {
+  border-color: #fd93bb;
+}
+
+.grammar-num {
+  grid-row: span 2;
+  font-family: var(--font-num);
+  font-size: 1.5rem;
+  color: #fd93bb;
+  text-shadow: 0 2px 0 #1d1660;
+}
+
+.grammar-title {
+  font-family: var(--font-kana);
+  font-size: 1.3rem;
+  word-break: keep-all; /* wrap only at the <wbr> after each ・ */
+}
+
+.grammar-meaning {
+  grid-column: 2;
+  font-size: 0.85rem;
+  color: var(--muted);
+}
+
+.item-view.grammar {
+  --kind: var(--word);
+}
+
+.grammar-pattern {
+  margin: 0;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+
+.pattern-slot {
+  padding: 2px 10px;
+  border: 1px dashed rgb(206 196 255 / 0.6);
+  border-radius: 6px;
+  color: var(--muted);
+  font-style: italic;
+}
+
+.pattern-fixed {
+  font-family: var(--font-kana);
+  font-size: 1.35rem;
+  color: #fd93bb;
+}
+
+.grammar-para {
+  margin: 0 0 8px;
+}
+
+.grammar-examples {
+  display: grid;
+  gap: 12px;
+}
+
+.grammar-examples li {
+  display: grid;
+  gap: 2px;
+}
+
+.grammar-ja {
+  font-size: 1.25rem;
+}
+
+.grammar-kana {
+  font-size: 0.9rem;
+  color: var(--muted);
+}
+
+.grammar-related {
+  display: inline-flex;
+  gap: 8px;
+  align-items: baseline;
+  padding: 4px 12px;
+  border: 1px solid var(--panel-border);
+  border-radius: 999px;
+  background: rgb(0 0 0 / 0.15);
+  color: var(--text);
+}
+
+.grammar-related:hover {
+  border-color: #fd93bb;
+}
+
 /* Dictionary: "Find by parts" (PartsFinder in Dictionary.tsx). */
 .dict-parts-toggle {
   display: inline-flex;

@@ -3,6 +3,7 @@ import { autoBackupIfDue } from "./backup.ts";
 import { migrate } from "./db/migrations.ts";
 import { tauriDb } from "./db/tauriDb.ts";
 import { ComingSoon } from "./screens/ComingSoon.tsx";
+import { Grammar } from "./screens/Grammar.tsx";
 import { Dictionary } from "./screens/Dictionary.tsx";
 import { Lessons } from "./screens/Lessons.tsx";
 import { Library } from "./screens/Library.tsx";
@@ -26,7 +27,7 @@ const openDb = () =>
 
 const SESSIONS: Screen[] = ["lessons", "reviews", "quick-reviews", "extra-reviews"];
 /** Screens that use the full width (item pages, the library grid). */
-const WIDE: Screen[] = [...SESSIONS, "library", "dictionary", "today"];
+const WIDE: Screen[] = [...SESSIONS, "library", "dictionary", "grammar", "today"];
 
 function App() {
   const [ready, setReady] = useState(false);
@@ -102,7 +103,9 @@ function App() {
             <Library />
           ) : screen === "dictionary" ? (
             <Dictionary partsRequest={partsRequest} />
-          ) : screen === "grammar" || screen === "reading" ? (
+          ) : screen === "grammar" ? (
+            <Grammar />
+          ) : screen === "reading" ? (
             <ComingSoon section={screen} />
           ) : screen === "settings" ? (
             <Settings onOpenSources={() => setScreen("sources")} />
