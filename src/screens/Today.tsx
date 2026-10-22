@@ -266,7 +266,7 @@ function Upcoming({ summary, forecast, now }: { summary: TodaySummary; forecast:
   const around = (h: number) => new Date(now + (h + 0.5) * 3_600_000).toLocaleTimeString(undefined, { hour: "numeric" });
   const text =
     busyHours.length > 0
-      ? `${busyHours.map(({ h, n }) => `${n} more around ${around(h)}`).join(", ")}. That's all for the next 24 hours.`
+      ? `${busyHours.map(({ h, n }) => `${n} more around ${around(h)}`).join(", ")}.`
       : summary.reviewsToday > 0
         ? "No more coming in the next 24 hours."
         : summary.nextReviewAt
