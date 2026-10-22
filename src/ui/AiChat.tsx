@@ -1,9 +1,12 @@
 import { useEffect, useRef, useState } from "react";
-import { claudeCode, type ChatMessage } from "../ai/ai.ts";
+import { aiComplete, type ChatMessage } from "../ai/ai.ts";
+import { providerLabel, useAiSettings } from "../ai/settings.ts";
+import { tauriDb } from "../db/tauriDb.ts";
 
 /**
- * A chat with Claude that opens by sending `opener` (shown as your first
- * message). `extras` adds controls under a reply, e.g. "Use this" buttons.
+ * A chat with your AI helper (Settings → AI helper) that opens by sending
+ * `opener` (shown as your first message). `extras` adds controls under a
+ * reply, e.g. "Use this" buttons. The footnote ends by naming where requests go.
  */
 export function AiChat({
   title,
@@ -22,6 +25,7 @@ export function AiChat({
   extras?: (reply: string) => React.ReactNode;
   onClose: () => void;
 }) {
+  const ai = useAiSettings(tauriDb);
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [draft, setDraft] = useState("");
   const [busy, setBusy] = useState(false);
@@ -33,7 +37,7 @@ export function AiChat({
     setBusy(true);
     setError(undefined);
     try {
-      const reply = await claudeCode.complete({ system, messages: conversation, model: "sonnet" });
+      const reply = await aiComplete({ system, messages: conversation });
       setMessages([...conversation, { role: "assistant", text: reply }]);
     } catch (e) {
       setError(String(e));
@@ -92,7 +96,7 @@ export function AiChat({
           Send
         </button>
       </form>
-      <p className="muted small">{footnote}</p>
+      <p className="muted small">{footnote}{ai && ` Runs through ${providerLabel(ai)}.`}</p>
     </div>
   );
 }

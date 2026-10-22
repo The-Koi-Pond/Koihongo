@@ -24,11 +24,11 @@ Rule of thumb: boring, well-supported tools; as few moving parts as possible.
 │   └─ talks to ↓                                   │
 │  Backend (Rust, kept thin)                        │
 │   ├─ SQLite database (your progress + content)    │
-│   └─ AI requests → `claude -p` (Claude Code CLI)  │
+│   └─ AI requests → your chosen AI helper          │
 └───────────────────────────────────────────────────┘
 ```
 
-AI requests go through the backend, which runs the Claude Code CLI with your existing login (see "AI integration").
+AI requests go through the backend, to whichever AI helper you picked in Settings (see "AI integration"). AI is off until you pick one.
 
 ## Content sources and licenses
 
@@ -154,8 +154,18 @@ Code: [`src/srs/`](../src/srs/). Pacing numbers: [`src/srs/settings.ts`](../src/
 
 1. You click "Rework mnemonic" on 森 (forest).
 2. The app builds a request containing: the kanji, its meanings and readings, its components and their names, your current mnemonic, and a short instruction ("help the learner make a vivid, memorable mnemonic; keep it short; use the component names").
-3. The backend sends it to Claude and shows the reply in a chat panel.
+3. The backend sends it to your AI helper and shows the reply in a chat panel.
 4. You chat back and forth. When you like one, "Use this" saves it as a new `notes` version marked `ai` (or `ai_edited` if you tweak it).
+
+### Choosing a helper (2026-10-23)
+
+AI is **off by default**, for everyone: nothing is sent anywhere until you pick a helper in Settings → AI helper (`src/ui/AiSettingsCard.tsx`, saved as `ai.*` rows in user.db `settings`, see `src/ai/settings.ts`). While it's off, the Ask AI and Explain buttons are hidden. The choices:
+
+- **Claude Code** (below): your own Claude login, no key.
+- **Anthropic API** (`src-tauri/src/ai_api.rs`): `POST https://api.anthropic.com/v1/messages` with an API key. Defaults to Claude Opus 5.5 (Sonnet 5.5 and Haiku 5.5 selectable). For models that support it, requests opt into Anthropic's server-side refusal fallback (`fallbacks: "default"`, beta `server-side-fallback-2026-07-01`): a request a model's safety classifiers wrongly decline is re-run on a recommended other model. A remaining `stop_reason: "refusal"` is shown as "the model declined".
+- **OpenAI-compatible**: any `/chat/completions` endpoint. Presets for OpenAI, OpenRouter, Google Gemini, and local Ollama / LM Studio (no key, nothing leaves the PC), or a custom address.
+
+API keys are stored in the OS credential store (Windows Credential Manager, via the `keyring` crate), one per service, never in user.db, so they don't end up in backups. The web side only learns whether a key is saved; requests are made in Rust. Settings has a "Test connection" button.
 
 ### Backend: Claude Code CLI (decided 2026-10-20)
 
@@ -172,12 +182,12 @@ run from an empty working folder.
 - `--setting-sources ""` + empty folder: your personal CLAUDE.md and settings aren't loaded, so they don't steer the output or cost tokens. `--bare` would also do this, but it skips the login, so it fails.
 - Each request sends the whole chat so far, so nothing is stored by Claude Code between turns. That keeps the app's AI interface a plain "messages in, text out" call.
 - About 5 seconds per reply (measured).
-- **Limitation:** this is fine for a personal tool on your own PC. If the app is ever shared with other people, add an API-key backend behind the same interface, since each person needs their own access.
+- Opt-in only (since 2026-10-23): the app never runs Claude Code just because it's installed.
 
 ### Rules
 
 - **No spending log or cap** (decided 2026-10-20: not useful for personal use on a subscription).
-- **Model choice per feature:** Haiku for bulk jobs like drafting mnemonics; Sonnet for chat and explanations.
+- **One model per helper**, chosen in Settings (Claude Code defaults to Sonnet, the Anthropic API to Opus 5.5).
 - **Prompts live in one file**, [`src/ai/prompts.ts`](../src/ai/prompts.ts), so they're easy to read and tune. `LEARNER_PROFILE` there describes you to the AI.
 - **Japanese accuracy:** the AI's facts (readings, meanings) come *from our database* in the prompt, not from the AI's memory. The AI is used for creativity and explanation, not as the source of truth.
 

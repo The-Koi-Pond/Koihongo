@@ -84,7 +84,7 @@ The one place you start every session. Fits the window without scrolling.
 
 ## G. AI helpers
 
-All optional, all run through your Claude Code login, all marked as AI-generated, none change content without approval.
+All optional and off until you pick an AI helper in Settings (Claude Code, the Anthropic API, or an OpenAI-compatible service including local models), all marked as AI-generated, none change content without approval.
 
 - **[v1 stretch / first AI feature]** **Mnemonic workshop:** from any kanji or word, open a chat. The AI sees the item's meaning, readings, components and your current mnemonic. You talk through alternatives; one click saves the one you like (previous version kept).
 - **[later]** **Explain this:** select a sentence or grammar point and ask "why is it は and not が here?"
@@ -97,6 +97,6 @@ All optional, all run through your Claude Code login, all marked as AI-generated
 
 - **[v1]** Daily new-item limit and maximum review load.
 - **[v1]** Backup: one-click export of your database file.
-- **[maybe]** AI settings: model choice per feature. (No API key or spending log: AI runs through Claude Code.)
+- **[v1]** AI settings: pick the helper and its model; API keys kept in Windows Credential Manager; a connection test.
 - **[later]** Import Anki decks.
 - **[maybe]** Import your own progress from WaniKani via its API (needs a check of WaniKani's API terms first).

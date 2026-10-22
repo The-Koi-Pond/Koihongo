@@ -1,5 +1,6 @@
-// AI requests through the Claude Code CLI, using the user's existing Claude
-// login. See docs/03-architecture.md "AI integration" for why these flags.
+// AI requests: through the Claude Code CLI (the user's own Claude login),
+// or over HTTP APIs (ai_api.rs), whichever the user picked in Settings.
+// See docs/03-architecture.md "AI integration" for why these CLI flags.
 
 use serde::Deserialize;
 use std::io::{Read, Write};
@@ -8,6 +9,8 @@ use std::process::{Command, Stdio};
 use std::thread;
 use std::time::{Duration, Instant};
 use tauri::Manager;
+
+use crate::ai_api::{anthropic, get_key, openai_compatible, ChatMessage};
 
 const TIMEOUT: Duration = Duration::from_secs(180);
 const MODELS: [&str; 3] = ["haiku", "sonnet", "opus"];
@@ -100,15 +103,57 @@ fn parse_output(stdout: &str, stderr: &str) -> Result<String, String> {
     }
 }
 
+/// One AI request from the app. `provider` picks the backend (Settings → AI helper):
+/// "claude-code" (your Claude login, via the CLI), "anthropic" (API key) or
+/// "openai-compatible" (any service with that API, `base_url` plus an optional key).
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct AiRequest {
+    provider: String,
+    model: String,
+    base_url: Option<String>,
+    /// Which saved API key to send (see ai_api.rs); none for local models.
+    key_slot: Option<String>,
+    system: String,
+    messages: Vec<ChatMessage>,
+    /// The conversation written out as one prompt, for Claude Code (one prompt per call).
+    prompt: Option<String>,
+}
+
 #[tauri::command]
-pub async fn ai_complete(app: tauri::AppHandle, system: String, prompt: String, model: String) -> Result<String, String> {
-    let claude = find_claude().ok_or("Claude Code wasn't found. Install it, or check that `claude` works in a terminal.")?;
-    // An empty folder, so no project CLAUDE.md or settings get picked up.
-    let workdir = app.path().app_data_dir().map_err(|e| e.to_string())?.join("ai-workdir");
-    std::fs::create_dir_all(&workdir).map_err(|e| e.to_string())?;
-    tauri::async_runtime::spawn_blocking(move || complete(&claude, &workdir, &system, &prompt, &model))
-        .await
-        .map_err(|e| e.to_string())?
+pub async fn ai_complete(app: tauri::AppHandle, request: AiRequest) -> Result<String, String> {
+    let AiRequest { provider, model, base_url, key_slot, system, messages, prompt } = request;
+    match provider.as_str() {
+        "claude-code" => {
+            let claude = find_claude().ok_or("Claude Code wasn't found. Install it, or check that `claude` works in a terminal.")?;
+            let prompt = prompt.ok_or("missing prompt")?;
+            // An empty folder, so no project CLAUDE.md or settings get picked up.
+            let workdir = app.path().app_data_dir().map_err(|e| e.to_string())?.join("ai-workdir");
+            std::fs::create_dir_all(&workdir).map_err(|e| e.to_string())?;
+            tauri::async_runtime::spawn_blocking(move || complete(&claude, &workdir, &system, &prompt, &model))
+                .await
+                .map_err(|e| e.to_string())?
+        }
+        "anthropic" => {
+            let key = get_key("anthropic")?.ok_or("No Anthropic API key is saved. Add one in Settings → AI helper.")?;
+            anthropic(&key, &model, &system, &messages).await
+        }
+        "openai-compatible" => {
+            let key = match key_slot.as_deref() {
+                Some(slot) => Some(get_key(slot)?.ok_or("No API key is saved for this service. Add one in Settings → AI helper.")?),
+                None => None,
+            };
+            let base_url = base_url.ok_or("No service address is set.")?;
+            openai_compatible(&base_url, key.as_deref(), &model, &system, &messages).await
+        }
+        _ => Err("AI is turned off. You can turn it on in Settings → AI helper.".into()),
+    }
+}
+
+/// Whether Claude Code is installed (so Settings can say so); never runs it.
+#[tauri::command]
+pub fn ai_claude_code_found() -> bool {
+    find_claude().is_some()
 }
 
 #[cfg(test)]
