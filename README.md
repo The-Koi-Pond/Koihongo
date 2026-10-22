@@ -8,7 +8,7 @@ It's an early, personal project by Xel, shared with friends for testing. Things 
 
 ## Trying it
 
-Ask Xel for the installer (`Koihongo_x.y.z_x64-setup.exe`) and run it. Windows will probably say "Windows protected your PC" because the app isn't signed: choose **More info → Run anyway**. Your progress stays on your own PC.
+Download `Koihongo_x.y.z_x64-setup.exe` from the [Releases page](https://github.com/The-Koi-Pond/Koihongo/releases) and run it. Windows will probably say "Windows protected your PC" because the app isn't signed: choose **More info → Run anyway**. Your progress stays on your own PC.
 
 The AI helper is optional and off until you pick one in Settings → AI helper: Claude Code, the Anthropic API, or any OpenAI-compatible service (including free local models via Ollama or LM Studio). API keys are kept in Windows Credential Manager.
 
@@ -68,3 +68,7 @@ The study content is built from open data. Thank you to:
 - **Fonts**: M PLUS Rounded 1c, Pixelify Sans, DotGothic16, Tiny5 and Silkscreen (SIL Open Font License)
 
 The app shows these under Settings → Sources & licences. Pixel art by Xel.
+
+## Licence
+
+The code is under the [MIT licence](LICENSE): use it, change it and share it, keeping the copyright notice. The pixel art in `src/assets/` and the app icons are © Xel, all rights reserved (please ask before reusing them). The datasets and fonts keep their own licences, listed above.
