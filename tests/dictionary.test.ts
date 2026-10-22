@@ -3,7 +3,7 @@ import { existsSync } from "node:fs";
 import { join } from "node:path";
 import { test } from "node:test";
 import { migrate } from "../src/db/migrations.ts";
-import { searchDictionary } from "../src/dictionary.ts";
+import { kanjiByParts, listParts, searchDictionary } from "../src/dictionary.ts";
 import { entryTerms, meaningTerm, meaningWords, normalizeTerm } from "../src/searchTerms.ts";
 import { openDbWithContent } from "./nodeDb.ts";
 
@@ -61,4 +61,25 @@ test("dictionary hits show your progress, or null off the path", { skip: !exists
   const { words } = await searchDictionary(db, "neko");
   assert.equal(words.find((w) => w.label === "猫")?.status, "locked");
   assert.equal(words.find((w) => w.label === "猫背")?.status, null);
+});
+
+test("find kanji by parts: every chosen part must be in it, and the picker learns what still fits", { skip: !existsSync(CONTENT) && "content.db not built" }, async () => {
+  const db = openDbWithContent(CONTENT);
+  await migrate(db);
+  const parts = await listParts(db);
+  assert.ok(parts.length > 200);
+  assert.ok(parts.every((p, i) => i === 0 || parts[i - 1].strokes <= p.strokes), "fewest strokes first");
+
+  // Person (stored as 化, drawn ⺅) and tree: 休 (rest) and 体 (body), not 林, which has no person.
+  const personTree = await kanjiByParts(db, ["化", "木"]);
+  const labels = personTree.kanji.map((k) => k.label);
+  assert.ok(labels.includes("休") && labels.includes("体"));
+  assert.ok(!labels.includes("林"));
+  assert.equal(personTree.total, personTree.kanji.length);
+  // 体 also has 一, so 一 can still narrow it down; the chosen parts themselves are usable too.
+  assert.ok(personTree.usable.includes("一") && personTree.usable.includes("木"));
+
+  // Fewer strokes first: 休 (6) before 体 (7).
+  assert.ok(labels.indexOf("休") < labels.indexOf("体"));
+  assert.deepEqual(await kanjiByParts(db, []), { kanji: [], total: 0, usable: [] });
 });

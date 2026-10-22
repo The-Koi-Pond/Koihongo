@@ -96,31 +96,18 @@ export async function searchDictionary(db: Db, query: string): Promise<Dictionar
   const kanjiKeys = [...new Set([...typedKanji, ...kanjiMatches.map((m) => m.item_key)])].slice(0, MAX_KANJI);
   const wordKeys = wordMatches.map((m) => m.item_key);
 
-  const [kanjiRows, wordRows, onPath] = await Promise.all([
-    kanjiKeys.length
-      ? db.all<{ character: string; meanings: string; on_readings: string; kun_readings: string }>(
-          `SELECT character, meanings, on_readings, kun_readings FROM content.kanji WHERE character IN (${kanjiKeys.map(() => "?").join(", ")})`,
-          kanjiKeys.map((k) => k.slice(6)),
-        )
-      : [],
+  const [kanji, wordRows, onPath] = await Promise.all([
+    kanjiHits(db, kanjiKeys),
     wordKeys.length
       ? db.all<{ id: string; written: string; reading: string; senses: string }>(
           `SELECT id, written, reading, senses FROM content.words WHERE id IN (${wordKeys.map(() => "?").join(", ")})`,
           wordKeys.map((k) => k.slice(5)),
         )
       : [],
-    kanjiKeys.length + wordKeys.length ? libraryItems(db, [...kanjiKeys, ...wordKeys]) : [],
+    wordKeys.length ? libraryItems(db, wordKeys) : [],
   ]);
   const status = new Map(onPath.map((i) => [i.item_key, i.status]));
 
-  const kanjiByKey = new Map(
-    kanjiRows.map((k) => {
-      const key = `kanji:${k.character}`;
-      const on: string[] = JSON.parse(k.on_readings);
-      const kun: string[] = JSON.parse(k.kun_readings);
-      return [key, { item_key: key, label: k.character, readings: [on[0], kun[0]].filter(Boolean), meanings: JSON.parse(k.meanings), status: status.get(key) ?? null }];
-    }),
-  );
   const wordByKey = new Map(
     wordRows.map((w) => {
       const key = `word:${w.id}`;
@@ -130,8 +117,73 @@ export async function searchDictionary(db: Db, query: string): Promise<Dictionar
   );
 
   return {
-    // A typed character that isn't in the dictionary (a rare kanji) is skipped.
-    kanji: kanjiKeys.flatMap((k) => kanjiByKey.get(k) ?? []),
+    kanji,
     words: wordKeys.flatMap((k) => wordByKey.get(k) ?? []),
+  };
+}
+
+/**
+ * Results for these kanji keys, in the order given. A key that isn't in the
+ * dictionary (e.g. a rare kanji someone typed) is skipped.
+ */
+async function kanjiHits(db: Db, keys: string[]): Promise<DictionaryHit[]> {
+  if (keys.length === 0) return [];
+  const [rows, onPath] = await Promise.all([
+    db.all<{ character: string; meanings: string; on_readings: string; kun_readings: string }>(
+      `SELECT character, meanings, on_readings, kun_readings FROM content.kanji WHERE character IN (${keys.map(() => "?").join(", ")})`,
+      keys.map((k) => k.slice(6)),
+    ),
+    libraryItems(db, keys),
+  ]);
+  const status = new Map(onPath.map((i) => [i.item_key, i.status]));
+  const byKey = new Map(
+    rows.map((k) => {
+      const key = `kanji:${k.character}`;
+      const on: string[] = JSON.parse(k.on_readings);
+      const kun: string[] = JSON.parse(k.kun_readings);
+      return [key, { item_key: key, label: k.character, readings: [on[0], kun[0]].filter(Boolean), meanings: JSON.parse(k.meanings), status: status.get(key) ?? null }];
+    }),
+  );
+  return keys.flatMap((k) => byKey.get(k) ?? []);
+}
+
+/** A component (radical) you can look kanji up by. `display` is how it's drawn; `glyph` is its key. */
+export type Part = { glyph: string; display: string; name: string; strokes: number };
+
+/** Every component, fewest strokes first: the parts picker's buttons. */
+export function listParts(db: Db): Promise<Part[]> {
+  return db.all<Part>(
+    `SELECT glyph, display, name, stroke_count AS strokes FROM content.components ORDER BY stroke_count, display`,
+  );
+}
+
+/** Kanji shown per parts lookup; `total` says how many matched in all. */
+const MAX_PART_KANJI = 150;
+
+export type PartsResult = {
+  /** Kanji containing every chosen part, fewest strokes first, then most common. */
+  kanji: DictionaryHit[];
+  total: number;
+  /** Parts that still lead somewhere: they appear in at least one of the matching kanji. */
+  usable: string[];
+};
+
+/** Look up kanji by their parts: every kanji that contains all of `parts`. */
+export async function kanjiByParts(db: Db, parts: string[]): Promise<PartsResult> {
+  if (parts.length === 0) return { kanji: [], total: 0, usable: [] };
+  const marks = parts.map(() => "?").join(", ");
+  const matching = `SELECT kanji FROM content.kanji_components WHERE component IN (${marks}) GROUP BY kanji HAVING count(*) = ?`;
+  const [rows, usable] = await Promise.all([
+    db.all<{ character: string }>(
+      `SELECT k.character FROM content.kanji k WHERE k.character IN (${matching})
+       ORDER BY k.stroke_count, coalesce(k.freq_rank, 1e9), k.character`,
+      [...parts, parts.length],
+    ),
+    db.all<{ component: string }>(`SELECT DISTINCT component FROM content.kanji_components WHERE kanji IN (${matching})`, [...parts, parts.length]),
+  ]);
+  return {
+    kanji: await kanjiHits(db, rows.slice(0, MAX_PART_KANJI).map((r) => `kanji:${r.character}`)),
+    total: rows.length,
+    usable: usable.map((u) => u.component),
   };
 }
