@@ -1,23 +1,9 @@
 import { getCurrentWindow } from "@tauri-apps/api/window";
-import {
-  BookA,
-  BookOpenText,
-  GraduationCap,
-  House,
-  Keyboard,
-  LibraryBig,
-  Maximize2,
-  Minimize2,
-  Minus,
-  Puzzle,
-  RotateCcw,
-  Settings,
-  X,
-  type LucideIcon,
-} from "lucide-react";
+import { GraduationCap, Keyboard, Maximize2, Minimize2, Minus, RotateCcw, Settings, X, type LucideIcon } from "lucide-react";
 import { useEffect, useState } from "react";
 import wordmark from "../assets/ui/koihongo-wordmark.png";
 import type { TodaySummary } from "../srs/progress.ts";
+import { PixelIcon, type PixelIconName } from "./PixelIcon.tsx";
 
 export type Screen =
   | "today"
@@ -32,12 +18,12 @@ export type Screen =
   | "quick-reviews"
   | "extra-reviews";
 
-const SECTIONS: { screen: Screen; icon: LucideIcon; ja: string; en: string; short?: string; soon?: boolean }[] = [
-  { screen: "today", icon: House, ja: "今日", en: "Today" },
-  { screen: "library", icon: LibraryBig, ja: "図書館", en: "Library" },
-  { screen: "dictionary", icon: BookA, ja: "辞書", en: "Dictionary", short: "Dict" },
-  { screen: "grammar", icon: Puzzle, ja: "文法", en: "Grammar", soon: true },
-  { screen: "reading", icon: BookOpenText, ja: "読書", en: "Reading", soon: true },
+const SECTIONS: { screen: Screen; icon: PixelIconName; ja: string; en: string; short?: string; soon?: boolean }[] = [
+  { screen: "today", icon: "house", ja: "今日", en: "Today" },
+  { screen: "library", icon: "books", ja: "図書館", en: "Library" },
+  { screen: "dictionary", icon: "dictionary", ja: "辞書", en: "Dictionary", short: "Dict" },
+  { screen: "grammar", icon: "puzzle", ja: "文法", en: "Grammar", soon: true },
+  { screen: "reading", icon: "openBook", ja: "読書", en: "Reading", soon: true },
 ];
 
 const ICON = { size: 19, strokeWidth: 1.75 };
@@ -68,18 +54,17 @@ export function NavBar({
       </button>
 
       <nav className="nav-group" aria-label="Main" data-tauri-drag-region>
-        {SECTIONS.map(({ screen: s, icon: Icon, ja, en, short, soon }) => (
+        {SECTIONS.map(({ screen: s, icon, ja, en, short, soon }) => (
           <button
             key={s}
-            className={`nav-tab ${screen === s ? "current" : ""}`}
+            className={`nav-tab ${screen === s ? "current" : ""} ${soon ? "soon" : ""}`}
             aria-current={screen === s ? "page" : undefined}
             aria-label={en}
             title={`${ja} ${en}${soon ? " (coming soon)" : ""}`}
             onClick={() => go(s)}
           >
-            <Icon size={16} strokeWidth={2} aria-hidden="true" />
+            <PixelIcon name={icon} />
             <span className="nav-tab-label">{short ?? en}</span>
-            {soon && <span className="soon-dot" />}
           </button>
         ))}
       </nav>
