@@ -2006,33 +2006,46 @@ textarea {
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: flex-start;
+  justify-content: center;
   gap: 0;
+  position: relative;
   border-radius: 8px;
-  overflow: hidden;
 }
 
-/* The fast-track arrow and rank letter live in the tile's kind band, either
-   side of the label, in the band's own ink colour. */
-.tile-fast,
-.tile-rank {
-  display: grid;
-  align-items: center;
-  min-width: 0;
-}
-
+/* Fast track: the tile's top-left corner folded down, in butter, like a
+   dog-eared page. */
 .tile-fast {
-  justify-items: start;
-  padding-left: 3px;
+  position: absolute;
+  top: -1px;
+  left: -1px;
+  width: 18px;
+  height: 18px;
+  border-top-left-radius: 8px;
+  background: linear-gradient(135deg, var(--word) 50%, transparent 50%);
+  filter: drop-shadow(1px 1px 0 rgb(20 14 60 / 0.55));
+  pointer-events: none;
 }
 
+/* Rank: a little sticker overlapping the top-right corner, only on ranked items. */
 .tile-rank {
-  justify-items: end;
-  padding-right: 3px;
-  /* Tiny5, like numbers: in Pixelify a small B reads as 8. */
-  font-family: var(--font-num);
-  font-size: 0.6rem;
-  letter-spacing: 0;
+  position: absolute;
+  top: -6px;
+  right: -5px;
+  z-index: 1;
+  font-size: 0.68rem;
+  line-height: 1;
+  pointer-events: none;
+}
+
+.tile-rank .rank-badge {
+  min-width: 1.4em;
+  height: 1.4em;
+  padding: 0 2px;
+  border-radius: 4px;
+  box-shadow:
+    0 0 0 2px var(--bg),
+    inset 0 2px 0 rgb(255 255 255 / 0.4),
+    inset 0 -2px 0 rgb(0 0 0 / 0.2);
 }
 
 /* Fast track: a pill like "Stop here" in banners; filled butter while on. */
@@ -2077,7 +2090,6 @@ textarea {
 .tile.word { --kind: var(--word); }
 
 .tile-glyph {
-  margin: auto 0; /* centred in the space below the band */
   font-size: 2.3rem;
   line-height: 1;
   max-width: 100%;
@@ -2089,33 +2101,6 @@ textarea {
 .tile-glyph.multi {
   font-size: 1.6rem;
 }
-
-/* A slim band in the kind's colour across the top (the sections name the
-   kinds), holding the fast-track arrow and rank letter. The character is
-   centred in the space below it. */
-.tile-kind {
-  align-self: stretch;
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  align-items: center;
-  min-height: 11px;
-  margin: 0 -2px;
-  padding: 1px 0;
-  font-size: 0.5rem;
-  font-weight: 700;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-  line-height: 1;
-  background: var(--kind);
-  color: var(--on-kind);
-}
-
-/* Passed tiles are already filled with the kind colour: darken the band. */
-.tile.passed .tile-kind {
-  background: color-mix(in srgb, var(--kind) 65%, #000);
-}
-
-
 
 .tile.locked {
   background: var(--surface-2);
