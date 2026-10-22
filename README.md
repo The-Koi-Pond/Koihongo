@@ -2,9 +2,23 @@
 
 Koihongo (鯉 *koi* "carp" + 恋 *koi* "love" + 日本語 *nihongo*) is a personal, all-in-one Windows desktop app for learning Japanese. It takes the best methods from existing tools (WaniKani, Anki, Bunpro) and links kanji, vocabulary, grammar and reading together in one place. Where it helps, it can call AI models (for example, to rework a kanji mnemonic you don't like).
 
-Status: **Phases 0–3 done** (lessons and reviews, settings and backups, dictionary, example sentences, AI helpers). Next is daily use, then Phase 4 (grammar). See [docs/04-roadmap.md](docs/04-roadmap.md).
+Status: **Phases 0–3 done** (lessons and reviews, settings and backups, dictionary, example sentences, AI helpers), plus your own flashcard decks. Phase 4 (grammar) has started: the first beginner points are in as drafts. See [docs/04-roadmap.md](docs/04-roadmap.md).
 
-## Running it
+It's an early, personal project by Xel, shared with friends for testing. Things will change and things will break.
+
+## Trying it
+
+Ask Xel for the installer (`Koihongo_x.y.z_x64-setup.exe`) and run it. Windows will probably say "Windows protected your PC" because the app isn't signed: choose **More info → Run anyway**. Your progress stays on your own PC.
+
+The AI helper is optional and off until you pick one in Settings → AI helper: Claude Code, the Anthropic API, or any OpenAI-compatible service (including free local models via Ollama or LM Studio). API keys are kept in Windows Credential Manager.
+
+## Reporting problems
+
+Open an issue saying what you did, what you expected, and what happened instead. A screenshot helps a lot.
+
+## Running it from source
+
+You need [Node.js](https://nodejs.org) 24+, [pnpm](https://pnpm.io), and [Rust with the Tauri prerequisites](https://tauri.app/start/prerequisites/).
 
 In a terminal, from this folder:
 
@@ -20,6 +34,8 @@ pnpm tauri dev
 Checks: `pnpm test` (TypeScript unit tests), `pnpm typecheck` (TypeScript errors), and `cargo test` inside `src-tauri/` (Rust database tests).
 
 Your progress is saved in `%APPDATA%\com.xel.nihongo\user.db`, and backed up automatically once a day to `Documents\Koihongo\Backups` (Settings has "Back up now" and restore).
+
+To make the installer: close the running app first (the build needs to read `content.db`), then `pnpm tauri build`. It ends up in `src-tauri/target/release/bundle/nsis/`.
 
 ## Documents
 
@@ -40,3 +56,15 @@ Read them in this order:
 - **Radical / component:** a building-block shape inside a kanji (e.g. 木 "tree" inside 林 "grove").
 - **Kana:** the two phonetic alphabets, hiragana (ひらがな) and katakana (カタカナ).
 - **Sentence mining:** saving real sentences you meet while reading or watching, then studying them.
+
+## Credits
+
+The study content is built from open data. Thank you to:
+
+- **KANJIDIC2**, **JMdict** and **KRADFILE/RADKFILE**: the [Electronic Dictionary Research and Development Group](https://www.edrdg.org/edrdg/licence.html) (CC BY-SA 4.0)
+- **KanjiVG** stroke orders: Ulrich Apel, [kanjivg.tagaini.net](https://kanjivg.tagaini.net) (CC BY-SA 3.0)
+- **Example sentences**: [Tatoeba](https://tatoeba.org) contributors (Tanaka Corpus, indexed by the EDRDG) (CC BY 2.0 FR)
+- **jmdict-simplified** (the JSON conversion we read): Dmitry Shpika and contributors (CC BY-SA 4.0)
+- **Fonts**: M PLUS Rounded 1c, Pixelify Sans, DotGothic16, Tiny5 and Silkscreen (SIL Open Font License)
+
+The app shows these under Settings → Sources & licences. Pixel art by Xel.
