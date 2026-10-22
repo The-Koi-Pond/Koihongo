@@ -7,6 +7,7 @@ import type { Screen } from "../ui/NavBar.tsx";
 import { LevelCard, LevelUp } from "../ui/LevelCard.tsx";
 import { rankTally, type Rank } from "../srs/ranks.ts";
 import { CardTitle } from "../ui/CardTitle.tsx";
+import { DONE_CAT, PanelCat, SLEEPY_CAT } from "../ui/CatArt.tsx";
 import { BannerScene } from "../ui/Scene.tsx";
 import { StatusBar } from "../ui/StatusBar.tsx";
 import { useSharedCardPattern } from "../ui/useSharedCardPattern.ts";
@@ -176,31 +177,37 @@ export function Today({
       <div className="today-tiles">
         <section className="card">
           <CardTitle icon={RotateCcw}>Reviews</CardTitle>
-          <div className="card-panel">
-            <p className="tile-big">
-              {reviews} <span className="tile-unit">{catchUp ? "left in today's share" : "due now"}</span>
-            </p>
-            {catchUp && (
-              <p className="catch-up small">
-                Catch-up mode: the rest is spread over about {plural(catchUp.moreDays, "more day")}.{" "}
-                <button className="link" onClick={() => go("extra-reviews")}>
-                  Do a few more
-                </button>
+          <div className={`card-panel ${reviews === 0 ? "with-cat" : ""}`}>
+            <div className="panel-main">
+              <p className="tile-big">
+                <span className="tile-num">{reviews}</span> <span className="tile-unit">{catchUp ? "left in today's share" : "due now"}</span>
               </p>
-            )}
-            <Upcoming summary={summary} forecast={forecast} now={now.getTime()} />
+              {catchUp && (
+                <p className="catch-up small">
+                  Catch-up mode: the rest is spread over about {plural(catchUp.moreDays, "more day")}.{" "}
+                  <button className="link" onClick={() => go("extra-reviews")}>
+                    Do a few more
+                  </button>
+                </p>
+              )}
+              <Upcoming summary={summary} forecast={forecast} now={now.getTime()} />
+            </div>
+            {reviews === 0 && <PanelCat art={SLEEPY_CAT} />}
           </div>
         </section>
 
         <section className="card">
           <CardTitle icon={GraduationCap}>Lessons</CardTitle>
-          <div className="card-panel">
-            <p className="tile-big">
-              {lessons} <span className="tile-unit">new today</span>
-            </p>
-            <TrackPreview name="Kana" lessons={summary.lessons.filter((l) => l.track === "kana")} />
-            <TrackPreview name="Kanji path" lessons={summary.lessons.filter((l) => l.track === "main")} />
-            <p className="muted small">{lessonNote(summary)}</p>
+          <div className={`card-panel ${lessons === 0 ? "with-cat" : ""}`}>
+            <div className="panel-main">
+              <p className="tile-big">
+                <span className="tile-num">{lessons}</span> <span className="tile-unit">new today</span>
+              </p>
+              <TrackPreview name="Kana" lessons={summary.lessons.filter((l) => l.track === "kana")} />
+              <TrackPreview name="Kanji path" lessons={summary.lessons.filter((l) => l.track === "main")} />
+              <p className="muted small">{lessonNote(summary)}</p>
+            </div>
+            {lessons === 0 && <PanelCat art={DONE_CAT} />}
           </div>
         </section>
       </div>
