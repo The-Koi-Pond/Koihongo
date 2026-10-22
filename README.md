@@ -71,4 +71,4 @@ The app shows these under Settings → Sources & licences. Pixel art by Xel.
 
 ## Licence
 
-The code is under the [MIT licence](LICENSE): use it, change it and share it, keeping the copyright notice. The pixel art in `src/assets/` and the app icons are © Xel, all rights reserved (please ask before reusing them). The datasets and fonts keep their own licences, listed above.
+The code is under the [MIT licence](LICENSE): use it, change it and share it, keeping the copyright notice. The pixel art in `src/assets/` and the app icons are © Xel, all rights reserved (please ask before reusing them). The datasets and fonts keep their own licences, listed above. Details in [NOTICE.md](NOTICE.md).
