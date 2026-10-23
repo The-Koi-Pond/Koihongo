@@ -4096,6 +4096,52 @@ select {
   text-shadow: none;
 }
 
+/* Library → Kana → "I already know these" (KnownKana.tsx). */
+.known-kana-open {
+  margin-left: 12px;
+  font-weight: 400;
+}
+
+.known-kana {
+  display: grid;
+  gap: 10px;
+  margin: 6px 0 12px;
+  padding: 12px 14px;
+  border: 2px solid var(--panel-border);
+  border-radius: 10px;
+  background: var(--surface);
+}
+
+.known-kana p {
+  margin: 0;
+}
+
+.known-kana-scripts {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 10px 16px;
+}
+
+.known-kana fieldset {
+  display: grid;
+  gap: 4px;
+  margin: 0;
+  padding: 6px 10px 8px;
+  border: 1px solid var(--panel-border);
+  border-radius: 8px;
+}
+
+.known-kana label {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+}
+
+.known-kana-sample {
+  font-family: var(--font-kana);
+  color: #fd93bb;
+}
+
 /* Settings → AI helper (AiSettingsCard.tsx). */
 .ai-providers {
   display: grid;

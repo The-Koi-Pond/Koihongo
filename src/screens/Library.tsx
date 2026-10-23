@@ -5,6 +5,7 @@ import { tauriDb } from "../db/tauriDb.ts";
 import { libraryItems, STATUS_NAME, type ItemStatus, type LibraryItem } from "../library.ts";
 import type { ItemKind } from "../srs/progress.ts";
 import { ItemPage } from "../ui/ItemPage.tsx";
+import { KnownKana } from "../ui/KnownKana.tsx";
 import { ItemHover, OpenItemContext } from "../ui/Popover.tsx";
 import { RankBadge } from "../ui/RankBadge.tsx";
 
@@ -55,6 +56,7 @@ export function Library() {
   const [shown, setShown] = useState<Record<ItemKind, number>>(ALL_PAGES);
   const [selected, setSelected] = useState<string>();
   const [version, setVersion] = useState(0);
+  const [knownKanaOpen, setKnownKanaOpen] = useState(false);
   const [collapsed, setCollapsed] = useState<Set<ItemKind>>(loadCollapsed);
 
   const toggleSection = (k: ItemKind) => {
@@ -163,9 +165,17 @@ export function Library() {
                     {open ? <ChevronDown size={14} strokeWidth={2.5} aria-hidden="true" /> : <ChevronRight size={14} strokeWidth={2.5} aria-hidden="true" />}
                     {name} <span className="num">{all.length}</span>
                   </button>
+                  {k === "kana" && open && !knownKanaOpen && all.some((i) => i.status === "available") && (
+                    <button type="button" className="link small known-kana-open" onClick={() => setKnownKanaOpen(true)}>
+                      I already know these…
+                    </button>
+                  )}
                 </h3>
                 {open && (
                   <>
+                    {k === "kana" && knownKanaOpen && (
+                      <KnownKana onDone={() => setVersion((v) => v + 1)} onClose={() => setKnownKanaOpen(false)} />
+                    )}
                     <ul className="tiles">
                       {tiles.map((i) => (
                         <li key={i.item_key} style={{ gridColumn: `span ${tileSpan(i)}` }}>
