@@ -69,7 +69,10 @@ pub fn prune(dir: &Path, kind: &str, keep: usize) -> Result<(), String> {
 }
 
 /// Replaces the live database's contents with a backup, after checking it is one.
-pub fn restore(conn: &mut Connection, dir: &Path, name: &str) -> Result<(), String> {
+/// Replaces the open database with backup `name`. Refuses files that aren't
+/// Koihongo backups, and backups from a newer app (data version above
+/// `max_schema`), which this version couldn't open afterwards.
+pub fn restore(conn: &mut Connection, dir: &Path, name: &str, max_schema: u32) -> Result<(), String> {
     check_name(name)?;
     let path = dir.join(name);
     let src = Connection::open_with_flags(&path, OpenFlags::SQLITE_OPEN_READ_ONLY).map_err(|e| e.to_string())?;
@@ -78,6 +81,12 @@ pub fn restore(conn: &mut Connection, dir: &Path, name: &str) -> Result<(), Stri
         .map_err(|e| format!("{name} isn't a Koihongo backup ({e})"))?;
     if !has_progress {
         return Err(format!("{name} isn't a Koihongo backup"));
+    }
+    let version: u32 = src.query_row("PRAGMA user_version", [], |r| r.get(0)).map_err(|e| e.to_string())?;
+    if version > max_schema {
+        return Err(format!(
+            "{name} was made by a newer version of Koihongo (data version {version}, this app knows {max_schema}). Update the app to restore it."
+        ));
     }
     drop(src);
     conn.restore(MAIN_DB, &path, None::<fn(rusqlite::backup::Progress)>).map_err(|e| e.to_string())
@@ -110,9 +119,9 @@ pub fn backup_prune(app: tauri::AppHandle, kind: String, keep: usize) -> Result<
 }
 
 #[tauri::command]
-pub fn backup_restore(app: tauri::AppHandle, db: tauri::State<Db>, name: String) -> Result<(), String> {
+pub fn backup_restore(app: tauri::AppHandle, db: tauri::State<Db>, name: String, max_schema: u32) -> Result<(), String> {
     let mut conn = db.0.lock().map_err(|e| e.to_string())?;
-    restore(&mut conn, &backup_dir(&app)?, &name)
+    restore(&mut conn, &backup_dir(&app)?, &name, max_schema)
 }
 
 #[tauri::command]
@@ -156,7 +165,7 @@ mod tests {
         assert!(create(&conn, &backups, "manual-2026-10-20_120000.db").is_err(), "never overwrites");
 
         conn.execute("UPDATE srs_cards SET item_key = 'kanji:森'", []).unwrap();
-        restore(&mut conn, &backups, "manual-2026-10-20_120000.db").unwrap();
+        restore(&mut conn, &backups, "manual-2026-10-20_120000.db", 99).unwrap();
         assert_eq!(card(&conn), "kanji:木");
     }
 
@@ -168,7 +177,7 @@ mod tests {
             assert!(create(&conn, &dir, bad).is_err(), "{bad}");
         }
         Connection::open(dir.join("auto-other.db")).unwrap().execute_batch("CREATE TABLE t (x);").unwrap();
-        assert!(restore(&mut conn, &dir, "auto-other.db").unwrap_err().contains("isn't a Koihongo backup"));
+        assert!(restore(&mut conn, &dir, "auto-other.db", 99).unwrap_err().contains("isn't a Koihongo backup"));
         assert_eq!(card(&conn), "x");
     }
 
@@ -183,5 +192,19 @@ mod tests {
         let mut left: Vec<String> = list(&dir).unwrap().into_iter().map(|b| b.name).collect();
         left.sort();
         assert_eq!(left, ["auto-2.db", "auto-3.db", "manual-1.db"]);
+    }
+
+    #[test]
+    fn refuses_backups_from_a_newer_app() {
+        let dir = temp_dir("newer");
+        let newer = Connection::open(dir.join("manual-newer.db")).unwrap();
+        newer.execute_batch("CREATE TABLE srs_cards (x); PRAGMA user_version = 9;").unwrap();
+        drop(newer);
+        let mut conn = Connection::open_in_memory().unwrap();
+        conn.execute_batch("CREATE TABLE srs_cards (x); INSERT INTO srs_cards VALUES (1);").unwrap();
+        let err = restore(&mut conn, &dir, "manual-newer.db", 5).unwrap_err();
+        assert!(err.contains("newer version"), "{err}");
+        let kept: i64 = conn.query_row("SELECT count(*) FROM srs_cards", [], |r| r.get(0)).unwrap();
+        assert_eq!(kept, 1, "nothing was replaced");
     }
 }

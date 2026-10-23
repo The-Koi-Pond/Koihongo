@@ -1,7 +1,7 @@
 // Your progress: which lessons are available, what's due, recording answers.
 
 import type { Db, Statement } from "../db/db.ts";
-import { isFastTracked, setFastTrackMany } from "./fastTrack.ts";
+import { fastTrackStatements, isFastTracked } from "./fastTrack.ts";
 import { newCard, PASS_STABILITY_DAYS, retrievability, review, type CardRow, type CardType } from "./scheduler.ts";
 import { DEFAULT_PACING, LESSON_WINDOW, loadPacing, type Pacing } from "./settings.ts";
 
@@ -76,25 +76,29 @@ export async function availableLessons(db: Db, limit = 2 * LESSON_WINDOW, window
 
 /** Creates review cards for finished lessons. Starting an item twice does nothing. */
 export async function startLessons(db: Db, lessons: Pick<Lesson, "item_key" | "kind">[], now: number): Promise<void> {
+  await db.batch(startStatements(lessons, now, false));
+}
+
+/** The statements that create review cards for these items (`known`: started with "I already know these"). */
+function startStatements(lessons: Pick<Lesson, "item_key" | "kind">[], now: number, known: boolean): Statement[] {
   const cards = lessons.flatMap((l) => cardTypesFor(l.kind).map((t) => newCard(l.item_key, t, now)));
-  await db.batch(
-    cards.map((c): Statement => ({
-      sql: `INSERT OR IGNORE INTO srs_cards
-            (item_key, card_type, state, due, stability, difficulty, scheduled_days, learning_steps, reps, lapses, last_review, started_at)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-      params: [c.item_key, c.card_type, c.state, c.due, c.stability, c.difficulty, c.scheduled_days, c.learning_steps, c.reps, c.lapses, c.last_review, c.started_at],
-    })),
-  );
+  return cards.map((c): Statement => ({
+    sql: `INSERT OR IGNORE INTO srs_cards
+          (item_key, card_type, state, due, stability, difficulty, scheduled_days, learning_steps, reps, lapses, last_review, started_at, started_known)
+          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+    params: [c.item_key, c.card_type, c.state, c.due, c.stability, c.difficulty, c.scheduled_days, c.learning_steps, c.reps, c.lapses, c.last_review, c.started_at, known ? 1 : 0],
+  }));
 }
 
 /**
  * Starts items you say you already know, skipping their lessons and the daily
  * limits: they go on fast track, so their first review (in a few hours)
  * passes them with one right answer, and a miss puts them back to normal pace.
+ * They don't use up the day's lessons, and until that first review they don't
+ * slow lessons down. All in one transaction.
  */
 export async function startAsKnown(db: Db, items: Pick<Lesson, "item_key" | "kind">[], now: number): Promise<void> {
-  await setFastTrackMany(db, items.map((i) => i.item_key), now);
-  await startLessons(db, items, now);
+  await db.batch([...fastTrackStatements(items.map((i) => i.item_key), now), ...startStatements(items, now, true)]);
 }
 
 export type KanaScript = "hiragana" | "katakana";
@@ -178,8 +182,10 @@ export function catchUpPlan(due: number, reviewedToday: number, perDay: number):
 
 export type TodaySummary = {
   reviewsDue: number;
-  /** Reviews a session gives you today: all that are due, or today's catch-up share. */
+  /** Reviews a session gives you today: all that are due, or today's catch-up share, plus new deck cards. */
   reviewsToday: number;
+  /** Brand-new cards from decks in daily reviews: they come after everything else, outside catch-up. */
+  newDeckCardsDue: number;
   /** Set when a pile of reviews is being spread over several days. */
   catchUp: CatchUp | null;
   reviewsNext24h: number;
@@ -197,10 +203,15 @@ export type TodaySummary = {
 export async function todaySummary(db: Db, now: number): Promise<TodaySummary> {
   const pacing = await loadPacing(db);
   const dayStart = studyDayStart(now, pacing.dayStartsAtHour);
-  // `due` is path cards only: lessons slow down for a path backlog, not for your decks.
+  // `due` is path cards only. `throttle_due` (what slows lessons down) also
+  // leaves out cards started as known that haven't had their first review yet.
+  // Deck cards split into reviews and brand-new cards: new ones come after
+  // everything else and don't count toward catch-up.
   const [counts] = await db.all<{
     due: number;
+    throttle_due: number;
     deck_due: number;
+    deck_new_due: number;
     next_day: number;
     kana_today: number;
     main_today: number;
@@ -209,16 +220,19 @@ export async function todaySummary(db: Db, now: number): Promise<TodaySummary> {
   }>(
     `SELECT
        (SELECT count(*) FROM srs_cards WHERE due <= ?) AS due,
-       (SELECT count(*) FROM deck_cards c JOIN decks d ON d.id = c.deck_id WHERE d.in_daily = 1 AND c.due <= ?) AS deck_due,
+       (SELECT count(*) FROM srs_cards WHERE due <= ? AND NOT (started_known = 1 AND reps = 0)) AS throttle_due,
+       (SELECT count(*) FROM deck_cards c JOIN decks d ON d.id = c.deck_id WHERE d.in_daily = 1 AND c.due <= ? AND c.state != 0) AS deck_due,
+       (SELECT count(*) FROM deck_cards c JOIN decks d ON d.id = c.deck_id WHERE d.in_daily = 1 AND c.due <= ? AND c.state = 0) AS deck_new_due,
        (SELECT min(due) FROM (${DAILY_DUES}) WHERE due > ?) AS next_due,
        (SELECT count(*) FROM (${DAILY_DUES}) WHERE due > ? AND due <= ?) AS next_day,
-       (SELECT count(DISTINCT item_key) FROM srs_cards WHERE started_at >= ? AND item_key LIKE 'kana:%') AS kana_today,
-       (SELECT count(DISTINCT item_key) FROM srs_cards WHERE started_at >= ? AND item_key NOT LIKE 'kana:%') AS main_today,
+       (SELECT count(DISTINCT item_key) FROM srs_cards WHERE started_at >= ? AND started_known = 0 AND item_key LIKE 'kana:%') AS kana_today,
+       (SELECT count(DISTINCT item_key) FROM srs_cards WHERE started_at >= ? AND started_known = 0 AND item_key NOT LIKE 'kana:%') AS main_today,
        (SELECT count(*) FROM review_log WHERE reviewed_at >= ?)
          + (SELECT count(*) FROM deck_review_log l JOIN deck_cards c ON c.id = l.card_id JOIN decks d ON d.id = c.deck_id
-            WHERE d.in_daily = 1 AND l.reviewed_at >= ?) AS reviewed_today`,
-    [now, now, now, now, now + DAY_MS, dayStart, dayStart, dayStart, dayStart],
+            WHERE d.in_daily = 1 AND l.reviewed_at >= ? AND l.state_before != 0) AS reviewed_today`,
+    [now, now, now, now, now, now, now + DAY_MS, dayStart, dayStart, dayStart, dayStart],
   );
+  /** Everything due except brand-new deck cards: what catch-up is about. */
   const allDue = counts.due + counts.deck_due;
   const unlocked = await availableLessons(db);
   // Kana first, so a lesson round doesn't mix a kana row with kanji.
@@ -226,12 +240,13 @@ export async function todaySummary(db: Db, now: number): Promise<TodaySummary> {
     const all = unlocked.filter((l) => l.track === track);
     return { lessons: all.slice(0, allowed), waiting: Math.max(0, all.length - allowed) };
   };
-  const kana = pick("kana", lessonAllowance(counts.due, counts.kana_today, pacing.kanaPerDay, pacing.pauseLessonsAtDue));
-  const main = pick("main", lessonAllowance(counts.due, counts.main_today, pacing.newPerDay, pacing.pauseLessonsAtDue));
+  const kana = pick("kana", lessonAllowance(counts.throttle_due, counts.kana_today, pacing.kanaPerDay, pacing.pauseLessonsAtDue));
+  const main = pick("main", lessonAllowance(counts.throttle_due, counts.main_today, pacing.newPerDay, pacing.pauseLessonsAtDue));
   const catchUp = catchUpPlan(allDue, counts.reviewed_today, pacing.catchUpPerDay);
   return {
-    reviewsDue: allDue,
-    reviewsToday: catchUp ? catchUp.todayLeft : allDue,
+    reviewsDue: allDue + counts.deck_new_due,
+    reviewsToday: (catchUp ? catchUp.todayLeft : allDue) + counts.deck_new_due,
+    newDeckCardsDue: counts.deck_new_due,
     catchUp,
     reviewsNext24h: counts.next_day,
     lessonsDoneToday: counts.kana_today + counts.main_today,

@@ -124,3 +124,34 @@ test("decks: cards made from items fill front and back", () => {
   } as unknown as WordDetails;
   assert.deepEqual(cardFromItem(word), { front: "休み", back: "やすみ\nrest, break, holiday; absence" });
 });
+
+test("decks: brand-new cards come after reviews and don't trigger catch-up", async () => {
+  const db = await setup();
+  const id = await createDeck(db, "Huge", T0);
+  for (let i = 0; i < 200; i++) await addDeckCard(db, id, `f${i}`, `b${i}`, null, T0);
+  const s = await todaySummary(db, T0);
+  assert.equal(s.catchUp, null, "200 new cards alone don't start catch-up");
+  assert.equal(s.newDeckCardsDue, 200);
+  assert.equal(s.reviewsToday, 200, "they're all still offered");
+
+  // A card you've reviewed before comes ahead of the new ones.
+  const [first] = await deckCards(db, id);
+  await recordDeckReview(db, first.id, Rating.Again, T0);
+  const later = T0 + 3 * 24 * HOUR;
+  const queue = await dueDeckCards(db, later);
+  assert.equal(queue[0].id, first.id);
+  assert.ok(queue.slice(1).every((c) => c.state === 0));
+  // New cards keep the order they were added in.
+  const fresh = queue.slice(1).map((c) => c.id);
+  assert.deepEqual(fresh, [...fresh].sort((a, b) => a - b));
+});
+
+test("decks: reviewing a brand-new card doesn't use up the catch-up share", async () => {
+  const db = await setup();
+  const id = await createDeck(db, "D", T0);
+  await addDeckCard(db, id, "f", "b", null, T0);
+  const [card] = await deckCards(db, id);
+  await recordDeckReview(db, card.id, Rating.Good, T0);
+  const [{ n }] = await db.all<{ n: number }>("SELECT count(*) AS n FROM deck_review_log WHERE state_before != 0");
+  assert.equal(n, 0, "its first look is logged as new, which reviewed_today leaves out");
+});

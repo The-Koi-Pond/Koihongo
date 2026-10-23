@@ -268,3 +268,22 @@ test("fast track: right answers count as Easy, so an item passes on its first re
   await recordReview(db, "component:木", "meaning", false, "wood", fast.due);
   assert.equal(await isFastTracked(db, "component:木"), false, "one miss takes it off fast track");
 });
+
+test("an older user.db upgrades without losing progress", async () => {
+  const db = openTestDb(fixture);
+  await migrate(db, 4); // as saved by the app before "start as known" existed
+  await db.batch([
+    {
+      sql: `INSERT INTO srs_cards (item_key, card_type, state, due, stability, difficulty, scheduled_days, learning_steps, reps, lapses, last_review, started_at)
+            VALUES ('component:木', 'meaning', 2, ?, 5, 5, 3, 0, 2, 0, ?, ?)`,
+      params: [T0 + DAY, T0, T0 - DAY],
+    },
+    { sql: "INSERT INTO decks (name, in_daily, created_at) VALUES ('Mine', 1, ?)", params: [T0] },
+  ]);
+  await migrate(db);
+  const [card] = await db.all<{ stability: number; started_known: number }>("SELECT stability, started_known FROM srs_cards");
+  assert.deepEqual({ ...card }, { stability: 5, started_known: 0 });
+  assert.equal((await db.all("SELECT * FROM decks")).length, 1);
+  const [{ user_version }] = await db.all<{ user_version: number }>("PRAGMA user_version");
+  assert.equal(user_version, SCHEMA_VERSION);
+});

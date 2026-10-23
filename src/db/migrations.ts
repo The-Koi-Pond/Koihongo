@@ -104,17 +104,26 @@ const MIGRATIONS: string[][] = [
       reviewed_at  INTEGER NOT NULL
     )`,
   ],
+  [
+    // Cards started with "I already know these" / "I know all 5" (startAsKnown):
+    // they don't use up the day's lessons, and until their first review they
+    // don't slow lessons down either.
+    `ALTER TABLE srs_cards ADD COLUMN started_known INTEGER NOT NULL DEFAULT 0`,
+  ],
 ];
 
 export const SCHEMA_VERSION = MIGRATIONS.length;
 
-/** Brings user.db up to the latest schema. Safe to call on every start. */
-export async function migrate(db: Db): Promise<void> {
+/**
+ * Brings user.db up to the latest schema (or to `target`, for tests of
+ * upgrading old files). Safe to call on every start.
+ */
+export async function migrate(db: Db, target = SCHEMA_VERSION): Promise<void> {
   const [{ user_version }] = await db.all<{ user_version: number }>("PRAGMA user_version");
   if (user_version > SCHEMA_VERSION) {
     throw new Error(`user.db is from a newer app version (schema ${user_version}, this app knows ${SCHEMA_VERSION})`);
   }
-  for (let v = user_version; v < SCHEMA_VERSION; v++) {
+  for (let v = user_version; v < target; v++) {
     await db.batch([...MIGRATIONS[v].map((sql) => ({ sql })), { sql: `PRAGMA user_version = ${v + 1}` }]);
   }
 }

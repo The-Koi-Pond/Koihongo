@@ -5,6 +5,7 @@ import { migrate } from "../src/db/migrations.ts";
 import { isFastTracked } from "../src/srs/fastTrack.ts";
 import { dueCards, kanaGroups, recordReview, startAsKnown, startLessons, todaySummary } from "../src/srs/progress.ts";
 import { FIRST_REVIEW_DELAY_MS, PASS_STABILITY_DAYS } from "../src/srs/scheduler.ts";
+import { DEFAULT_PACING, savePacing } from "../src/srs/settings.ts";
 import { openTestDb } from "./nodeDb.ts";
 
 const T0 = new Date("2026-03-02T10:00:00").getTime();
@@ -66,4 +67,28 @@ test("start as known: skips the daily kana limit, and isn't offered as a lesson 
   // Starting them again changes nothing.
   await startAsKnown(db, all, T0 + 1000);
   assert.equal((await db.all("SELECT * FROM srs_cards")).length, 6);
+});
+
+test("start as known: doesn't use up today's lessons, nor slow them down before its first review", async () => {
+  const db = await setup();
+  await savePacing(db, { ...DEFAULT_PACING, kanaPerDay: 2 });
+  assert.equal((await todaySummary(db, T0)).lessons.length, 2, "two kana lessons a day");
+  // Mark three as known: two lessons are still on offer today.
+  await startAsKnown(db, ["kana:あ", "kana:い", "kana:う"].map((item_key) => ({ item_key, kind: "kana" as const })), T0);
+  const after = await todaySummary(db, T0);
+  assert.deepEqual(after.lessons.map((l) => l.item_key), ["kana:が", "kana:ア"]);
+  // A real lesson still counts.
+  await startLessons(db, [{ item_key: "kana:が", kind: "kana" }], T0);
+  assert.equal((await todaySummary(db, T0)).lessons.length, 1);
+  // Once due, the known cards wait for review without throttling lessons.
+  const due = await todaySummary(db, T0 + FIRST_REVIEW_DELAY_MS);
+  assert.equal(due.reviewsDue, 4);
+});
+
+test("start as known is one transaction: flags and cards together", async () => {
+  const db = await setup();
+  await startAsKnown(db, [{ item_key: "kana:あ", kind: "kana" }], T0);
+  const [{ known }] = await db.all<{ known: number }>("SELECT started_known AS known FROM srs_cards WHERE item_key = 'kana:あ'");
+  assert.equal(known, 1);
+  assert.ok(await isFastTracked(db, "kana:あ"));
 });

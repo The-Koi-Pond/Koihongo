@@ -1,6 +1,7 @@
 // Backups of your progress (user.db), stored in Documents\Koihongo\Backups by
 // the Rust side (src-tauri/src/backup.rs). One is made automatically each day.
 
+import { SCHEMA_VERSION } from "./db/migrations.ts";
 import { invoke } from "@tauri-apps/api/core";
 
 export type BackupKind = "auto" | "manual" | "before-restore";
@@ -43,5 +44,5 @@ export async function autoBackupIfDue(): Promise<void> {
 /** Backs up your current progress, then replaces it with the named backup. */
 export async function restoreBackup(name: string): Promise<void> {
   await createBackup("before-restore");
-  await invoke("backup_restore", { name });
+  await invoke("backup_restore", { name, maxSchema: SCHEMA_VERSION });
 }
