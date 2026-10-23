@@ -254,6 +254,13 @@ test("chapters: the number in a title, however it's written", async () => {
     ["Vol 2 page 7", "7"],
     ["Chapter 007", "7"],
     ["Prologue", null],
+    // Downloaded manhwa: the number in front, not the ID on the end.
+    ["20. Making Sense_917076", "20"],
+    ["1. Prologue_812345", "1"],
+    ["Making Sense_917076", null],
+    ["Season 2 Episode 15_123456", "15"],
+    ["Extra_ The First Day_3a244a", null],
+    ["127. The Road I Must Take_92c27c", "127"],
   ];
   for (const [title, n] of cases) assert.equal(chapterNumber(title), n, title);
 });
@@ -265,6 +272,9 @@ test("chapters: a subtitle only when the title says more than series and number"
   assert.equal(chapterSubtitle("Chapter 2", "Koi Story"), "");
   assert.equal(chapterSubtitle("第3話 はじまり", "X"), "はじまり");
   assert.equal(chapterSubtitle("Prologue", "Koi Story"), "Prologue");
+  assert.equal(chapterSubtitle("20. Making Sense_917076", "Concubine Walkthrough"), "Making Sense");
+  assert.equal(chapterSubtitle("Extra_ The First Day_3a244a", "X"), "Extra: The First Day");
+  assert.equal(chapterSubtitle("3. What Do I Do__067e47", "X"), "What Do I Do");
 });
 
 test("chapters: reading order by number (2 before 10), else by title", async () => {

@@ -744,23 +744,41 @@ export async function coverUrl(name: string): Promise<string> {
 
 /**
  * The chapter number in a title: "Chapter 12", "Ch.12", "ch 12.5", "第12話",
- * "12話", else the last number in it. Full-width digits count. null if none.
+ * "12話"; else a number it starts with ("20. Making Sense"); else the last
+ * number in it, leaving out long ID-like ones. Full-width digits count.
+ * null if none. A downloader's ID on the end ("_917076", "_3a244a") is ignored.
  */
 export function chapterNumber(title: string): string | null {
-  const t = title.normalize("NFKC");
-  const m = t.match(/(?:chapter|chap\.?|ch\.?|#|第)\s*(\d+(?:\.\d+)?)/i) ?? t.match(/(\d+(?:\.\d+)?)\s*(?:話|章)/) ?? t.match(/(\d+(?:\.\d+)?)(?!.*\d)/);
+  const t = withoutId(title.normalize("NFKC"));
+  const m =
+    t.match(/(?:chapter|chap\.?|ch\.?|#|第)\s*(\d+(?:\.\d+)?)/i) ??
+    t.match(/(\d+(?:\.\d+)?)\s*(?:話|章)/) ??
+    t.match(/^\s*(\d{1,4}(?:\.\d+)?)(?=[\s.:_)\]-]|$)/) ??
+    [...t.matchAll(/(?<![\d.])(\d{1,4}(?:\.\d+)?)(?![\d.]*\d)/g)].at(-1);
   return m ? String(Number(m[1])) : null;
+}
+
+/** A title without a downloader's ID on the end: 5+ letters and digits (hex), at least one a digit ("_917076", "_3a244a"). */
+function withoutId(title: string): string {
+  return title.replace(/[\s_-]+(?=[0-9a-f]*\d)[0-9a-f]{5,}$/i, "");
 }
 
 /**
  * What a chapter's title says beyond its series and number, e.g. "Koi Story ·
- * Chapter 3: The Pond" → "The Pond"; "" when that's all it says.
+ * Chapter 3: The Pond" → "The Pond"; "" when that's all it says. Underscores
+ * where a file name couldn't have ":" or "?" are tidied ("Extra_ The First
+ * Day" → "Extra: The First Day").
  */
 export function chapterSubtitle(title: string, seriesTitle: string): string {
-  let t = title.normalize("NFKC").trim();
+  let t = withoutId(title.normalize("NFKC").trim());
   const series = seriesTitle.normalize("NFKC").trim();
   if (series && t.toLowerCase().startsWith(series.toLowerCase())) t = t.slice(series.length);
-  t = t.replace(/(?:chapter|chap\.?|ch\.?|#|第)\s*\d+(?:\.\d+)?\s*(?:話|章)?/i, "").replace(/^\s*\d+(?:\.\d+)?\s*(?:話|章)?(?=\s|$|[:·\-–—])/, "");
+  t = t
+    .replace(/(?:chapter|chap\.?|ch\.?|#|第)\s*\d+(?:\.\d+)?\s*(?:話|章)?/i, "")
+    .replace(/^\s*\d+(?:\.\d+)?[.)]?\s*(?:話|章)?(?=\s|$|[:·\-–—])/, "")
+    .replace(/_(?= )/g, ":")
+    .replace(/_+$/, "")
+    .replace(/_/g, " ");
   return t.replace(/^[\s·:\-–—|]+|[\s·:\-–—|]+$/g, "");
 }
 
