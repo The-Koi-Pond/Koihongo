@@ -6832,3 +6832,24 @@ button.aka-add {
 .mark-peek-text {
   font-size: 0.95rem;
 }
+
+/* "Explain" in a mark's editor (Reading.tsx, MarkEditor): an AI chat about the box. */
+.mark-explain {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+}
+
+.mark-editor .workshop {
+  margin-top: 0;
+}
+
+.mark-editor .chat p {
+  white-space: pre-wrap;
+}
+
+.explain-use {
+  gap: 6px;
+  margin-top: 6px;
+}
