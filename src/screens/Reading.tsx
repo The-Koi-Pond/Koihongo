@@ -2,6 +2,7 @@ import {
   ArrowLeft,
   ArrowRight,
   BookOpen,
+  ClipboardPaste,
   Bookmark as BookmarkIcon,
   BookmarkCheck,
   ChevronLeft,
@@ -119,14 +120,15 @@ import {
   type SfxMeaning,
   type SeriesExtras,
 } from "../reading.ts";
-import { findText, pictureOf, readBoxes, type OcrText } from "../ocr.ts";
+import { findText, pictureOf, readBoxes, readBoxesWithAi, type OcrText } from "../ocr.ts";
 import { coverage, wordsIn, wordsInAll, type Coverage, type Word } from "../words.ts";
 import { EXPLAIN_BOX_OPENER, explainBoxPrompt, explainedParts } from "../ai/prompts.ts";
 import { useAiSettings } from "../ai/settings.ts";
 import { AiChat } from "../ui/AiChat.tsx";
-import { WordHelp } from "../ui/WordHelp.tsx";
+import { ReadableBar, WordHelp } from "../ui/WordHelp.tsx";
+import { TextReader } from "./TextReader.tsx";
 
-type View = { mode: "shelf"; series?: number } | { mode: "book"; id: number; page?: string } | { mode: "pages"; id: number } | { mode: "glossary" };
+type View = { mode: "shelf"; series?: number } | { mode: "book"; id: number; page?: string } | { mode: "pages"; id: number } | { mode: "glossary" } | { mode: "text" };
 
 /** Reading: your bookshelf (or one series on it), a book open in the reader, a chapter's page editor, or your glossary. */
 export function Reading() {
@@ -151,6 +153,7 @@ export function Reading() {
   }
   if (view.mode === "pages") return <PageEditor id={view.id} onBack={() => shelf(from)} onRead={() => setView({ mode: "book", id: view.id })} />;
   if (view.mode === "glossary") return <Glossary onBack={() => shelf()} onOpen={(id, page) => setView({ mode: "book", id, page })} />;
+  if (view.mode === "text") return <TextReader onBack={() => shelf()} />;
   return (
     <Shelf
       key={view.series ?? "top"}
@@ -159,6 +162,7 @@ export function Reading() {
       onOpen={(id, page) => setView({ mode: "book", id, page })}
       onMade={(id) => setView({ mode: "pages", id })}
       onGlossary={() => setView({ mode: "glossary" })}
+      onPasteText={() => setView({ mode: "text" })}
       category={category}
       onCategory={chooseCategory}
     />
@@ -217,6 +221,7 @@ function Shelf({
   onOpen,
   onMade,
   onGlossary,
+  onPasteText,
   category: chosen,
   onCategory,
 }: {
@@ -230,6 +235,8 @@ function Shelf({
   /** Opens a chapter you made in the page editor (just made, or its pencil clicked). */
   onMade: (id: number) => void;
   onGlossary: () => void;
+  /** Opens Paste text: any Japanese, read with word help. */
+  onPasteText: () => void;
 }) {
   const [books, setBooks] = useState<Book[]>();
   const [series, setSeries] = useState<Series[]>();
@@ -428,9 +435,14 @@ function Shelf({
             <h1>
               <span lang="ja">読書</span> Reading
             </h1>
-            <button type="button" onClick={onGlossary}>
-              <NotebookText size={16} strokeWidth={2.25} aria-hidden="true" /> Glossary
-            </button>
+            <span className="reading-top-tools">
+              <button type="button" onClick={onPasteText} title="Read any Japanese text with word help">
+                <ClipboardPaste size={16} strokeWidth={2.25} aria-hidden="true" /> Paste text
+              </button>
+              <button type="button" onClick={onGlossary}>
+                <NotebookText size={16} strokeWidth={2.25} aria-hidden="true" /> Glossary
+              </button>
+            </span>
           </div>
           <p className="muted reading-intro">
             Read your own manga with help. Mark speech bubbles and sound effects, write down what they say, and anything you've written down before
@@ -2080,8 +2092,8 @@ function Reader({ id, startPage, onBack, onEditPages }: { id: number; startPage?
         <p className="mark-help muted">
           {showMarks ? "Drag a box on the page to mark it. Click a box to open it. Scroll to zoom; drag with the scroll wheel held (or hold Space and drag) to move around." : "Boxes are hidden. Show them to mark the page."}
         </p>
-        {pageCoverage && <ReadableBar label="This page" c={pageCoverage} />}
-        {chapterCoverage && chapterCoverage.known + chapterCoverage.learning + chapterCoverage.new > 0 && <ReadableBar label="This chapter" c={chapterCoverage} />}
+        {pageCoverage && <ReadableBar label="This page" c={pageCoverage} note="in the text you've marked; names and grammar not counted" />}
+        {chapterCoverage && <ReadableBar label="This chapter" c={chapterCoverage} note="in the text you've marked; names and grammar not counted" />}
         {showMarks && (
           <button type="button" className="read-all" onClick={findOnPage} disabled={finding || !!readingAll || !url} title="Add a box for every text area on this page you haven't marked">
             <ScanSearch size={15} aria-hidden="true" /> {finding ? "Finding text…" : "Find text on this page"}
@@ -2136,6 +2148,7 @@ function Reader({ id, startPage, onBack, onEditPages }: { id: number; startPage?
                     extending={extending}
                     onExtend={() => setExtending(!extending)}
                     onReadText={() => (url ? readBoxes(url, markBoxes(m)) : Promise.reject(new Error("The page is still loading.")))}
+                    onReadWithAi={(kindName) => (url ? readBoxesWithAi(url, markBoxes(m), kindName) : Promise.reject(new Error("The page is still loading.")))}
                     picture={() => (url ? pictureOf(url, aroundBoxes(markBoxes(m))) : Promise.resolve(undefined))}
                     pageLines={markSections(marks).flatMap((s) => s.marks.flatMap((x, j) => (x.text.trim() && x.id !== m.id ? [`${s.name} ${j + 1}: ${x.text.trim()}`] : [])))}
                     onSaved={(saved) => setMarks((all) => all.map((x) => (x.id === saved.id ? saved : x)))}
@@ -2401,24 +2414,6 @@ function PageView({
   );
 }
 
-/** "This page: you know 8 of 14 words": a bar of known, learning and new. */
-function ReadableBar({ label, c }: { label: string; c: Coverage }) {
-  const total = c.known + c.learning + c.new;
-  if (total === 0) return null;
-  const pct = (n: number) => `${(n / total) * 100}%`;
-  return (
-    <div className="readable" title={`${c.known} known, ${c.learning} learning, ${c.new} new (in the text you've marked; names and grammar not counted)`}>
-      <span className="readable-text">
-        {label}: you know <strong>{c.known}</strong> of {total} words ({Math.round((c.known / total) * 100)}%)
-      </span>
-      <span className="readable-bar" aria-hidden="true">
-        <span className="status-known" style={{ width: pct(c.known) }} />
-        <span className="status-learning" style={{ width: pct(c.learning) }} />
-      </span>
-    </div>
-  );
-}
-
 /** Below this confidence, text read automatically is marked "?" (check it). */
 const OCR_UNSURE = 0.5;
 
@@ -2437,6 +2432,7 @@ function MarkEditor({
   extending,
   onExtend,
   onReadText,
+  onReadWithAi,
   picture,
   pageLines,
   onSaved,
@@ -2451,6 +2447,8 @@ function MarkEditor({
   onExtend: () => void;
   /** Reads the text in the mark's boxes (Baberu OCR, src-tauri/src/baberu.rs). */
   onReadText: () => Promise<OcrText>;
+  /** Reads the text in the mark's boxes with your AI helper, from their pictures (`kind`: Speech, SFX…). */
+  onReadWithAi: (kind: string) => Promise<string>;
   /** The page's other boxes with text, in reading order ("Speech 2: …"), for "Explain". */
   pageLines: string[];
   /** The box with the panel around it, as a picture for cards. */
@@ -2518,6 +2516,24 @@ function MarkEditor({
       setExplain({ context: await readingContext(tauriDb, mark.book_id) });
     } catch (e) {
       setExplain({ note: String(e) });
+    }
+  }
+
+  const aiOn = !!ai && ai.provider !== "off";
+  async function readWithAi() {
+    setReading(true);
+    setReadNote(undefined);
+    try {
+      const text = await onReadWithAi(MARK_KINDS.find((k) => k.kind === kind)?.name ?? kind);
+      if (!text) return setReadNote("The AI helper found no text in this box.");
+      const next = { ...fields, text };
+      setFields(next);
+      save(next, kind, false);
+      setReadNote("Read by your AI helper.");
+    } catch (e) {
+      setReadNote(String(e).replace(/^Error: /, ""));
+    } finally {
+      setReading(false);
     }
   }
 
@@ -2592,9 +2608,23 @@ function MarkEditor({
           Japanese
           <input lang="ja" className="mark-text" placeholder="What it says" autoFocus={autoFocus} {...field("text")} />
         </label>
-        <button type="button" className="mark-read" onClick={readText} disabled={reading} title="Read the text in this box (set up in Settings)">
-          <ScanText size={14} aria-hidden="true" /> {reading ? "Reading…" : "Read text"}
-        </button>
+        <span className="mark-read-tools">
+          <button type="button" className="mark-read" onClick={readText} disabled={reading} title="Read the text in this box (set up in Settings)">
+            <ScanText size={14} aria-hidden="true" /> {reading ? "Reading…" : "Read text"}
+          </button>
+          {aiOn && (
+            <button
+              type="button"
+              className="mark-read"
+              onClick={readWithAi}
+              disabled={reading}
+              title="Ask your AI helper to read this box from its picture: better on messy sound effects and handwriting"
+              aria-label="Read with AI"
+            >
+              <Sparkles size={14} aria-hidden="true" /> AI
+            </button>
+          )}
+        </span>
       </div>
       {readNote && <p className="muted mark-read-note">{readNote}</p>}
       <WordHelp
@@ -2617,6 +2647,11 @@ function MarkEditor({
           <button type="button" className="seen-use" onClick={() => save(fields, kind, false)}>
             Looks right
           </button>
+          {aiOn && (
+            <button type="button" className="seen-use" onClick={readWithAi} disabled={reading}>
+              Ask AI
+            </button>
+          )}
         </p>
       )}
       {seen.length > 0 && (

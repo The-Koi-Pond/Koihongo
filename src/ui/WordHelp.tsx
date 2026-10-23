@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { tauriDb } from "../db/tauriDb.ts";
-import { GRAMMAR_NOTES, POS_NAME, readingOf, wordsIn, type Word } from "../words.ts";
+import { GRAMMAR_NOTES, POS_NAME, readingOf, wordsIn, type Coverage, type Word } from "../words.ts";
 import { AddToDeck } from "./AddToDeck.tsx";
 
 const STATUS_NAME: Partial<Record<Word["status"], string>> = { known: "Known", learning: "Learning", new: "New to you", name: "A name" };
@@ -82,7 +82,8 @@ export function WordHelp({
   );
 }
 
-function WordCard({ word, bubble, picture }: { word: Word; bubble: string; picture?: () => Promise<string | undefined> }) {
+/** A word's details: its entry, what its endings do, and Add to deck (with `bubble`, the line it's in, and the panel's picture if given). */
+export function WordCard({ word, bubble, picture }: { word: Word; bubble: string; picture?: () => Promise<string | undefined> }) {
   const head = word.pieces[0];
   const entry = word.entry;
   // A noun + する (約束する): a verb, and its する is part of the word, not an ending.
@@ -141,6 +142,24 @@ function WordCard({ word, bubble, picture }: { word: Word; bubble: string; pictu
           />
         </div>
       )}
+    </div>
+  );
+}
+
+/** "This page: you know 8 of 14 words": a bar of known, learning and new. `note`: what was counted. */
+export function ReadableBar({ label, c, note }: { label: string; c: Coverage; note: string }) {
+  const total = c.known + c.learning + c.new;
+  if (total === 0) return null;
+  const pct = (n: number) => `${(n / total) * 100}%`;
+  return (
+    <div className="readable" title={`${c.known} known, ${c.learning} learning, ${c.new} new (${note})`}>
+      <span className="readable-text">
+        {label}: you know <strong>{c.known}</strong> of {total} words ({Math.round((c.known / total) * 100)}%)
+      </span>
+      <span className="readable-bar" aria-hidden="true">
+        <span className="status-known" style={{ width: pct(c.known) }} />
+        <span className="status-learning" style={{ width: pct(c.learning) }} />
+      </span>
     </div>
   );
 }

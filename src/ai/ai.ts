@@ -7,7 +7,8 @@ import { tauriDb } from "../db/tauriDb.ts";
 import { getAiSettings, type AiSettings } from "./settings.ts";
 
 export type ChatMessage = { role: "user" | "assistant"; text: string };
-export type AiRequest = { system: string; messages: ChatMessage[] };
+/** `image`: a picture (PNG, base64) shown with the last message, e.g. a box cut out of a manga page. */
+export type AiRequest = { system: string; messages: ChatMessage[]; image?: string };
 
 /**
  * Claude Code takes one prompt per call, so earlier turns are written out as
@@ -32,12 +33,12 @@ export function formatConversation(messages: ChatMessage[]): string {
  * services it names the service: Rust decides its address and which saved key
  * goes with it (src-tauri/src/ai_api.rs, compat_target).
  */
-export function backendRequest(s: AiSettings, { system, messages }: AiRequest) {
+export function backendRequest(s: AiSettings, { system, messages, image }: AiRequest) {
   switch (s.provider) {
     case "claude-code":
-      return { provider: s.provider, model: s.claudeCodeModel, system, messages, prompt: formatConversation(messages) };
+      return { provider: s.provider, model: s.claudeCodeModel, system, messages, prompt: formatConversation(messages), image };
     case "anthropic":
-      return { provider: s.provider, model: s.anthropicModel, system, messages };
+      return { provider: s.provider, model: s.anthropicModel, system, messages, image };
     case "openai-compatible": {
       if (!s.compatModel.trim()) throw new Error("No model is set. Choose one in Settings → AI helper.");
       return {
@@ -47,6 +48,7 @@ export function backendRequest(s: AiSettings, { system, messages }: AiRequest) {
         baseUrl: s.compatPreset === "custom" ? s.compatBaseUrl : undefined,
         system,
         messages,
+        image,
       };
     }
     default:

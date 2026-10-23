@@ -162,6 +162,8 @@ Code: [`src/srs/`](../src/srs/). Pacing numbers: [`src/srs/settings.ts`](../src/
 
 ## AI integration
 
+An AI request can carry one picture (a PNG, base64) with its last message: Anthropic and OpenAI-compatible services get it as an image content block; Claude Code gets it through `--input-format stream-json` (its tools stay off). Used by "Read with AI" in Reading.
+
 ### How a request works (mnemonic workshop example)
 
 1. You click "Rework mnemonic" on 森 (forest).

@@ -77,12 +77,28 @@ fn network_error(e: reqwest::Error) -> String {
 }
 
 /// One reply from the Anthropic Messages API.
-pub async fn anthropic(key: &str, model: &str, system: &str, messages: &[ChatMessage]) -> Result<String, String> {
+/// Each message's content; the last one carries `image` (a PNG, base64) if given, in `with_image`'s format.
+fn contents(messages: &[ChatMessage], image: Option<&str>, with_image: impl Fn(&str, &str) -> Value) -> Vec<Value> {
+    let last = messages.len().saturating_sub(1);
+    messages
+        .iter()
+        .enumerate()
+        .map(|(i, m)| match image {
+            Some(png) if i == last => json!({"role": m.role, "content": with_image(&m.text, png)}),
+            _ => json!({"role": m.role, "content": m.text}),
+        })
+        .collect()
+}
+
+pub async fn anthropic(key: &str, model: &str, system: &str, messages: &[ChatMessage], image: Option<&str>) -> Result<String, String> {
     let mut body = json!({
         "model": model,
         "max_tokens": 16000,
         "system": system,
-        "messages": messages.iter().map(|m| json!({"role": m.role, "content": m.text})).collect::<Vec<_>>(),
+        "messages": contents(messages, image, |text, png| json!([
+            {"type": "image", "source": {"type": "base64", "media_type": "image/png", "data": png}},
+            {"type": "text", "text": text},
+        ])),
     });
     let mut request = client()?
         .post(ANTHROPIC_URL)
@@ -164,13 +180,16 @@ pub fn secure_or_local(url: &str) -> bool {
 }
 
 /// One reply from an OpenAI-compatible chat completions endpoint.
-pub async fn openai_compatible(base_url: &str, key: Option<&str>, model: &str, system: &str, messages: &[ChatMessage]) -> Result<String, String> {
+pub async fn openai_compatible(base_url: &str, key: Option<&str>, model: &str, system: &str, messages: &[ChatMessage], image: Option<&str>) -> Result<String, String> {
     let base = base_url.trim().trim_end_matches('/');
     if !(base.starts_with("https://") || base.starts_with("http://")) {
         return Err("The service address must start with http:// or https://.".into());
     }
     let mut all = vec![json!({"role": "system", "content": system})];
-    all.extend(messages.iter().map(|m| json!({"role": m.role, "content": m.text})));
+    all.extend(contents(messages, image, |text, png| json!([
+        {"type": "text", "text": text},
+        {"type": "image_url", "image_url": {"url": format!("data:image/png;base64,{png}")}},
+    ])));
     let mut request = client()?.post(format!("{base}/chat/completions"));
     if let Some(key) = key {
         request = request.bearer_auth(key);
@@ -284,5 +303,14 @@ mod credential_store {
         ai_key_delete("custom".into()).unwrap();
         assert!(!ai_key_status("custom".into()).unwrap());
         ai_key_delete("custom".into()).unwrap(); // deleting twice is fine
+    }
+
+    #[test]
+    fn only_the_last_message_carries_the_picture() {
+        let messages = [ChatMessage { role: "user".into(), text: "hi".into() }, ChatMessage { role: "user".into(), text: "read".into() }];
+        let out = contents(&messages, Some("QUJD"), |text, png| json!([{"text": text, "png": png}]));
+        assert_eq!(out[0]["content"], "hi");
+        assert_eq!(out[1]["content"][0]["png"], "QUJD");
+        assert_eq!(contents(&messages, None, |_, _| json!(null))[1]["content"], "read");
     }
 }

@@ -72,8 +72,8 @@ Your own manga, in stages (details: `02-features.md` F):
 - ✅ Stage 2, part 2: how much of a page or chapter you can read (`coverage` in `src/words.ts`), panel pictures on deck cards (`deck_cards.image`, migration 18), word colours in the hover card.
 - ✅ Stage 3, part 1: "Read text" (Baberu OCR) and "Find text on this page" (comic-text-and-bubble-detector), an optional download that runs offline (`src-tauri/src/ocr.rs`, `baberu.rs`). Tried manga-ocr first: Baberu matched it on speech and read all four sound effects on a test page that manga-ocr missed, at a quarter of the size. Windows' built-in OCR was dropped (weaker on vertical text).
 - ✅ Stage 3, part 2: "Explain" on a box (`explainBoxPrompt` in `src/ai/prompts.ts`): an AI breakdown with the page's other boxes and the series context (`readingContext` in `src/reading.ts`), explaining how that context changes the meaning.
-- Still open: AI reading straight from the image, for boxes the text reader can't manage (study LunaTranslator first, `05-references.md`).
-- Paste text → split into words → hover definitions, known words marked.
+- ✅ AI reading straight from the image ("Read with AI": `readBoxesWithAi` in `src/ocr.ts`; pictures in AI requests for every helper).
+- ✅ Paste text → split into words → hover definitions, known words marked (`src/screens/TextReader.tsx`). Later, maybe: watch the clipboard, for visual novels with Textractor or LunaTranslator.
 
 ## After that (unordered)
 
