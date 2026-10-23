@@ -2634,7 +2634,6 @@ function ScrollPages({
 }) {
   const box = useRef<HTMLDivElement>(null);
   const [urls, setUrls] = useState<Record<number, string>>({});
-  const loading = useRef(new Set<number>());
   const index = useRef(onIndex);
   index.current = onIndex;
 
@@ -2643,17 +2642,20 @@ function ScrollPages({
     const items = [...root.querySelectorAll<HTMLElement>("[data-page]")];
     let live = true;
     const created: string[] = [];
+    // This run's own list: a run that's been torn down (React runs effects twice
+    // in development) throws its pages away, so the next run must ask again.
+    const asked = new Set<number>();
     /** Loads page i (once). */
     const load = async (i: number) => {
-      if (loading.current.has(i)) return;
-      loading.current.add(i);
+      if (asked.has(i)) return;
+      asked.add(i);
       try {
         const u = await pageUrl(path, pages[i]);
         created.push(u);
         if (live) setUrls((all) => ({ ...all, [i]: u }));
         else URL.revokeObjectURL(u);
       } catch {
-        loading.current.delete(i); // tried again when it comes near the screen
+        asked.delete(i); // tried again when it comes near the screen
       }
     };
     // The whole chapter loads in the background, a few at a time, nearest to where you
