@@ -6,7 +6,7 @@ Koihongo is Xel's personal Windows desktop app for learning Japanese from zero: 
 
 - Xel (they/them) is a beginner learner and a hands-on vibe-coder. Claude writes and explains the code; Xel test-drives in the app and gives feedback, often from screenshots.
 - Explain changes in plain words, keep reports short, and say what was and wasn't checked (preview vs. the real app window).
-- Design docs: `docs/01-vision.md` (design rules: above all, easy to stick with), `02-features.md`, `03-architecture.md`, `04-roadmap.md`. Read the relevant one before changing a feature, and tick the roadmap when something ships.
+- Design docs: `docs/01-vision.md` (design rules: above all, easy to stick with), `02-features.md`, `03-architecture.md`, `04-roadmap.md`, and `05-references.md` (other projects to study before building a feature, with their licences). Read the relevant one before changing a feature, and tick the roadmap when something ships.
 - Copy methods, never content, from WaniKani or Bunpro. Dataset licences are listed in `03-architecture.md` and credited in the app (Settings → Sources).
 
 ## Where things are
@@ -54,7 +54,7 @@ Use **browser mode** with the Playwright tools: while `pnpm tauri dev` runs, ope
 
 ## Conventions
 
-- **Git:** commit locally with a clear message, ending with the `Co-Authored-By` trailer, at natural checkpoints only (agreed 2026-10-23): a finished, working feature; just before a risky change, so it's easy to undo; or when Xel says "commit" / "save it". Don't commit each small tweak: a run of visual adjustments becomes one commit at the end (e.g. "Today: banner and card polish"). Run the tests before every commit. Never push, publish, or open issues or PRs unless Xel asks. The repo is public at github.com/The-Koi-Pond/Koihongo (remote `origin`); its local git config uses Xel's private GitHub noreply address, so keep it that way and never commit a personal email.
+- **Git:** commit locally with a clear message, ending with the `Co-Authored-By` trailer, at natural checkpoints only (agreed 2026-10-23): a finished, working feature; just before a risky change, so it's easy to undo; or when Xel says "commit" / "save it". Don't commit each small tweak: a run of visual adjustments becomes one commit at the end (e.g. "Today: banner and card polish"). A run of requests about the same screen or feature (Xel asking for change after change) is one piece of work: leave it uncommitted until Xel says it's done or asks to commit, even when each request on its own feels finished (Xel had to repeat this on 2026-10-23). Run the tests before every commit. Never push, publish, or open issues or PRs unless Xel asks. The repo is public at github.com/The-Koi-Pond/Koihongo (remote `origin`); its local git config uses Xel's private GitHub noreply address, so keep it that way and never commit a personal email.
 - **Visual style, "Starry night":**
   - twilight indigo with pastel pink, cyan and butter glows, pixel fonts, glowing panels;
   - colours come from tokens on `:root`, and each kind has its own: kana pink, component cyan, kanji purple, word butter;

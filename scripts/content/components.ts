@@ -75,6 +75,20 @@ export const NAME_OVERRIDES: Record<string, string> = {
   隹: "old bird",
 };
 
+// Parts KRADFILE lists for a kanji that aren't in it. KRADFILE is made for
+// finding kanji by the shapes you can see, so it says 口 contains 囗 (the box
+// shape); but 囗 (くにがまえ) is the enclosure that wraps around something
+// (国, 回, 図), and 口 (mouth) is a different character, not built from it.
+export const NOT_PARTS: Record<string, string[]> = {
+  口: ["囗"],
+};
+
+/** A kanji's parts as KRADFILE lists them, without the ones in NOT_PARTS. */
+export function partsOf(kanji: string, listed: string[]): string[] {
+  const wrong = NOT_PARTS[kanji] ?? [];
+  return listed.filter((p) => !wrong.includes(p));
+}
+
 /** "kettle lid radical (no. 8)" → "kettle lid" */
 export function cleanName(meaning: string): string {
   return meaning.replace(/\s*\(no\.\s*\d+\)/, "").replace(/\s+radical\b.*$/, "").trim();

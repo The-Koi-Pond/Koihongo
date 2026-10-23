@@ -9,7 +9,8 @@ import { join } from "node:path";
 import { gunzipSync } from "node:zlib";
 import { DatabaseSync } from "node:sqlite";
 import { strFromU8, unzipSync } from "fflate";
-import { describeComponent } from "./components.ts";
+import { japaneseName, NAME_NOTES } from "./componentNames.ts";
+import { describeComponent, partsOf } from "./components.ts";
 import { allKana, CURATED_EXAMPLES, pickExample, type ExampleCandidate } from "./kana.ts";
 import { allMnemonics } from "./mnemonics/index.ts";
 import { planLevels } from "./levels.ts";
@@ -37,7 +38,7 @@ const SENTENCES_PER_WORD = 20;
 
 type KanjidicChar = {
   literal: string;
-  misc: { grade: number | null; strokeCounts: number[]; frequency: number | null; jlptLevel: number | null };
+  misc: { grade: number | null; strokeCounts: number[]; frequency: number | null; jlptLevel: number | null; radicalNames: string[] };
   readingMeaning: {
     groups: { readings: { type: string; value: string }[]; meanings: { lang: string; value: string }[] }[];
     nanori: string[];
@@ -174,10 +175,17 @@ async function main() {
     .map((w) => toWord(w, priorities.get(w.id) ?? NO_PRIORITY))
     .filter((w): w is Word => w !== null);
 
-  const componentsOf = (ch: string) => krad.kanji[KRAD_VARIANTS[ch] ?? ch] ?? [];
+  const componentsOf = (ch: string) => partsOf(ch, krad.kanji[KRAD_VARIANTS[ch] ?? ch] ?? []);
   const componentGlyphs = new Set(kanjiChars.flatMap((c) => componentsOf(c.literal)));
   const componentStrokes = new Map([...componentGlyphs].map((g) => [g, radk.radicals[g]?.strokeCount ?? 0]));
   const componentDisplay = new Map([...componentGlyphs].map((g) => [g, describeComponent(g, (ch) => firstMeaning.get(ch))]));
+  // Japanese names for components, looked up by the shape shown (氵, not 汁).
+  const kanjidicByChar = new Map(kanjidic.characters.map((c) => [c.literal, c]));
+  const readings = (c: KanjidicChar, type: string) => (c.readingMeaning?.groups[0]?.readings ?? []).filter((r) => r.type === type).map((r) => r.value);
+  const kanjidicNames = (ch: string) => {
+    const c = kanjidicByChar.get(ch);
+    return c && { radicalNames: c.misc.radicalNames ?? [], kun: readings(c, "ja_kun"), on: readings(c, "ja_on") };
+  };
 
   // Stroke orders from KanjiVG: kanji, single kana, and components (by their
   // displayed shape, e.g. ⺅, else the glyph itself; KanjiVG has nearly all of them).
@@ -230,10 +238,13 @@ async function main() {
   insertSource.run("Tatoeba (Tanaka Corpus, indexed by EDRDG)", tanakaVersion, "CC BY 2.0 FR", "https://tatoeba.org", "Tatoeba contributors; word index by the Electronic Dictionary Research and Development Group (EDRDG)");
   insertSource.run("jmdict-simplified (JSON conversion)", examplesAsset.version, "CC BY-SA 4.0", "https://github.com/scriptin/jmdict-simplified", "Dmitry Shpika and contributors");
 
-  const insertComponent = db.prepare("INSERT INTO components (glyph, display, name, stroke_count, stroke_svg) VALUES (?, ?, ?, ?, ?)");
+  const insertComponent = db.prepare(
+    "INSERT INTO components (glyph, display, name, stroke_count, stroke_svg, ja_name, ja_note) VALUES (?, ?, ?, ?, ?, ?, ?)",
+  );
   for (const g of componentGlyphs) {
     const { display, name } = componentDisplay.get(g)!;
-    insertComponent.run(g, display, name, componentStrokes.get(g) ?? 0, strokeSvg(display) ?? strokeSvg(g));
+    const jaName = japaneseName(display, display !== g, kanjidicNames);
+    insertComponent.run(g, display, name, componentStrokes.get(g) ?? 0, strokeSvg(display) ?? strokeSvg(g), jaName, jaName ? (NAME_NOTES[display] ?? null) : null);
   }
 
   const insertKanji = db.prepare(

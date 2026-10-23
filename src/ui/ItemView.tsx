@@ -1,7 +1,7 @@
 import { useRef } from "react";
 import { useSharedCardPattern } from "./useSharedCardPattern.ts";
 import type { ItemDetails } from "../items.ts";
-import { ArrowLeftRight } from "lucide-react";
+import { ArrowLeftRight, Info } from "lucide-react";
 import { Gloss } from "./Gloss.tsx";
 import { InfoTip } from "./InfoTip.tsx";
 import { ItemInfo } from "./ItemInfo.tsx";
@@ -58,6 +58,8 @@ function bannerFacts(item: ItemDetails): {
   badge?: string;
   primary?: string;
   secondary?: string;
+  /** More about the secondary line, behind an ⓘ (a component's Japanese name: what it means). */
+  secondaryNote?: string;
   speak?: string;
 } {
   switch (item.kind) {
@@ -69,7 +71,14 @@ function bannerFacts(item: ItemDetails): {
         speak: item.character,
       };
     case "component":
-      return { kind: "component", primary: item.name };
+      // Its Japanese name under the English one (くにがまえ), spoken by the speaker button.
+      return {
+        kind: "component",
+        primary: item.name,
+        secondary: item.jaName ?? undefined,
+        secondaryNote: item.jaNote ?? undefined,
+        speak: item.jaName?.split(" / ")[0],
+      };
     case "kanji": {
       const reading = item.kunReadings[0] ?? item.onReadings[0];
       return {
@@ -85,7 +94,7 @@ function bannerFacts(item: ItemDetails): {
 }
 
 function ItemBanner({ item, start, end }: { item: ItemDetails; start?: React.ReactNode; end?: React.ReactNode }) {
-  const { kind, detail, badge, primary, secondary, speak } = bannerFacts(item);
+  const { kind, detail, badge, primary, secondary, secondaryNote, speak } = bannerFacts(item);
   const label = itemLabel(item);
   return (
     <header className={`banner bleed ${item.kind}`}>
@@ -134,8 +143,13 @@ function ItemBanner({ item, start, end }: { item: ItemDetails; start?: React.Rea
                 </p>
               )}
               {secondary && (
-                <p className="banner-secondary" lang="ja">
-                  {secondary}
+                <p className="banner-secondary">
+                  <span lang="ja">{secondary}</span>
+                  {secondaryNote && (
+                    <InfoTip label="What this name means" icon={Info} placement="below" buttonClassName="banner-note-btn">
+                      <span className="banner-note">{secondaryNote}</span>
+                    </InfoTip>
+                  )}
                 </p>
               )}
             </div>

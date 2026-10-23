@@ -183,6 +183,12 @@ const MIGRATIONS: string[][] = [
     // Documents\Koihongo\Covers (null: the first chapter's first page).
     `ALTER TABLE series ADD COLUMN cover TEXT`,
   ],
+  [
+    // The series' name is its title now; a Japanese title you'd typed in
+    // separately becomes one of its "also known as" names (the column stays, unused).
+    `INSERT INTO series_titles (series_id, title) SELECT id, trim(japanese_title) FROM series WHERE trim(japanese_title) != ''`,
+    `UPDATE series SET japanese_title = ''`,
+  ],
 ];
 
 export const SCHEMA_VERSION = MIGRATIONS.length;
