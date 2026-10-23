@@ -5040,21 +5040,37 @@ button.danger {
 
 .reader-toolbar {
   display: flex;
+  flex-wrap: wrap; /* on a very narrow window, a second line rather than under the side panel */
   align-items: center;
-  gap: 8px;
+  gap: 6px;
   min-width: 0;
 }
 
 .reader-toolbar .deck-back {
   margin: 0;
   flex: none;
+  max-width: 130px;
+}
+
+.deck-back svg {
+  flex: none; /* the arrow never gets squeezed by a long label */
+}
+
+/* A back button labelled with a (maybe long) series name: cut short with …, full name on hover. */
+.deck-back .back-label {
+  min-width: 0;
+  max-width: 240px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .reader-title {
   flex: 1;
-  min-width: 0;
+  min-width: 4.2em; /* CH.12 always fits */
   margin: 0;
-  font-size: 1.15rem;
+  font-family: var(--font-title); /* Silkscreen: in Pixelify a C reads as O */
+  font-size: 1rem;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -5067,7 +5083,7 @@ button.danger {
 }
 
 .reader-count {
-  min-width: 4.5em;
+  min-width: 4em;
   text-align: center;
   color: var(--muted);
 }
