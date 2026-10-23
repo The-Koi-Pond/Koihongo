@@ -6971,3 +6971,58 @@ button.aka-add {
   padding: 4px 10px;
   font-size: 0.85rem;
 }
+
+/* "This page: you know 8 of 14 words" in the reader's side panel (Reading.tsx, ReadableBar). */
+.readable {
+  display: grid;
+  gap: 4px;
+  margin-bottom: 8px;
+  font-size: 0.82rem;
+}
+
+.readable-bar {
+  display: flex;
+  height: 6px;
+  border-radius: 3px;
+  background: rgb(255 255 255 / 0.12);
+  overflow: hidden;
+}
+
+.readable-bar .status-known {
+  background: #6fdc9a;
+}
+
+.readable-bar .status-learning {
+  background: #ffd36e;
+}
+
+/* The hover card's words in their colours (PageView). */
+.peek-word.status-known {
+  color: #8ff0b5;
+}
+
+.peek-word.status-learning {
+  color: #ffe08a;
+}
+
+.peek-word.status-grammar,
+.peek-word.status-symbol {
+  color: var(--muted);
+}
+
+/* A card's picture: the manga panel its word came from (FlipCard, Decks). */
+.flip-image {
+  display: block;
+  max-width: min(100%, 420px);
+  max-height: 300px;
+  margin: 10px auto 0;
+  border-radius: 8px;
+  border: 1px solid var(--panel-border);
+}
+
+.deck-card-image {
+  width: 44px;
+  height: 44px;
+  object-fit: cover;
+  border-radius: 6px;
+}

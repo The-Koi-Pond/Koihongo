@@ -96,6 +96,7 @@ export function FlipCard({
             <p className="flip-back" lang="ja">
               {card.back || <span className="muted">(no back)</span>}
             </p>
+            {card.image && <img className="flip-image" src={card.image} alt="Where it came from" />}
             <div className="flip-grades" role="group" aria-label="How well did you remember it?">
               {GRADES.map((g) => (
                 <button key={g.rating} type="button" className={`flip-grade grade-${g.label.toLowerCase()}`} onClick={() => onRate(g.rating)}>

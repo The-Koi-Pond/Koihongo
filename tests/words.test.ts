@@ -96,3 +96,10 @@ test("word help: a noun + する verb finds the noun's entry; the explaining の
     ["だ", "grammar"],
   ]);
 });
+
+test("how much you can read: words counted each time they appear; names and grammar left out", async () => {
+  const { coverage } = await import("../src/words.ts");
+  const words = groupPieces(MOU_MACHIMASEN).concat(groupPieces([P("優里", "名詞,固有名詞,人名,名,*,*,優里,ユリ"), P("は", "助詞,係助詞,*,*,*,*,は,ハ")]));
+  words[0].status = "known";
+  assert.deepEqual(coverage(words), { known: 1, learning: 0, new: 1 });
+});

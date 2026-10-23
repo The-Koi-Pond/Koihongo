@@ -35,6 +35,20 @@ export async function cutOut(url: string, box: Box): Promise<Uint8Array> {
   return new Uint8Array(await png.arrayBuffer());
 }
 
+/** A box of the page as a small JPEG data: URL (for a card's picture), at most `maxSide` pixels across. */
+export async function pictureOf(url: string, box: Box, maxSide = 480): Promise<string> {
+  const img = new Image();
+  img.src = url;
+  await img.decode();
+  const [x, y, w, h] = [box.x * img.naturalWidth, box.y * img.naturalHeight, box.w * img.naturalWidth, box.h * img.naturalHeight];
+  const scale = Math.min(1, maxSide / Math.max(w, h));
+  const canvas = document.createElement("canvas");
+  canvas.width = Math.max(1, Math.round(w * scale));
+  canvas.height = Math.max(1, Math.round(h * scale));
+  canvas.getContext("2d")!.drawImage(img, x, y, w, h, 0, 0, canvas.width, canvas.height);
+  return canvas.toDataURL("image/jpeg", 0.82);
+}
+
 /** The text in a mark's boxes (a bubble in two parts reads as one text, in box order). */
 export async function readBoxes(url: string, boxes: Box[]): Promise<OcrText> {
   const parts: OcrText[] = [];

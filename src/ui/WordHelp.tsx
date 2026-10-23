@@ -14,7 +14,16 @@ const note = (base: string) => GRAMMAR_NOTES[base];
  * endings do, and Add to deck. `onReading` gets the text's kana reading once
  * it's split.
  */
-export function WordHelp({ text, onReading }: { text: string; onReading: (reading: string, unsure: boolean) => void }) {
+export function WordHelp({
+  text,
+  picture,
+  onReading,
+}: {
+  text: string;
+  /** The panel the text is in, as a picture for cards. */
+  picture?: () => Promise<string | undefined>;
+  onReading: (reading: string, unsure: boolean) => void;
+}) {
   const [words, setWords] = useState<Word[]>();
   const [open, setOpen] = useState<number>();
   const [problem, setProblem] = useState<string>();
@@ -68,12 +77,12 @@ export function WordHelp({ text, onReading }: { text: string; onReading: (readin
           ),
         )}
       </div>
-      {word && <WordCard word={word} bubble={text.trim()} />}
+      {word && <WordCard word={word} bubble={text.trim()} picture={picture} />}
     </div>
   );
 }
 
-function WordCard({ word, bubble }: { word: Word; bubble: string }) {
+function WordCard({ word, bubble, picture }: { word: Word; bubble: string; picture?: () => Promise<string | undefined> }) {
   const head = word.pieces[0];
   const entry = word.entry;
   // A noun + する (約束する): a verb, and its する is part of the word, not an ending.
@@ -126,6 +135,7 @@ function WordCard({ word, bubble }: { word: Word; bubble: string }) {
               front: entry.written,
               back: [entry.reading !== entry.written ? entry.reading : "", meanings.slice(0, 2).join("; "), "", `「${bubble}」`].join("\n").trim(),
               itemKey: entry.itemKey,
+              image: picture,
             }}
             label="Add to deck"
           />

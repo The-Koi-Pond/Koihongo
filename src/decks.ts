@@ -16,6 +16,8 @@ export type DeckCard = FsrsFields & {
   front: string;
   back: string;
   item_key: string | null;
+  /** A picture shown with the answer (a JPEG data: URL), e.g. the manga panel a word came from. */
+  image: string | null;
   created_at: number;
 };
 
@@ -69,13 +71,13 @@ export async function getDeckCard(db: Db, id: number): Promise<DeckCard | undefi
 }
 
 /** Adds a card, due right away (a new card's first look is its first review). */
-export async function addDeckCard(db: Db, deckId: number, front: string, back: string, itemKey: string | null, now: number): Promise<void> {
+export async function addDeckCard(db: Db, deckId: number, front: string, back: string, itemKey: string | null, now: number, image: string | null = null): Promise<void> {
   const f = emptyFsrs(now, now);
   await db.batch([
     {
       sql: `INSERT INTO deck_cards (deck_id, front, back, item_key, created_at, state, due, stability, difficulty,
-            scheduled_days, learning_steps, reps, lapses, last_review) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-      params: [deckId, front.trim(), back.trim(), itemKey, now, f.state, f.due, f.stability, f.difficulty, f.scheduled_days, f.learning_steps, f.reps, f.lapses, f.last_review],
+            scheduled_days, learning_steps, reps, lapses, last_review, image) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      params: [deckId, front.trim(), back.trim(), itemKey, now, f.state, f.due, f.stability, f.difficulty, f.scheduled_days, f.learning_steps, f.reps, f.lapses, f.last_review, image],
     },
   ]);
 }

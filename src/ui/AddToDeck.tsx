@@ -5,7 +5,7 @@ import { addDeckCard, cardFromItem, createDeck, listDecks, type Deck } from "../
 import type { ItemDetails } from "../items.ts";
 
 /** A card made elsewhere (e.g. a word from a manga bubble); `id` tells cards apart, `itemKey` links it to the learning path. */
-export type ReadyCard = { id: string; front: string; back: string; itemKey: string | null };
+export type ReadyCard = { id: string; front: string; back: string; itemKey: string | null; /** Makes the card's picture, when it's added. */ image?: () => Promise<string | undefined> };
 
 /**
  * "Add to deck" on an item page (or with a ready-made `card`): pick one of
@@ -40,7 +40,9 @@ export function AddToDeck({ item, card, label }: { item?: ItemDetails; card?: Re
 
   async function addTo(deckId: number, deckName: string) {
     const { front, back } = card ?? cardFromItem(item!);
-    await addDeckCard(tauriDb, deckId, front, back, card ? card.itemKey : item!.item_key, Date.now());
+    // A picture that can't be made (the page moved, say) just leaves the card without one.
+    const image = (await card?.image?.().catch(() => undefined)) ?? null;
+    await addDeckCard(tauriDb, deckId, front, back, card ? card.itemKey : item!.item_key, Date.now(), image);
     setAdded(deckName);
     setOpen(false);
   }

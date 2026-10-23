@@ -504,3 +504,22 @@ test("marks: text manga-ocr wasn't sure of stays marked until changed or confirm
   await updateMark(db, id, "sfx", text, T0, false);
   assert.equal(await unsure(), 0);
 });
+
+test("a card's picture: the boxes with room around them, kept on the page", async () => {
+  const { aroundBoxes } = await import("../src/reading.ts");
+  const near = (a: { x: number; y: number; w: number; h: number }, b: typeof a) =>
+    assert.ok((["x", "y", "w", "h"] as const).every((k) => Math.abs(a[k] - b[k]) < 1e-9), `${JSON.stringify(a)} ≠ ${JSON.stringify(b)}`);
+  near(aroundBoxes([{ x: 0.4, y: 0.4, w: 0.1, h: 0.1 }], 0.5), { x: 0.35, y: 0.35, w: 0.2, h: 0.2 });
+  near(aroundBoxes([{ x: 0.0, y: 0.9, w: 0.1, h: 0.1 }, { x: 0.2, y: 0.8, w: 0.1, h: 0.1 }], 1), { x: 0, y: 0.6, w: 0.6, h: 0.4 });
+});
+
+test("deck cards can carry a picture", async () => {
+  const { addDeckCard, createDeck, deckCards } = await import("../src/decks.ts");
+  const db = openTestDb(() => {});
+  await migrate(db);
+  const deck = await createDeck(db, "Manga words", T0);
+  await addDeckCard(db, deck, "溺愛", "できあい\nblind love", null, T0, "data:image/jpeg;base64,AAAA");
+  await addDeckCard(db, deck, "もう", "already", null, T0);
+  const cards = await deckCards(db, deck);
+  assert.deepEqual(cards.map((c) => [c.front, c.image]).sort(), [["もう", null], ["溺愛", "data:image/jpeg;base64,AAAA"]]);
+});

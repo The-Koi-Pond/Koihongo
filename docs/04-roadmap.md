@@ -69,7 +69,7 @@ Your own manga, in stages (details: `02-features.md` F):
 
 - ✅ Stage 1: bookshelf (folders and .cbz), reader, boxes with text and meaning, "seen before" across books, glossary, "About this book".
 - ✅ Stage 2, part 1: word help (`src/words.ts`, `src/ui/WordHelp.tsx`, `src-tauri/src/words.rs`): words with entries, progress colours, endings explained, Add to deck, the reading filled in. Split with lindera + IPADIC (an optional download); looked up in all of JMdict (`content.dict_entries`, `dict_forms`). Yomitan's own parser (longest match with deinflection rules) is GPL, so we use a morphological analyser instead.
-- Stage 2, part 2: how much of a page or chapter you can read, panel cut-outs on cards, word colours on the page.
+- ✅ Stage 2, part 2: how much of a page or chapter you can read (`coverage` in `src/words.ts`), panel pictures on deck cards (`deck_cards.image`, migration 18), word colours in the hover card.
 - ✅ Stage 3, part 1: "Read text" (Baberu OCR) and "Find text on this page" (comic-text-and-bubble-detector), an optional download that runs offline (`src-tauri/src/ocr.rs`, `baberu.rs`). Tried manga-ocr first: Baberu matched it on speech and read all four sound effects on a test page that manga-ocr missed, at a quarter of the size. Windows' built-in OCR was dropped (weaker on vertical text).
 - ✅ Stage 3, part 2: "Explain" on a box (`explainBoxPrompt` in `src/ai/prompts.ts`): an AI breakdown with the page's other boxes and the series context (`readingContext` in `src/reading.ts`), explaining how that context changes the meaning.
 - Still open: AI reading straight from the image, for boxes the text reader can't manage (study LunaTranslator first, `05-references.md`).
