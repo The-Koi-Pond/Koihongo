@@ -785,7 +785,7 @@ function ChapterBar({
     <button
       type="button"
       className={`chapter-bar ${dragging ? "drag-source" : ""}`}
-      style={{ paddingRight: 16 + tools * 38 }}
+      style={{ paddingRight: 14 + tools * 30 }}
       onClick={onOpen}
       title={book.title}
       {...dragHandlers}
