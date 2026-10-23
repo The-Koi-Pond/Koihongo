@@ -1179,9 +1179,12 @@ function Reader({ id, startPage, onBack, onEditPages }: { id: number; startPage?
   if (!book) return <p className="muted">Loading…</p>;
 
   const fullTitle = book.series_title ? `${book.series_title} · ${book.title}` : book.title;
+  // In a series the back button already names it: the title is just the chapter (CH.12).
+  const number = book.series_title ? chapterNumber(book.title) : null;
+  const shortTitle = book.series_title ? (number ? `CH.${number}` : chapterSubtitle(book.title, book.series_title) || book.title) : book.title;
   const back = (
-    <button type="button" className="deck-back" onClick={onBack}>
-      <ArrowLeft size={16} aria-hidden="true" /> {book.series_title ?? "Bookshelf"}
+    <button type="button" className="deck-back" onClick={onBack} title={book.series_title ?? "Bookshelf"}>
+      <ArrowLeft size={16} aria-hidden="true" /> <span className="back-label">{book.series_title ?? "Bookshelf"}</span>
     </button>
   );
   if (missing) {
@@ -1236,7 +1239,7 @@ function Reader({ id, startPage, onBack, onEditPages }: { id: number; startPage?
         <div className="reader-toolbar">
           {back}
           <h1 className="reader-title" title={fullTitle}>
-            {fullTitle}
+            {shortTitle}
           </h1>
           <div className="reader-pager">
             {rtl ? next : prev}
@@ -1808,8 +1811,8 @@ function PageEditor({ id, onBack, onRead }: { id: number; onBack: () => void; on
 
   return (
     <>
-      <button type="button" className="deck-back" onClick={onBack}>
-        <ArrowLeft size={16} aria-hidden="true" /> {book.series_title ?? "Bookshelf"}
+      <button type="button" className="deck-back" onClick={onBack} title={book.series_title ?? "Bookshelf"}>
+        <ArrowLeft size={16} aria-hidden="true" /> <span className="back-label">{book.series_title ?? "Bookshelf"}</span>
       </button>
       <h1>{book.title}</h1>
       <p className="muted reading-intro">
