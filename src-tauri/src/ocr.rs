@@ -2,8 +2,9 @@
 //! Baberu OCR (genshiai-daichi/baberu-ocr, Apache-2.0; see baberu.rs), and
 //! finding the text on a page ("Find text") with
 //! ogkalu/comic-text-and-bubble-detector (RT-DETR-v2, Apache-2.0), both run by
-//! ONNX Runtime. The models are an optional download (about 133 MB) into the
-//! app's data folder; the installer doesn't carry them.
+//! ONNX Runtime. The models are an optional download (about 144 MB, with the
+//! word splitter's dictionary for words.rs) into the app's data folder; the
+//! installer doesn't carry them.
 //!
 //! The window cuts the page down to the box (it already has the page
 //! decoded) and sends the cut-out here as a PNG.
@@ -25,28 +26,33 @@ use crate::baberu::{self, Baberu};
 // --- The model files ---
 
 struct ModelFile {
-    /// The Hugging Face repo and the commit we download from, so the files never change under us.
-    repo: &'static str,
-    revision: &'static str,
-    /// Where it is in the repo, and the name we keep it under.
-    path: &'static str,
+    /// Where it comes from: a pinned commit or release, so the file never changes under us.
+    url: &'static str,
+    /// The name we keep it under.
     name: &'static str,
     size: u64,
     sha256: &'static str,
+    /// A zip, unpacked once it's checked (then deleted): the file (and its size) that shows it's unpacked.
+    unzipped: Option<(&'static str, u64)>,
 }
 
-const BABERU: (&str, &str) = ("genshiai-daichi/baberu-ocr", "b9868433dbda3ed9ba1357d008599ff4ada873d5");
-const DETECTOR: (&str, &str) = ("ogkalu/comic-text-and-bubble-detector", "16e8a622f91fabc6b5b65c96d32d1183f8843546");
+macro_rules! baberu {
+    ($path:literal) => {
+        concat!("https://huggingface.co/genshiai-daichi/baberu-ocr/resolve/b9868433dbda3ed9ba1357d008599ff4ada873d5/", $path)
+    };
+}
 
 #[rustfmt::skip]
-const FILES: [ModelFile; 5] = [
+const FILES: [ModelFile; 6] = [
     // Baberu's smallest tier (vision int4 + decoder int8): read the same as the 243 MB tier on our test pages.
-    ModelFile { repo: BABERU.0, revision: BABERU.1, path: "onnx/vision_int4.onnx", name: "vision_int4.onnx", size: 52_293_486, sha256: "1967ecef502e4c1e1e7c512ea0a2e06396b39ded87a8a9cc77bd7db2e981a361" },
-    ModelFile { repo: BABERU.0, revision: BABERU.1, path: "onnx/decoder_prefill_int8.onnx", name: "decoder_prefill_int8.onnx", size: 35_133_596, sha256: "187a59cb61d3870f1f97c9eb027eb34ff19d023fba801cda113a13870be0b724" },
-    ModelFile { repo: BABERU.0, revision: BABERU.1, path: "onnx/decoder_step_int8.onnx", name: "decoder_step_int8.onnx", size: 34_715_466, sha256: "46640b0b3db77f0f0eef660bbe5dc9126a5e0fb49eb2786b2edba7b0371d9769" },
-    ModelFile { repo: BABERU.0, revision: BABERU.1, path: "tokenizer/vocab.json", name: "vocab.json", size: 130_761, sha256: "681de4eb83154a397af49e2ddae4705041b12a22e16fe00860b829e889e5f47c" },
+    ModelFile { url: baberu!("onnx/vision_int4.onnx"), name: "vision_int4.onnx", size: 52_293_486, sha256: "1967ecef502e4c1e1e7c512ea0a2e06396b39ded87a8a9cc77bd7db2e981a361", unzipped: None },
+    ModelFile { url: baberu!("onnx/decoder_prefill_int8.onnx"), name: "decoder_prefill_int8.onnx", size: 35_133_596, sha256: "187a59cb61d3870f1f97c9eb027eb34ff19d023fba801cda113a13870be0b724", unzipped: None },
+    ModelFile { url: baberu!("onnx/decoder_step_int8.onnx"), name: "decoder_step_int8.onnx", size: 34_715_466, sha256: "46640b0b3db77f0f0eef660bbe5dc9126a5e0fb49eb2786b2edba7b0371d9769", unzipped: None },
+    ModelFile { url: baberu!("tokenizer/vocab.json"), name: "vocab.json", size: 130_761, sha256: "681de4eb83154a397af49e2ddae4705041b12a22e16fe00860b829e889e5f47c", unzipped: None },
     // The small (int8) detector, as comic-translate uses on CPU.
-    ModelFile { repo: DETECTOR.0, revision: DETECTOR.1, path: "detector-v4-s_int8.onnx", name: "detector-v4-s_int8.onnx", size: 11_120_765, sha256: "5fe9e4f576e49d4e7e8b0e029d6d3cdc252abd4694113e1cae120e62c931ea79" },
+    ModelFile { url: "https://huggingface.co/ogkalu/comic-text-and-bubble-detector/resolve/16e8a622f91fabc6b5b65c96d32d1183f8843546/detector-v4-s_int8.onnx", name: "detector-v4-s_int8.onnx", size: 11_120_765, sha256: "5fe9e4f576e49d4e7e8b0e029d6d3cdc252abd4694113e1cae120e62c931ea79", unzipped: None },
+    // The word splitter's dictionary (lindera's build of IPADIC, for words.rs).
+    ModelFile { url: "https://github.com/lindera/lindera/releases/download/v6.2.0/lindera-ipadic-6.2.0.zip", name: "lindera-ipadic-6.2.0.zip", size: 10_519_550, sha256: "5ed4bba6b429030b0387df67d40d5751d35dedef0306f4bac6d957cad5f04b72", unzipped: Some((crate::words::DICTIONARY_CHECK, 32_674_733)) },
 ];
 const OCR_FILES: [&str; 4] = [baberu::VISION, "decoder_prefill_int8.onnx", "decoder_step_int8.onnx", "vocab.json"];
 const DETECTOR_FILE: &str = "detector-v4-s_int8.onnx";
@@ -55,7 +61,7 @@ fn models(app: &AppHandle) -> Result<PathBuf, String> {
     Ok(app.path().app_data_dir().map_err(|e| e.to_string())?.join("models"))
 }
 
-fn model_dir(app: &AppHandle) -> Result<PathBuf, String> {
+pub(crate) fn model_dir(app: &AppHandle) -> Result<PathBuf, String> {
     Ok(models(app)?.join("text-reading"))
 }
 
@@ -66,21 +72,44 @@ fn remove_old_models(app: &AppHandle) {
     }
 }
 
-/// These model files (all of them, if None) are downloaded and complete.
-fn installed(dir: &Path, names: Option<&[&str]>) -> bool {
-    FILES
-        .iter()
-        .filter(|f| names.is_none_or(|n| n.contains(&f.name)))
-        .all(|f| std::fs::metadata(dir.join(f.name)).is_ok_and(|m| m.len() == f.size))
+fn present(dir: &Path, f: &ModelFile) -> bool {
+    let (path, size) = f.unzipped.unwrap_or((f.name, f.size));
+    std::fs::metadata(dir.join(path)).is_ok_and(|m| m.len() == size)
 }
 
-const NOT_SET_UP: &str = "Text reading isn't set up yet: download it in Settings → Reading text from manga.";
+/// These model files (all of them, if None) are downloaded and complete.
+pub(crate) fn installed(dir: &Path, names: Option<&[&str]>) -> bool {
+    FILES.iter().filter(|f| names.is_none_or(|n| n.contains(&f.name))).all(|f| present(dir, f))
+}
+
+/// Unpacks a downloaded zip into `dir` (entries that would land outside it are skipped).
+fn unzip(zip_path: &Path, dir: &Path) -> Result<(), String> {
+    let mut zip = zip::ZipArchive::new(std::fs::File::open(zip_path).map_err(|e| e.to_string())?).map_err(|e| e.to_string())?;
+    for i in 0..zip.len() {
+        let mut entry = zip.by_index(i).map_err(|e| e.to_string())?;
+        let Some(name) = entry.enclosed_name() else { continue };
+        let out = dir.join(name);
+        if entry.is_dir() {
+            std::fs::create_dir_all(&out).map_err(|e| e.to_string())?;
+        } else {
+            if let Some(parent) = out.parent() {
+                std::fs::create_dir_all(parent).map_err(|e| e.to_string())?;
+            }
+            std::io::copy(&mut entry, &mut std::fs::File::create(&out).map_err(|e| e.to_string())?).map_err(|e| e.to_string())?;
+        }
+    }
+    Ok(())
+}
+
+pub(crate) const NOT_SET_UP: &str = "Text reading isn't set up yet: download it in Settings → Reading text from manga.";
 
 /// The loaded models (loading takes a few seconds, so they're kept), and whether a download is running.
 #[derive(Default)]
 pub struct Ocr {
     model: Mutex<Option<Arc<Baberu>>>,
     detector: Mutex<Option<Arc<Mutex<Session>>>>,
+    /// The word splitter (words.rs).
+    pub(crate) words: Mutex<Option<Arc<lindera::segmenter::Segmenter>>>,
     downloading: AtomicBool,
 }
 
@@ -122,13 +151,13 @@ async fn download(dir: &Path, on_progress: &Channel<Progress>) -> Result<(), Str
     let client = reqwest::Client::builder().build().map_err(|e| e.to_string())?;
     for file in &FILES {
         let dest = dir.join(file.name);
-        if std::fs::metadata(&dest).is_ok_and(|m| m.len() == file.size) {
+        if present(dir, file) {
             done += file.size;
             continue;
         }
         let part = dir.join(format!("{}.part", file.name));
         let mut response = client
-            .get(format!("https://huggingface.co/{}/resolve/{}/{}", file.repo, file.revision, file.path))
+            .get(file.url)
             .send()
             .await
             .and_then(|r| r.error_for_status())
@@ -149,6 +178,10 @@ async fn download(dir: &Path, on_progress: &Channel<Progress>) -> Result<(), Str
             return Err(format!("{} didn't download correctly (it doesn't match the expected file). Try again.", file.name));
         }
         std::fs::rename(&part, &dest).map_err(|e| e.to_string())?;
+        if file.unzipped.is_some() {
+            unzip(&dest, dir)?;
+            let _ = std::fs::remove_file(&dest);
+        }
         done += file.size;
     }
     Ok(())
@@ -162,6 +195,7 @@ pub fn ocr_remove(app: AppHandle, state: State<'_, Ocr>) -> Result<(), String> {
     }
     *state.model.lock().map_err(|e| e.to_string())? = None;
     *state.detector.lock().map_err(|e| e.to_string())? = None;
+    *state.words.lock().map_err(|e| e.to_string())? = None;
     remove_old_models(&app);
     let dir = model_dir(&app)?;
     if dir.exists() {

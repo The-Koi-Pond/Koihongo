@@ -202,7 +202,7 @@ function TextReadingCard() {
       </h2>
       <p className="muted">
         "Read text" in a mark's editor fills in the Japanese for you, sound effects included, and "Find text on this page" puts boxes around the text
-        for you. Both run on your PC, with no internet needed once they're downloaded.
+        for you, and word help splits the Japanese into words with their meanings. All of it runs on your PC, with no internet needed once it's downloaded.
       </p>
       {progress ? (
         <div className="ocr-progress" role="progressbar" aria-valuemin={0} aria-valuemax={progress.total} aria-valuenow={progress.done}>
@@ -231,7 +231,7 @@ function TextReadingCard() {
       )}
       {error && <p className="error">{error}</p>}
       <p className="muted small">
-        Baberu OCR by genshiai-daichi and comic-text-and-bubble-detector by ogkalu (both Apache-2.0), saved in Koihongo's data folder.
+        Baberu OCR by genshiai-daichi and comic-text-and-bubble-detector by ogkalu (both Apache-2.0), and IPADIC for lindera (see Sources &amp; licences), saved in Koihongo's data folder.
         Downloaded from Hugging Face and checked before use.
       </p>
     </section>

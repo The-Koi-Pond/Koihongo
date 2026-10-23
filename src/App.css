@@ -6853,3 +6853,121 @@ button.aka-add {
   gap: 6px;
   margin-top: 6px;
 }
+
+/* Word help under a box's Japanese (WordHelp.tsx): words as chips, coloured by your progress. */
+.word-help {
+  display: grid;
+  gap: 8px;
+  margin-top: -2px;
+}
+
+.word-chips {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px;
+}
+
+.word-chip {
+  padding: 2px 7px;
+  border: 1px solid var(--panel-border);
+  border-radius: 6px;
+  background: rgb(255 255 255 / 0.06);
+  color: var(--text);
+  font-size: 1rem;
+  line-height: 1.5;
+}
+
+.word-chip.status-known {
+  border-color: #6fdc9a;
+  background: color-mix(in srgb, #6fdc9a 16%, transparent);
+}
+
+.word-chip.status-learning {
+  border-color: #ffd36e;
+  background: color-mix(in srgb, #ffd36e 16%, transparent);
+}
+
+.word-chip.status-grammar {
+  border-color: transparent;
+  background: none;
+  color: var(--muted);
+}
+
+.word-chip.status-name {
+  border-style: dashed;
+}
+
+.word-chip.on {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+}
+
+.word-symbol {
+  color: var(--muted);
+}
+
+.word-help-note {
+  margin: -4px 0 0;
+  font-size: 0.8rem;
+}
+
+.word-card {
+  display: grid;
+  gap: 6px;
+  padding: 10px 12px;
+  border: 1px solid var(--panel-border);
+  border-radius: 10px;
+  background: rgb(0 0 0 / 0.18);
+  font-size: 0.9rem;
+}
+
+.word-card-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 8px;
+}
+
+.word-card-written {
+  font-size: 1.3rem;
+  font-weight: 700;
+}
+
+.word-card-reading {
+  color: var(--muted);
+}
+
+.word-status {
+  margin-left: auto;
+  padding: 0 8px;
+  border-radius: 999px;
+  background: rgb(255 255 255 / 0.1);
+  font-size: 0.75rem;
+}
+
+.word-status.status-known {
+  background: color-mix(in srgb, #6fdc9a 30%, transparent);
+}
+
+.word-status.status-learning {
+  background: color-mix(in srgb, #ffd36e 30%, transparent);
+}
+
+.word-card-meanings {
+  margin: 0;
+  padding-left: 1.3em;
+}
+
+.word-card-note,
+.word-card-endings {
+  margin: 0;
+}
+
+.word-card-actions .add-to-deck-btn.labelled {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  font-size: 0.85rem;
+}

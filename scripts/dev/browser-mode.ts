@@ -172,6 +172,7 @@ export function browserMode(): Plugin {
       case "ocr_remove":
       case "ocr_read":
       case "ocr_find":
+      case "words_split":
         throw new Error("Only available in the desktop app (this is browser mode).");
       case "ocr_status":
         return { installed: false, size: 461_000_000 };

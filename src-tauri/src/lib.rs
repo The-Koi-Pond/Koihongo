@@ -5,6 +5,7 @@ mod baberu;
 mod books;
 mod db;
 mod ocr;
+mod words;
 
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::{Arc, Mutex};
@@ -57,7 +58,8 @@ pub fn run() {
             ocr::ocr_download,
             ocr::ocr_remove,
             ocr::ocr_read,
-            ocr::ocr_find
+            ocr::ocr_find,
+            words::words_split
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
