@@ -6075,7 +6075,7 @@ button.aka-add {
   margin: 0;
   padding: 0;
   display: grid;
-  gap: 8px; /* one chapter per row */
+  gap: 5px; /* one chapter per row */
   user-select: none;
 }
 
@@ -6092,12 +6092,12 @@ button.aka-add {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: 4px 16px;
-  padding: 10px 16px 12px; /* right: set inline, room for the tools */
+  gap: 2px 16px;
+  padding: 5px 14px 6px; /* right: set inline, room for the tools */
   overflow: hidden;
   text-align: left;
   border: 2px solid var(--panel-border);
-  border-radius: 12px;
+  border-radius: 9px;
   background: var(--surface-2);
   color: var(--text);
 }
@@ -6121,7 +6121,7 @@ button.aka-add {
 .chapter-num {
   flex: none;
   font-family: var(--font-title); /* Silkscreen: in Pixelify a bold C reads as O */
-  font-size: 1.25rem;
+  font-size: 1.05rem;
   font-weight: 700;
   line-height: 1.1;
   overflow-wrap: anywhere;
@@ -6184,6 +6184,9 @@ button.aka-add {
 }
 
 .chapter-tools .icon-action {
+  width: 26px;
+  height: 26px;
+  border-radius: 6px;
   background: var(--surface);
   color: var(--text);
 }
@@ -6196,12 +6199,12 @@ button.aka-add {
 .chapter-rename {
   width: 100%;
   box-sizing: border-box;
-  padding: 11px 16px;
+  padding: 5px 14px;
   border: 2px solid var(--accent);
-  border-radius: 12px;
+  border-radius: 9px;
   background: var(--surface-2);
   font-family: var(--font-title);
-  font-size: 1.1rem;
+  font-size: 1rem;
 }
 
 /* Dragging pages into order (Reading.tsx, PageEditor with useReorderDrag):
@@ -7298,4 +7301,11 @@ button.aka-add {
 
 .reader.fullscreen .reader-page img {
   max-height: 100vh;
+}
+
+/* In a series' chapter list, the + bar is as slim as the chapter bars. */
+.chapter-list .shelf-add-btn {
+  min-height: 35px;
+  padding: 4px 14px;
+  border-radius: 9px;
 }
