@@ -27,7 +27,7 @@ const T0 = new Date("2026-03-02T10:00:00").getTime(); // local time, mid-morning
 // Tiny path: 木 component → 木 kanji; 化(⺅) + 木 components → 休 kanji → 休み word.
 function fixture(content: DatabaseSync) {
   content.exec(`
-    INSERT INTO components VALUES ('木', '木', 'tree', 4), ('化', '⺅', 'person', 2);
+    INSERT INTO components (glyph, display, name, stroke_count) VALUES ('木', '木', 'tree', 4), ('化', '⺅', 'person', 2);
     INSERT INTO kanji (character, meanings, on_readings, kun_readings, nanori, stroke_count)
       VALUES ('木', '["tree"]', '["モク"]', '["き"]', '[]', 4), ('休', '["rest"]', '["キュウ"]', '["やす.む"]', '[]', 6);
     INSERT INTO words VALUES ('1', '休み', 'やすみ', '[]', '[]', 5, 0);

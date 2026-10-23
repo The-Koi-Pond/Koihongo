@@ -26,7 +26,7 @@ const T0 = new Date("2026-03-02T10:00:00").getTime();
 // One lesson on the path, so lesson pacing can be checked.
 function fixture(content: DatabaseSync) {
   content.exec(`
-    INSERT INTO components VALUES ('木', '木', 'tree', 4);
+    INSERT INTO components (glyph, display, name, stroke_count) VALUES ('木', '木', 'tree', 4);
     INSERT INTO path (position, item_key, kind, track) VALUES (1, 'component:木', 'component', 'main');
   `);
 }

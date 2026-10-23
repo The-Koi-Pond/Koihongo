@@ -7,7 +7,7 @@ import { openTestDb } from "./nodeDb.ts";
 async function freshDb() {
   const db = openTestDb((content) =>
     content.exec(`
-      INSERT INTO components VALUES ('木', '木', 'tree', 4), ('化', '⺅', 'person', 2);
+      INSERT INTO components (glyph, display, name, stroke_count) VALUES ('木', '木', 'tree', 4), ('化', '⺅', 'person', 2);
       INSERT INTO kanji (character, meanings, on_readings, kun_readings, nanori, stroke_count, stroke_svg)
         VALUES ('木', '["tree","wood"]', '["ボク","モク"]', '["き","こ-"]', '[]', 4, '<svg/>'),
                ('休', '["rest"]', '["キュウ"]', '["やす.む"]', '[]', 6, NULL);

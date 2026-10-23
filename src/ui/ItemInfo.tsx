@@ -76,6 +76,12 @@ export function ItemInfo({ item, onChange }: { item: ItemDetails; onChange: () =
               )}
             </Field>
           )}
+          {/* Same place as on kanji pages: just above the mnemonic. */}
+          {item.strokeSvg && (
+            <Field label="Stroke order" icon={PenLine} wide>
+              <StrokeOrder svg={item.strokeSvg} label={item.display} />
+            </Field>
+          )}
           <MnemonicAndSynonyms item={item} label="Mnemonic" onChange={onChange} />
         </>
       )}

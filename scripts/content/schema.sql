@@ -21,7 +21,8 @@ CREATE TABLE components (
   glyph        TEXT PRIMARY KEY,
   display      TEXT NOT NULL,
   name         TEXT NOT NULL,
-  stroke_count INTEGER NOT NULL
+  stroke_count INTEGER NOT NULL,
+  stroke_svg   TEXT             -- KanjiVG SVG of the displayed shape, NULL if missing
 );
 
 CREATE TABLE kanji (
