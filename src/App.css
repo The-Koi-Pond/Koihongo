@@ -7158,3 +7158,21 @@ button.aka-add {
   align-items: center;
   gap: 6px;
 }
+
+/* Dragging files in from Explorer (Reading.tsx: the shelf and the page editor). */
+.drop-overlay {
+  position: fixed;
+  inset: calc(var(--titlebar-h) + 12px) 12px 12px;
+  z-index: 50;
+  display: grid;
+  place-content: center;
+  justify-items: center;
+  gap: 8px;
+  border: 3px dashed var(--accent);
+  border-radius: 16px;
+  background: color-mix(in srgb, var(--bg) 82%, transparent);
+  color: var(--text);
+  font-size: 1.15rem;
+  font-weight: 700;
+  pointer-events: none;
+}

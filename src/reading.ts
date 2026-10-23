@@ -638,6 +638,11 @@ export async function makeChapter(db: Db, title: string, now: number, seriesId?:
   return id;
 }
 
+/** Copies images dragged in from Explorer into a chapter you made, after the last page: the new pages' names. */
+export function dropImages(path: string, files: string[]): Promise<string[]> {
+  return invoke<string[]>("book_drop_images", { path, files });
+}
+
 /** Asks you for images and copies them in after the last page: the new pages' names, or null if you cancel. */
 export function addImages(path: string): Promise<string[] | null> {
   return invoke<string[] | null>("book_add_images", { path });
@@ -676,6 +681,11 @@ export async function pagesChanged(db: Db, bookId: number, before: string[], pag
 // --- Files (src-tauri/src/books.rs) ---
 
 /** Asks you for a manga folder, or .cbz files: the books found there, or null if you cancel. */
+/** The books in files and folders dragged in from Explorer (found the way picking finds them). */
+export function scanBooks(paths: string[]): Promise<FoundBook[]> {
+  return invoke<FoundBook[]>("book_scan", { paths });
+}
+
 export function pickBooks(kind: "folder" | "files"): Promise<FoundBook[] | null> {
   return invoke<FoundBook[] | null>("book_pick", { kind });
 }

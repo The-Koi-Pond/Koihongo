@@ -63,6 +63,7 @@ import {
   createSeries,
   deleteCategory,
   deleteMark,
+  dropImages,
   deleteSeriesBox,
   getBook,
   glossary,
@@ -80,6 +81,7 @@ import {
   pageMarks,
   pageUrl,
   pickBooks,
+  scanBooks,
   pickSeriesCover,
   relinkBook,
   removeBook,
@@ -130,6 +132,7 @@ import { useAiSettings } from "../ai/settings.ts";
 import { AiChat } from "../ui/AiChat.tsx";
 import { ReadableBar, WordHelp } from "../ui/WordHelp.tsx";
 import { TextReader } from "./TextReader.tsx";
+import { useFileDrop } from "../ui/useFileDrop.ts";
 
 type View = { mode: "shelf"; series?: number } | { mode: "book"; id: number; page?: string } | { mode: "pages"; id: number } | { mode: "glossary" } | { mode: "text" };
 
@@ -297,14 +300,19 @@ function Shelf({
   });
   const dropClass = (target: string) => (drag?.over === target ? "drop-over" : drag ? "drop-ready" : "");
 
-  async function add(kind: "folder" | "files") {
+  /** Picking (`kind`) or dropping (`dropped` paths) books in: they go into this series, or the open category. */
+  async function add(kind: "folder" | "files", dropped?: string[]) {
     setError(undefined);
     setMessage(undefined);
     try {
-      const found = await pickBooks(kind);
+      const found = dropped ? await scanBooks(dropped) : await pickBooks(kind);
       if (!found) return; // cancelled
       if (found.length === 0) {
-        setMessage("No pages found there. Pick a folder with page images in it (or with chapter folders inside), or .cbz files.");
+        setMessage(
+          dropped
+            ? "No books in what you dropped. Drop a folder with page images in it (or with chapter folders inside), or .cbz files."
+            : "No pages found there. Pick a folder with page images in it (or with chapter folders inside), or .cbz files.",
+        );
         return;
       }
       const added = await addBooks(tauriDb, found, Date.now(), seriesId, newCategory);
@@ -385,6 +393,7 @@ function Shelf({
       )}
     </form>
   );
+  const { over: dropOver } = useFileDrop((paths) => add("folder", paths));
   const toggle = (what: "chapter" | "series" | "rename", text = "") => setNaming(naming?.what === what ? undefined : { what, text });
   const addItems = [
     { icon: FolderOpen, text: "Add a folder", onClick: () => add("folder") },
@@ -478,6 +487,13 @@ function Shelf({
       )}
       {naming?.what !== "rename" && naming_form}
       {message && <p className="reading-message">{message}</p>}
+      {dropOver && (
+        <div className="drop-overlay" aria-hidden="true">
+          <FolderOpen size={36} strokeWidth={1.75} />
+          <span>Drop to add {current ? `to ${current.title}` : "to your bookshelf"}</span>
+          <span className="muted small">Folders of page images, folders of chapters, or .cbz files</span>
+        </div>
+      )}
       {error && <p className="error">{error}</p>}
       {books && series && shown.length === 0 && (
         <p className="muted">
@@ -3092,15 +3108,22 @@ function PageEditor({ id, onBack, onRead }: { id: number; onBack: () => void; on
     }
   }
 
+  // Images dragged in from Explorer (the listener starts before the page loads; add is set up below).
+  const dropped = useRef<(paths: string[]) => void>(() => {});
+  const { over: dropOver } = useFileDrop((paths) => dropped.current(paths));
+
   if (!book || !pages) return error ? <p className="error">{error}</p> : <p className="muted">Loading…</p>;
 
-  const add = () =>
+  /** Adds images, picked or (`dropped`) dragged in from Explorer, after the last page. */
+  const add = (dropped?: string[]) =>
     run(async () => {
-      if (!(await addImages(book.path))) return; // cancelled
+      const added = dropped ? await dropImages(book.path, dropped) : await addImages(book.path);
+      if (!added?.length) return; // cancelled, or nothing that's an image
       const all = await bookPages(book.path);
       await arrangeChapter(tauriDb, book, all, all); // records the new page count
       setPages(all);
     });
+  dropped.current = (paths) => add(paths);
   const arrange = (next: string[]) =>
     run(async () => {
       await arrangeChapter(tauriDb, book, pages, next);
@@ -3134,10 +3157,18 @@ function PageEditor({ id, onBack, onRead }: { id: number; onBack: () => void; on
       </button>
       <h1>{book.title}</h1>
       <p className="muted reading-intro">
-        Add page images, one or a few at a time, and drag them into reading order. Removing a page deletes Koihongo's copy, never your original.
+        Add page images (or drag them in from Explorer), one or a few at a time, and drag them into reading order. Removing a page deletes
+        Koihongo's copy, never your original.
       </p>
+      {dropOver && (
+        <div className="drop-overlay" aria-hidden="true">
+          <ImagePlus size={36} strokeWidth={1.75} />
+          <span>Drop to add these images as pages</span>
+          <span className="muted small">They go after the last page; Koihongo keeps its own copies</span>
+        </div>
+      )}
       <div className="reading-actions">
-        <button type="button" className="primary" onClick={add} disabled={busy}>
+        <button type="button" className="primary" onClick={() => add()} disabled={busy}>
           <ImagePlus size={16} strokeWidth={2.25} aria-hidden="true" /> Add images
         </button>
         <button type="button" onClick={onRead} disabled={busy || pages.length === 0}>

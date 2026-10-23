@@ -45,6 +45,8 @@ pub fn run() {
             backup::backup_restore,
             backup::backup_open_folder,
             books::book_pick,
+            books::book_scan,
+            books::book_drop_images,
             books::book_pages,
             books::book_page,
             books::book_new,
