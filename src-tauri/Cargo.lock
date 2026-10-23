@@ -2515,6 +2515,7 @@ dependencies = [
  "tauri-plugin-dialog",
  "tauri-plugin-opener",
  "tauri-plugin-window-state",
+ "windows-sys 0.61.2",
  "zip",
 ]
 

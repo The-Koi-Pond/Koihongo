@@ -1,8 +1,9 @@
-import { invoke } from "@tauri-apps/api/core";
+import { Channel, invoke } from "@tauri-apps/api/core";
 import { KeyRound, Sparkles } from "lucide-react";
 import { useEffect, useState } from "react";
 import { aiComplete } from "../ai/ai.ts";
 import {
+  LOCAL_MODELS,
   ANTHROPIC_MODELS,
   CLAUDE_CODE_MODELS,
   loadAiSettings,
@@ -12,6 +13,7 @@ import {
   saveAiSettings,
   type AiSettings,
   type CompatPreset,
+  type LocalModel,
 } from "../ai/settings.ts";
 import { tauriDb } from "../db/tauriDb.ts";
 
@@ -45,7 +47,7 @@ export function AiSettingsCard() {
     setStatus(undefined);
   };
   const preset = PRESETS[draft.compatPreset];
-  const local = draft.provider === "openai-compatible" && preset.keySlot === null;
+  const local = draft.provider === "local" || (draft.provider === "openai-compatible" && preset.keySlot === null);
 
   async function save() {
     await saveAiSettings(tauriDb, draft!);
@@ -72,8 +74,8 @@ export function AiSettingsCard() {
         <Sparkles size={16} aria-hidden="true" /> AI helper
       </h2>
       <p className="muted small">
-        Optional, for the "Ask AI" mnemonic workshop and "Explain" on example sentences. It's off until you pick a helper here, and nothing is sent anywhere
-        before that.
+        Optional, for the "Ask AI" mnemonic workshop, "Explain" on example sentences and in Reading, and "Read with AI". It's off until you pick a
+        helper here, and nothing is sent anywhere before that.
       </p>
 
       <div className="ai-providers" role="radiogroup" aria-label="AI helper">
@@ -87,6 +89,8 @@ export function AiSettingsCard() {
           </label>
         ))}
       </div>
+
+      {draft.provider === "local" && <LocalAiSetup model={draft.localModel} onModel={(m) => set({ localModel: m })} />}
 
       {draft.provider === "claude-code" && (
         <div className="setting-list">
@@ -145,7 +149,9 @@ export function AiSettingsCard() {
       {draft.provider !== "off" && (
         <p className="muted small ai-privacy">
           {local
-            ? "Requests stay on this PC: they go to the model running on your own computer. For Japanese, pick a model that's strong in Asian languages, such as a recent Qwen or Gemma (what Koharu, a manga translator, offers too). Bigger models translate better but need more memory: around 8B parameters suits most PCs with 16 GB of RAM."
+            ? draft.provider === "local"
+              ? "Requests stay on this PC: nothing is sent anywhere. The first request after a while takes 10–20 seconds while the model loads; it's put away again after 10 minutes unused, or when you close Koihongo, to free the graphics card."
+              : "Requests stay on this PC: they go to the model running on your own computer. For Japanese, pick a model that's strong in Asian languages, such as a recent Qwen or Gemma (what Koharu, a manga translator, offers too). Bigger models translate better but need more memory: around 8B parameters suits most PCs with 16 GB of RAM."
             : `When you use Ask AI or Explain, the item you're on (its character, meanings, readings and mnemonic) and your chat messages are sent to ${providerLabel(draft)}. Nothing else from the app is sent.`}
         </p>
       )}
@@ -253,6 +259,97 @@ function KeyField({ slot, where, optional }: { slot: string; where?: string; opt
         </form>
       )}
       {error && <p className="error small">{error}</p>}
+    </div>
+  );
+}
+
+type LocalStatus = { installed: boolean; to_download: number; running: boolean };
+
+/** Settings → AI helper → Built-in: which Gemma 4, and downloading (or removing) it with llama.cpp. */
+function LocalAiSetup({ model, onModel }: { model: LocalModel; onModel: (m: LocalModel) => void }) {
+  const [status, setStatus] = useState<LocalStatus>();
+  const [progress, setProgress] = useState<{ done: number; total: number }>();
+  const [confirmRemove, setConfirmRemove] = useState(false);
+  const [error, setError] = useState<string>();
+  const refresh = () =>
+    invoke<LocalStatus>("local_ai_status", { modelId: model })
+      .then(setStatus)
+      .catch((e) => setError(String(e)));
+  useEffect(() => {
+    setError(undefined);
+    refresh();
+    // The model picked is what matters.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [model]);
+
+  async function download() {
+    setError(undefined);
+    setProgress({ done: 0, total: status?.to_download ?? 0 });
+    try {
+      const channel = new Channel<{ done: number; total: number }>();
+      channel.onmessage = (p) => setProgress(p);
+      await invoke("local_ai_download", { modelId: model, onProgress: channel });
+    } catch (e) {
+      setError(String(e));
+    } finally {
+      setProgress(undefined);
+      refresh();
+    }
+  }
+
+  async function remove() {
+    if (!confirmRemove) return setConfirmRemove(true);
+    setConfirmRemove(false);
+    await invoke("local_ai_remove").catch((e) => setError(String(e)));
+    refresh();
+  }
+
+  const GB = (bytes: number) => (bytes / 1e9).toFixed(1);
+  return (
+    <div className="setting-list">
+      <div className="local-models" role="radiogroup" aria-label="Built-in model">
+        {LOCAL_MODELS.map((m) => (
+          <label key={m.id} className={`ai-provider ${model === m.id ? "current" : ""}`}>
+            <input type="radio" name="local-model" checked={model === m.id} onChange={() => onModel(m.id)} />
+            <span>
+              <strong>{m.name}</strong>
+              <span className="muted small">
+                {m.blurb} Download {m.download}; graphics memory {m.memory}.
+              </span>
+            </span>
+          </label>
+        ))}
+      </div>
+      {progress ? (
+        <div className="ocr-progress" role="progressbar" aria-valuemin={0} aria-valuemax={progress.total} aria-valuenow={progress.done}>
+          <span className="ocr-progress-track">
+            <span style={{ width: `${progress.total ? (progress.done / progress.total) * 100 : 0}%` }} />
+          </span>
+          <span className="muted small">
+            Downloading… {GB(progress.done)} / {GB(progress.total)} GB (you can keep using Koihongo meanwhile)
+          </span>
+        </div>
+      ) : status?.installed ? (
+        <div className="row">
+          <span className="ocr-ready">✓ Ready{status.running ? " (running now)" : ""}</span>
+          <button type="button" className={`icon-text ${confirmRemove ? "danger" : ""}`} onClick={remove} onBlur={() => setConfirmRemove(false)}>
+            {confirmRemove ? "Click again to remove (all built-in models)" : "Remove"}
+          </button>
+        </div>
+      ) : (
+        status && (
+          <div className="row">
+            <button type="button" className="primary" onClick={download}>
+              Download ({GB(status.to_download)} GB)
+            </button>
+          </div>
+        )
+      )}
+      {error && <p className="error">{error}</p>}
+      <p className="muted small">
+        Gemma 4 by Google (Apache-2.0), as GGUF by ggml-org, run by llama.cpp (MIT). Saved in Koihongo's data folder, checked before use. Save, then
+        press Test connection to start it.
+      </p>
     </div>
   );
 }

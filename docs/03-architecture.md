@@ -164,6 +164,8 @@ Code: [`src/srs/`](../src/srs/). Pacing numbers: [`src/srs/settings.ts`](../src/
 
 An AI request can carry one picture (a PNG, base64) with its last message: Anthropic and OpenAI-compatible services get it as an image content block; Claude Code gets it through `--input-format stream-json` (its tools stay off). Used by "Read with AI" in Reading.
 
+The **built-in** helper ([`src-tauri/src/local_ai.rs`](../src-tauri/src/local_ai.rs)) downloads llama.cpp's Windows Vulkan build (release b11838) and a Gemma 4 GGUF with its vision projector (ggml-org, pinned commits) through [`downloads.rs`](../src-tauri/src/downloads.rs) into `%APPDATA%com.xel.nihongomodelslocal-ai`. The first request starts `llama-server` on 127.0.0.1 with a random port and API key (a Windows job object kills it if Koihongo dies), waits for `/health`, then talks to it as an OpenAI-compatible service. It stops after 10 minutes idle (a watcher thread), when another model is picked, or when Koihongo exits (`RunEvent::Exit`). Its output goes to `modelslocal-aiserver.log`.
+
 ### How a request works (mnemonic workshop example)
 
 1. You click "Rework mnemonic" on 森 (forest).

@@ -174,6 +174,11 @@ export function browserMode(): Plugin {
       case "ocr_find":
       case "words_split":
         throw new Error("Only available in the desktop app (this is browser mode).");
+      case "local_ai_download":
+      case "local_ai_remove":
+        throw new Error("Only available in the desktop app (this is browser mode).");
+      case "local_ai_status":
+        return { installed: false, to_download: 7_400_000_000, running: false };
       case "ocr_status":
         return { installed: false, size: 461_000_000 };
       default:

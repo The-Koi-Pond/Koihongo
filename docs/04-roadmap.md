@@ -33,6 +33,7 @@ Each phase ends with something you can **use daily**. Don't start the next phase
 
 - ✅ AI backend: run the Claude Code CLI with your existing login (no API key, no spending log; see 03-architecture "AI integration").
 - ✅ AI helper choice (2026-10-23): off by default; Claude Code, the Anthropic API, or an OpenAI-compatible service (OpenAI, OpenRouter, Gemini, local Ollama / LM Studio, custom), picked in Settings, keys in Windows Credential Manager.
+- ✅ Built-in AI (2026-10-24): Gemma 4 (12B or 26B-A4B) run by llama.cpp's llama-server inside Koihongo (`src-tauri/src/local_ai.rs`): a one-time download, started when first needed, stopped after 10 minutes idle or when Koihongo closes; reads pictures too (vision projector).
 - ✅ Mnemonic workshop chat on any item ("Ask AI" next to each mnemonic; prompts in `src/ai/prompts.ts`).
 - Tune the prompt after real use (e.g. which reading a reading mnemonic should target).
 - Bulk-draft mnemonics for upcoming items (marked AI, editable).
