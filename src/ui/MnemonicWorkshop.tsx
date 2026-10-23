@@ -1,45 +1,42 @@
 import { useState } from "react";
-import { extractMnemonics, mnemonicOpener, mnemonicSystemPrompt, type MnemonicFocus } from "../ai/prompts.ts";
+import { extractMnemonics, mnemonicInstructions, mnemonicOpener, type MnemonicFocus } from "../ai/prompts.ts";
+import { askDeki } from "../deki/store.ts";
 import type { ItemDetails } from "../items.ts";
-import { AiChat } from "./AiChat.tsx";
 
-/** Chat with your AI helper about a mnemonic; "Use this" saves a suggestion. */
-export function MnemonicWorkshop({
-  item,
-  focus,
-  onUse,
-  onClose,
-}: {
-  item: ItemDetails;
-  focus: MnemonicFocus;
-  onUse: (text: string) => Promise<void>;
-  onClose: () => void;
-}) {
+/** "Ask AI" on a mnemonic: Deki-senpai suggests some in a chat of their own; "Use this" saves one. */
+export function askForMnemonics(item: ItemDetails, focus: MnemonicFocus, onUse: (text: string) => Promise<void>) {
+  askDeki({
+    message: mnemonicOpener(item, focus),
+    instructions: mnemonicInstructions(item, focus),
+    apart: true,
+    actions: (reply) => <MnemonicOptions options={extractMnemonics(reply)} onUse={onUse} />,
+  });
+}
+
+function MnemonicOptions({ options, onUse }: { options: string[]; onUse: (text: string) => Promise<void> }) {
   const [used, setUsed] = useState<string>();
-
-  async function use(text: string) {
-    await onUse(text);
-    setUsed(text);
-  }
-
+  const [error, setError] = useState<string>();
   return (
-    <AiChat
-      title="Mnemonic workshop"
-      system={mnemonicSystemPrompt(item, focus)}
-      opener={mnemonicOpener(item, focus)}
-      placeholder="e.g. make it about Pokémon, shorter, use the word 'shin'…"
-      footnote="AI suggestions can be wrong; saved ones are marked as AI-written."
-      onClose={onClose}
-      extras={(reply) =>
-        extractMnemonics(reply).map((option) => (
-          <div key={option} className="option">
-            <button type="button" className={used === option ? "" : "primary"} disabled={used === option} onClick={() => use(option)}>
-              {used === option ? "Saved ✓" : "Use this"}
-            </button>
-            <span>{option}</span>
-          </div>
-        ))
-      }
-    />
+    <>
+      {options.map((option) => (
+        <div key={option} className="option">
+          <button
+            type="button"
+            className={used === option ? "" : "primary"}
+            disabled={used === option}
+            onClick={() =>
+              onUse(option).then(
+                () => setUsed(option),
+                (e) => setError(String(e)),
+              )
+            }
+          >
+            {used === option ? "Saved ✓" : "Use this"}
+          </button>
+          <span>{option}</span>
+        </div>
+      ))}
+      {error && <p className="error">{error}</p>}
+    </>
   );
 }

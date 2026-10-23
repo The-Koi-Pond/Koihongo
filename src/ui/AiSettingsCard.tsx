@@ -18,7 +18,7 @@ import {
 import { tauriDb } from "../db/tauriDb.ts";
 
 /**
- * Settings → AI helper: off by default; pick Claude Code, the Anthropic API or
+ * Settings → Deki-senpai: off by default; pick Claude Code, the Anthropic API or
  * an OpenAI-compatible service. API keys are saved straight into Windows
  * Credential Manager (never in the app's data or backups).
  */
@@ -71,14 +71,14 @@ export function AiSettingsCard() {
   return (
     <section className="card ai-settings">
       <h2>
-        <Sparkles size={16} aria-hidden="true" /> AI helper
+        <Sparkles size={16} aria-hidden="true" /> Deki-senpai
       </h2>
       <p className="muted small">
-        Optional, for the "Ask AI" mnemonic workshop, "Explain" on example sentences and in Reading, and "Read with AI". It's off until you pick a
-        helper here, and nothing is sent anywhere before that.
+        Your study buddy: the Deki button in the corner of every page, "Explain" on example sentences and in Reading, mnemonic ideas, and "Read with AI".
+        Pick which AI Deki uses here (or switch in Deki's menu). It's off until you pick one, and nothing is sent anywhere before that.
       </p>
 
-      <div className="ai-providers" role="radiogroup" aria-label="AI helper">
+      <div className="ai-providers" role="radiogroup" aria-label="Deki-senpai's connection">
         {PROVIDERS.map((p) => (
           <label key={p.id} className={`ai-provider ${draft.provider === p.id ? "current" : ""}`}>
             <input type="radio" name="ai-provider" checked={draft.provider === p.id} onChange={() => set({ provider: p.id })} />
@@ -265,7 +265,7 @@ function KeyField({ slot, where, optional }: { slot: string; where?: string; opt
 
 type LocalStatus = { installed: boolean; to_download: number; running: boolean };
 
-/** Settings → AI helper → Built-in: which Gemma 4, and downloading (or removing) it with llama.cpp. */
+/** Settings → Deki-senpai → Built-in: which Gemma 4, and downloading (or removing) it with llama.cpp. */
 function LocalAiSetup({ model, onModel }: { model: LocalModel; onModel: (m: LocalModel) => void }) {
   const [status, setStatus] = useState<LocalStatus>();
   const [progress, setProgress] = useState<{ done: number; total: number }>();

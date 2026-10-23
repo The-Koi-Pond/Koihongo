@@ -51,7 +51,7 @@ export async function pictureOf(url: string, box: Box, maxSide = 480): Promise<s
   return canvas.toDataURL("image/jpeg", 0.82);
 }
 
-/** The text in a mark's boxes read by your AI helper from their pictures (one request a box, joined in box order). */
+/** The text in a mark's boxes read by Deki-senpai from their pictures (one request a box, joined in box order). */
 export async function readBoxesWithAi(url: string, boxes: Box[], kind: string): Promise<string> {
   const parts: string[] = [];
   for (const box of boxes) {

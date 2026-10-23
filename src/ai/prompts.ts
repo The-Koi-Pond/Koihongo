@@ -51,7 +51,8 @@ export function describeItem(item: ItemDetails): string {
   }
 }
 
-export function mnemonicSystemPrompt(item: ItemDetails, focus: MnemonicFocus): string {
+/** The mnemonic workshop's instructions for Deki-senpai (on top of its persona). */
+export function mnemonicInstructions(item: ItemDetails, focus: MnemonicFocus): string {
   const current = item.notes[focus === "meaning" ? "mnemonic_meaning" : "mnemonic_reading"]?.text;
   const goal =
     item.kind === "kana"
@@ -61,10 +62,7 @@ export function mnemonicSystemPrompt(item: ItemDetails, focus: MnemonicFocus): s
         ? "the word's look (its kanji) to its meaning"
         : "the shape (its components) to its meaning"
       : "the item to its reading, through a sound-alike English word or image";
-  return `You help a Japanese learner write mnemonics inside Koihongo, a study app.
-A mnemonic is a short, vivid story that links ${goal}.
-
-About the learner: ${LEARNER_PROFILE}
+  return `You're helping them write a ${focus} mnemonic: a short, vivid story that links ${goal}.
 
 ${describeItem(item)}
 Current ${focus} mnemonic: ${current ? `"${current}"` : "none yet"}
@@ -100,75 +98,75 @@ export type SentenceToExplain = {
   word: { written: string; reading: string; meaning: string };
 };
 
-export const EXPLAIN_OPENER = "Please break this sentence down for me.";
+/**
+ * A request to Deki-senpai: the short message shown as yours in the chat, and
+ * the instructions sent with it behind the scenes (the facts, the shape of the answer).
+ */
+export type DekiRequest = { message: string; instructions: string };
 
-/** "Explain this sentence": readings come from our dictionary, so the AI only has to explain. */
-export function explainSystemPrompt(sentence: SentenceToExplain, words: SentenceWord[]): string {
+/** "Explain" on an example sentence: readings come from our dictionary, so Deki only has to explain. */
+export function explainSentenceRequest(sentence: SentenceToExplain, words: SentenceWord[]): DekiRequest {
   const facts = words.map(
     (w) => `- ${w.written} (${w.reading}): ${w.meaning}. ${w.started ? "The learner has studied this word." : "New to the learner."}`,
   );
-  return `You explain Japanese sentences to a beginner inside Koihongo, a study app.
-
-About the learner: ${LEARNER_PROFILE} They can read hiragana and katakana, and know very little grammar yet.
-
+  return {
+    message: `Break this sentence down for me: ${sentence.japanese}`,
+    instructions: `They asked about an example sentence on a word's page.
 Sentence: ${sentence.japanese}
 English translation (from a volunteer-made corpus; usually right, sometimes loose): ${sentence.english}
 The learner is studying the word ${sentence.word.written} (${sentence.word.reading}): ${sentence.word.meaning}.
-${facts.length > 0 ? `Dictionary facts for the words written with kanji in it (use these readings and meanings; if one appears conjugated, say so):\n${facts.join("\n")}` : ""}
-
-Format your first answer like this, in plain text (no markdown, no bold, no headings with #):
+${facts.length > 0 ? `Dictionary facts for the words written with kanji in it (use these readings and meanings; if one appears conjugated, say so):\n${facts.join("\n")}\n` : ""}
+Answer the breakdown request like this, starting straight with 1., in plain text:
 1. The whole sentence in kana, then the same in romaji on the next line.
-2. A blank line, then the sentence piece by piece, one piece per line: "piece (reading) – what it means and what it does here". Include particles, and split conjugated forms into their parts (e.g. 食べたくない = 食べ (taberu) + たい "want to" + ない "not").
-3. A blank line, then at most 3 short grammar notes, only about things in this sentence. Name each one plainly (e.g. "〜たい = want to").
-4. A blank line, then "Translation: " and a natural English translation. If the given one is loose, say how in a few words.
-
-Rules:
-- Use the dictionary facts above for readings. For anything else, if you aren't sure of a reading, say so rather than guess.
-- Explain any grammar word you use (particle, conjugation, polite form) in plain words the first time.
-- Keep it compact. For follow-up questions, answer briefly and directly, in plain text.`;
+2. The sentence piece by piece, one piece per line: "piece (reading) – what it means and what it does here". Include particles, and split conjugated forms into their parts (e.g. 食べたくない = 食べ (taberu) + たい "want to" + ない "not").
+3. At most 3 short grammar notes, only about things in this sentence (e.g. "〜たい = want to"). Explain any grammar word the first time.
+4. "Translation: " and a natural English translation. If the given one is loose, say how in a few words.
+Answer follow-up questions briefly and directly.`,
+  };
 }
 
 // --- Reading: "Explain" on a marked box ---
-
-export const EXPLAIN_BOX_OPENER = "Please explain this one for me.";
 
 /** A marked box to explain: its kind (speech bubble, sound effect…), its Japanese, and whether that was read automatically and unsure. */
 export type BoxToExplain = { kind: string; text: string; unsure: boolean };
 
 /**
- * "Explain" on a box in the reader: the box, the page's other boxes in
- * reading order (for the conversation around it), and the series' context
- * (whatever the series' options let through).
+ * "Explain" on a box (or a pasted line): the box and the shape of the answer.
+ * Where it is (the series' notes, the page's other boxes) Deki already knows
+ * from the page (src/deki).
  */
-export function explainBoxPrompt(box: BoxToExplain, page: string[], context: string, source = "a manga they're reading"): string {
+export function explainBoxRequest(box: BoxToExplain): DekiRequest {
   const sfx = box.kind === "SFX";
-  return `You explain Japanese from ${source} to a beginner inside Koihongo, a study app.
-
-About the learner: ${LEARNER_PROFILE} They can read hiragana and katakana, and know very little grammar yet.
-
-${context.trim() ? `About the manga (written by the learner; use it for names, who's who and tone):\n${context.trim()}\n\n` : ""}${page.length > 0 ? `The text around it, in order:\n${page.join("\n")}\n\n` : ""}The one to explain (${box.kind}): ${box.text}
-${box.unsure ? "It was read from the page automatically and the reader wasn't sure, so it may have a misread character or two. If something looks misread, say what it probably is.\n" : ""}
-Format your first answer like this, in plain text (no markdown, no bold, no headings with #):
+  return {
+    message: `Explain this ${box.kind === "Text" ? "line" : box.kind.toLowerCase()} for me: ${box.text}`,
+    instructions: `They asked you to explain a ${box.kind === "Text" ? "line of text" : box.kind.toLowerCase()}: ${box.text}
+${box.unsure ? "It was read off the page automatically and the reader wasn't sure, so it may have a misread character or two. If something looks misread, say what it probably is.\n" : ""}
+Answer like this, starting straight with 1., in plain text:
 1. The text in kana, then the same in romaji on the next line.
 ${
   sfx
-    ? `2. A blank line, then what this sound effect depicts here (a sound, a movement, a feeling or a state), and the feel of it, in two or three short lines. If it's a well-known one, mention the word it comes from or its common uses.`
-    : `2. A blank line, then the text piece by piece, one piece per line: "piece (reading) – what it means and what it does here". Include particles, and split conjugated forms into their parts.
-3. A blank line, then at most 3 short grammar notes, only about things in this text. Name each one plainly (e.g. "〜たい = want to").
-4. If the manga's context or the page around it changes the meaning or tone (who's speaking, politeness, a name, a joke), a blank line, then "Context: " and one or two sentences on how.`
+    ? `2. What this sound effect depicts here (a sound, a movement, a feeling or a state) and its feel, in two or three short lines. If it's a well-known one, mention the word it comes from.`
+    : `2. The text piece by piece, one piece per line: "piece (reading) – what it means and what it does here". Include particles, and split conjugated forms into their parts.
+3. At most 3 short grammar notes, only about things in this text (e.g. "〜たい = want to"). Explain any grammar word the first time.
+4. If the context or the text around it changes the meaning or tone (who's speaking, politeness, a name, a joke), "Context: " and one or two sentences on how.`
 }
-${sfx ? "3" : "5"}. A blank line, then "Translation: " and a short, natural English rendering that would fit the page.
+${sfx ? "3" : "5"}. "Translation: " and a short, natural English rendering that fits.
+Answer follow-up questions briefly and directly.`,
+  };
+}
 
-Rules:
-- If you aren't sure of a reading or a meaning, say so rather than guess.
-- Explain any grammar word you use (particle, conjugation, polite form) in plain words the first time.
-- Keep it compact. For follow-up questions, answer briefly and directly, in plain text.`;
-}
+/** /translate in Reading: every box on the page, in order. */
+export const TRANSLATE_PAGE_REQUEST: DekiRequest = {
+  message: "Translate this page for me.",
+  instructions:
+    'They asked for a translation of every box on this page. Give it in order, one per line: "Speech 1: (natural English)". Keep names and tone consistent with what you know of the manga. If a box looks misread, say so after its line.',
+};
 
 /** The parts of an "Explain" reply the learner can keep: its kana line (a reading) and its translation. */
 export function explainedParts(reply: string): { kana?: string; translation?: string } {
   const lines = reply.split("\n").map((l) => l.trim());
-  const kana = lines.find(Boolean)?.replace(/^1[.)]\s*/, "");
+  // The "1." line (Deki may say hello first), else the first line.
+  const kana = (lines.find((l) => /^1[.)]\s*\S/.test(l)) ?? lines.find(Boolean))?.replace(/^1[.)]\s*/, "");
   const translation = lines.find((l) => /^(\d[.)]\s*)?translation\s*:/i.test(l))?.replace(/^(\d[.)]\s*)?translation\s*:\s*/i, "");
   // Only a kana line counts as a reading (not an apology or a question back).
   const isKana = !!kana && /^[\p{Script=Hiragana}\p{Script=Katakana}ー〜\s、。！？!?…・「」『』　]+$/u.test(kana);

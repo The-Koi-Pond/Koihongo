@@ -1,9 +1,8 @@
 import { ArrowLeft, Sparkles } from "lucide-react";
 import { useEffect, useState } from "react";
-import { EXPLAIN_BOX_OPENER, explainBoxPrompt } from "../ai/prompts.ts";
-import { useAiSettings } from "../ai/settings.ts";
+import { explainBoxRequest } from "../ai/prompts.ts";
 import { tauriDb } from "../db/tauriDb.ts";
-import { AiChat } from "../ui/AiChat.tsx";
+import { askDeki, useDekiPage } from "../deki/store.ts";
 import { ReadableBar, WordCard } from "../ui/WordHelp.tsx";
 import { coverage, readingOf, wordsIn, type Word } from "../words.ts";
 
@@ -32,7 +31,7 @@ type Line = { text: string; words: Word[] };
  * Reading → Paste text: any Japanese (a visual novel's lines, a message, an
  * article) shown as words coloured by your progress. Hover a word for its
  * meaning, click it for the full entry and Add to deck (the line comes with
- * it); each line can be explained by the AI helper. The text is remembered
+ * it); Deki-senpai can explain each line (and knows the text). The text is remembered
  * on this PC.
  */
 export function TextReader({ onBack }: { onBack: () => void }) {
@@ -40,15 +39,18 @@ export function TextReader({ onBack }: { onBack: () => void }) {
   const [lines, setLines] = useState<Line[]>();
   const [problem, setProblem] = useState<string>();
   const [open, setOpen] = useState<{ line: number; word: number }>();
-  const [explaining, setExplaining] = useState<number>();
   const [readings, setReadings] = useState(false);
-  const ai = useAiSettings(tauriDb);
-  const aiOn = !!ai && ai.provider !== "off";
+  useDekiPage({
+    id: "paste-text",
+    label: "Reading · Paste text",
+    instructions: "They pasted some Japanese (a visual novel's lines, a message, an article…) to read it word by word. Help them understand it.",
+    // A long paste is cut, so it doesn't crowd out the chat.
+    parts: [{ key: "text", name: "The pasted text", text: text.trim().slice(0, 4000) }],
+  });
 
   useEffect(() => {
     saveDraft(text);
     setOpen(undefined);
-    setExplaining(undefined);
     let live = true;
     const timer = window.setTimeout(async () => {
       try {
@@ -123,11 +125,14 @@ export function TextReader({ onBack }: { onBack: () => void }) {
                       ),
                     )}
                   </div>
-                  {aiOn && explaining !== li && (
-                    <button type="button" className="explain-btn" onClick={() => setExplaining(li)} title="Break this line down with AI">
-                      <Sparkles size={14} aria-hidden="true" /> Explain
-                    </button>
-                  )}
+                  <button
+                    type="button"
+                    className="explain-btn"
+                    onClick={() => askDeki(explainBoxRequest({ kind: "Text", text: line.text, unsure: false }))}
+                    title="Ask Deki-senpai to break this line down"
+                  >
+                    <Sparkles size={14} aria-hidden="true" /> Explain
+                  </button>
                 </div>
                 {readings && (
                   <p className="text-line-reading" lang="ja">
@@ -135,21 +140,6 @@ export function TextReader({ onBack }: { onBack: () => void }) {
                   </p>
                 )}
                 {open?.line === li && <WordCard word={line.words[open.word]} bubble={line.text} />}
-                {explaining === li && (
-                  <AiChat
-                    title={`Line: ${line.text}`}
-                    system={explainBoxPrompt(
-                      { kind: "Text", text: line.text, unsure: false },
-                      lines.flatMap((l, i) => (i !== li && Math.abs(i - li) <= 4 ? [`Line ${i + 1}: ${l.text}`] : [])),
-                      "",
-                      "a text they pasted in",
-                    )}
-                    opener={EXPLAIN_BOX_OPENER}
-                    placeholder="Ask about it"
-                    footnote="Sent: this line and the lines around it. AI explanations can be wrong."
-                    onClose={() => setExplaining(undefined)}
-                  />
-                )}
               </li>
             ))}
           </ol>

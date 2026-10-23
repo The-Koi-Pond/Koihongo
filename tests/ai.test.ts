@@ -3,7 +3,7 @@ import { test } from "node:test";
 import { backendRequest, formatConversation } from "../src/ai/ai.ts";
 import { DEFAULT_AI, loadAiSettings, saveAiSettings, type AiSettings } from "../src/ai/settings.ts";
 import { migrate } from "../src/db/migrations.ts";
-import { describeItem, explainSystemPrompt, extractMnemonics, mnemonicOpener, mnemonicSystemPrompt } from "../src/ai/prompts.ts";
+import { describeItem, explainSentenceRequest, extractMnemonics, mnemonicOpener, mnemonicInstructions } from "../src/ai/prompts.ts";
 import type { KanjiDetails } from "../src/items.ts";
 import { openTestDb } from "./nodeDb.ts";
 
@@ -45,8 +45,8 @@ test("item facts come from the database, not the model", () => {
 
 test("the system prompt includes the current mnemonic and the opener adapts", () => {
   const withNote: KanjiDetails = { ...mori, notes: { mnemonic_meaning: { text: "Three trees.", author: "you", created_at: 1 } } };
-  assert.match(mnemonicSystemPrompt(withNote, "meaning"), /Current meaning mnemonic: "Three trees."/);
-  assert.match(mnemonicSystemPrompt(mori, "reading"), /Current reading mnemonic: none yet/);
+  assert.match(mnemonicInstructions(withNote, "meaning"), /Current meaning mnemonic: "Three trees."/);
+  assert.match(mnemonicInstructions(mori, "reading"), /Current reading mnemonic: none yet/);
   assert.match(mnemonicOpener(withNote, "meaning"), /isn't working/);
   assert.match(mnemonicOpener(mori, "meaning"), /3 options/);
 });
@@ -68,19 +68,19 @@ test("mnemonic lines are found, even with numbering or bold markers", () => {
   ]);
 });
 
-test("the sentence explainer gets the sentence, its word facts and what the learner knows", () => {
-  const prompt = explainSystemPrompt(
+test("explaining an example sentence to Deki: the sentence, its word facts and what the learner knows", () => {
+  const { message, instructions: prompt } = explainSentenceRequest(
     { japanese: "休みが欲しい。", english: "I want a break.", word: { written: "休み", reading: "やすみ", meaning: "rest" } },
     [
       { written: "休み", reading: "やすみ", meaning: "rest; break", started: true },
       { written: "欲しい", reading: "ほしい", meaning: "wanted; desired", started: false },
     ],
   );
-  assert.match(prompt, /Sentence: 休みが欲しい。/);
+  assert.equal(message, "Break this sentence down for me: 休みが欲しい。", "the chat shows just the ask");
   assert.match(prompt, /I want a break\./);
   assert.match(prompt, /- 休み \(やすみ\): rest; break\. The learner has studied this word\./);
   assert.match(prompt, /- 欲しい \(ほしい\): wanted; desired\. New to the learner\./);
-  assert.match(prompt, /no markdown/);
+  assert.match(prompt, /"Translation: "/);
 });
 
 const chat = { system: "sys", messages: [{ role: "user" as const, text: "hi" }] };
@@ -129,18 +129,17 @@ test("AI requests: each helper gets what it needs, and off sends nothing", () =>
   assert.throws(() => backendRequest({ ...DEFAULT_AI, provider: "openai-compatible" }, chat), /No model/);
 });
 
-test("explaining a manga box: the box, its page and the series context go in; SFX get their own format", async () => {
-  const { explainBoxPrompt } = await import("../src/ai/prompts.ts");
-  const speech = explainBoxPrompt({ kind: "Speech", text: "もう待ちません", unsure: false }, ["Speech 2: 邪魔者はもういないのだから…"], "Series: Koi Story\n\nCast:\nLily");
-  assert.match(speech, /The one to explain \(Speech\): もう待ちません/);
-  assert.match(speech, /Speech 2: 邪魔者はもういないのだから…/);
-  assert.match(speech, /Cast:\nLily/);
-  assert.match(speech, /piece by piece/);
-  assert.doesNotMatch(speech, /misread/);
-  const sfx = explainBoxPrompt({ kind: "SFX", text: "コツ", unsure: true }, [], "");
-  assert.match(sfx, /what this sound effect depicts/);
-  assert.match(sfx, /misread/);
-  assert.doesNotMatch(sfx, /About the manga|The text around it/);
+test("explaining a box to Deki: the box and the answer's shape; SFX get their own", async () => {
+  const { explainBoxRequest } = await import("../src/ai/prompts.ts");
+  const speech = explainBoxRequest({ kind: "Speech", text: "もう待ちません", unsure: false });
+  assert.equal(speech.message, "Explain this speech for me: もう待ちません", "the chat shows just the ask");
+  assert.match(speech.instructions, /piece by piece/);
+  assert.match(speech.instructions, /5\. "Translation: "/);
+  assert.doesNotMatch(speech.instructions, /misread/);
+  const sfx = explainBoxRequest({ kind: "SFX", text: "コツ", unsure: true });
+  assert.match(sfx.instructions, /What this sound effect depicts/);
+  assert.match(sfx.instructions, /misread/);
+  assert.equal(explainBoxRequest({ kind: "Text", text: "x", unsure: false }).message, "Explain this line for me: x");
 });
 
 test("an explanation's kana line and translation can be kept; other first lines aren't a reading", async () => {
@@ -149,6 +148,7 @@ test("an explanation's kana line and translation can be kept; other first lines 
   assert.deepEqual(explainedParts(reply), { kana: "もう まちません", translation: "I won't wait any longer." });
   assert.deepEqual(explainedParts("Sorry, I can't read that.\n5. translation: Footsteps (tap, tap)."), { kana: undefined, translation: "Footsteps (tap, tap)." });
   assert.deepEqual(explainedParts(""), { kana: undefined, translation: undefined });
+  assert.equal(explainedParts("Ooh, a good one!\n1. もう まちません\nmou").kana, "もう まちません", "after a hello");
 });
 
 test("reading a box with AI: the picture goes to every helper, and the reply is just the text", async () => {

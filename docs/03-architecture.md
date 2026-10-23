@@ -24,11 +24,11 @@ Rule of thumb: boring, well-supported tools; as few moving parts as possible.
 │   └─ talks to ↓                                   │
 │  Backend (Rust, kept thin)                        │
 │   ├─ SQLite database (your progress + content)    │
-│   └─ AI requests → your chosen AI helper          │
+│   └─ AI requests → Deki-senpai's connection       │
 └───────────────────────────────────────────────────┘
 ```
 
-AI requests go through the backend, to whichever AI helper you picked in Settings (see "AI integration"). AI is off until you pick one.
+AI requests go through the backend, to whichever connection you picked for Deki-senpai (see "AI integration"). AI is off until you pick one.
 
 ## Content sources and licenses
 
@@ -166,16 +166,26 @@ An AI request can carry one picture (a PNG, base64) with its last message: Anthr
 
 The **built-in** helper ([`src-tauri/src/local_ai.rs`](../src-tauri/src/local_ai.rs)) downloads llama.cpp's Windows Vulkan build (release b11838) and a Gemma 4 GGUF with its vision projector (ggml-org, pinned commits) through [`downloads.rs`](../src-tauri/src/downloads.rs) into `%APPDATA%com.xel.nihongomodelslocal-ai`. The first request starts `llama-server` on 127.0.0.1 with a random port and API key (a Windows job object kills it if Koihongo dies), waits for `/health`, then talks to it as an OpenAI-compatible service. It stops after 10 minutes idle (a watcher thread), when another model is picked, or when Koihongo exits (`RunEvent::Exit`). Its output goes to `modelslocal-aiserver.log`.
 
+### Deki-senpai (2026-10-24)
+
+All AI chat goes through one panel, [`src/deki/DekiPanel.tsx`](../src/deki/DekiPanel.tsx), mounted once in `App.tsx`. Its state is a small store ([`src/deki/store.ts`](../src/deki/store.ts), `useSyncExternalStore`); the React-free parts (persona, building the system prompt, trimming history, slash commands, saved chats) are in [`src/deki/deki.ts`](../src/deki/deki.ts).
+
+- **Pages tell Deki where you are** with `useDekiPage({ id, label, instructions, parts, scopes?, commands? })`. `parts` are named pieces of context (the chips in the header); the ones you switch off are remembered per page id in localStorage. Pages without it (Today, Decks…) get general instructions.
+- **Features ask Deki** with `askDeki({ message, instructions?, apart?, actions? })`: the message is shown as yours, `instructions` go into the system prompt for the rest of that task, `actions` render buttons under each reply ("Use as meaning", "Use this"), `apart` gives the task its own chat (mnemonics). Going to another page ends the task.
+- **The system prompt** is the persona, where you are and the page's instructions, the parts you let through, then the task's instructions.
+- **Kept chats** (Reading, scope chapter or series) are saved in `deki_threads` (one per scope + id) and `deki_messages`; "Just now" chats live in memory until cleared. Long chats send the newest messages that fit (9k characters for the built-in model, 60k otherwise), always starting with one of yours.
+- The connection menu and /use save `ai.provider`, the same setting as Settings → Deki-senpai.
+
 ### How a request works (mnemonic workshop example)
 
-1. You click "Rework mnemonic" on 森 (forest).
+1. You click Ask Deki on 森's (forest) meaning mnemonic.
 2. The app builds a request containing: the kanji, its meanings and readings, its components and their names, your current mnemonic, and a short instruction ("help the learner make a vivid, memorable mnemonic; keep it short; use the component names").
-3. The backend sends it to your AI helper and shows the reply in a chat panel.
+3. The backend sends it to your chosen connection and Deki's panel shows the reply.
 4. You chat back and forth. When you like one, "Use this" saves it as a new `notes` version marked `ai` (or `ai_edited` if you tweak it).
 
 ### Choosing a helper (2026-10-23)
 
-AI is **off by default**, for everyone: nothing is sent anywhere until you pick a helper in Settings → AI helper (`src/ui/AiSettingsCard.tsx`, saved as `ai.*` rows in user.db `settings`, see `src/ai/settings.ts`). While it's off, the Ask AI and Explain buttons are hidden. The choices:
+AI is **off by default**, for everyone: nothing is sent anywhere until you pick a connection in Settings → Deki-senpai (or Deki's own menu) (`src/ui/AiSettingsCard.tsx`, saved as `ai.*` rows in user.db `settings`, see `src/ai/settings.ts`). While it's off, the Ask AI and Explain buttons are hidden. The choices:
 
 - **Claude Code** (below): your own Claude login, no key.
 - **Anthropic API** (`src-tauri/src/ai_api.rs`): `POST https://api.anthropic.com/v1/messages` with an API key. Defaults to Claude Opus 5.5 (Sonnet 5.5 and Haiku 5.5 selectable). For models that support it, requests opt into Anthropic's server-side refusal fallback (`fallbacks: "default"`, beta `server-side-fallback-2026-07-01`): a request a model's safety classifiers wrongly decline is re-run on a recommended other model. A remaining `stop_reason: "refusal"` is shown as "the model declined".

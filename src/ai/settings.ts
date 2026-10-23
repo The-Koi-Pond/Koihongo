@@ -1,4 +1,4 @@
-// Which AI helper to use (Settings → AI helper), saved in user.db `settings`
+// Which AI Deki-senpai uses (Settings → Deki-senpai), saved in user.db `settings`
 // as ai.* keys. Off until you choose one: nothing is sent anywhere before that.
 // API keys are not here: they live in the OS credential store (src-tauri/src/ai_api.rs).
 

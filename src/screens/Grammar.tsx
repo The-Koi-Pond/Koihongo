@@ -1,6 +1,7 @@
 import { Link2, ListOrdered, NotebookPen, Quote } from "lucide-react";
 import { useEffect, useState } from "react";
 import { GRAMMAR, grammarPoint, markedParts, patternParts, type GrammarPoint } from "../grammar/points.ts";
+import { useDekiPage } from "../deki/store.ts";
 import { JapaneseText } from "../ui/Popover.tsx";
 import { KindLabel } from "../ui/ItemView.tsx";
 import { BannerScene } from "../ui/Scene.tsx";
@@ -54,6 +55,18 @@ function BreakAfterDots({ text }: { text: string }) {
 
 function GrammarPage({ point, onOpen, onBack }: { point: GrammarPoint; onOpen: (key: string) => void; onBack: () => void }) {
   const number = GRAMMAR.indexOf(point) + 1;
+  useDekiPage({
+    id: "grammar",
+    label: `Grammar · ${point.title}`,
+    instructions: "They're reading a grammar point's page. Help them understand the pattern; make up more examples or quiz them if they ask.",
+    parts: [
+      {
+        key: "point",
+        name: "The grammar point",
+        text: [`${point.title} (${point.meaning})`, `Pattern: ${point.pattern}`, ...point.explanation, "Examples:", ...point.examples.map((e) => `${e.ja} = ${e.en}`)].join("\n"),
+      },
+    ],
+  });
   return (
     <div className="item-body">
       <div className="item-view grammar">

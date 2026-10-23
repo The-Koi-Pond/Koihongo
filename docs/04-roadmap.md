@@ -34,6 +34,7 @@ Each phase ends with something you can **use daily**. Don't start the next phase
 - ✅ AI backend: run the Claude Code CLI with your existing login (no API key, no spending log; see 03-architecture "AI integration").
 - ✅ AI helper choice (2026-10-23): off by default; Claude Code, the Anthropic API, or an OpenAI-compatible service (OpenAI, OpenRouter, Gemini, local Ollama / LM Studio, custom), picked in Settings, keys in Windows Credential Manager.
 - ✅ Built-in AI (2026-10-24): Gemma 4 (12B or 26B-A4B) run by llama.cpp's llama-server inside Koihongo (`src-tauri/src/local_ai.rs`): a one-time download, started when first needed, stopped after 10 minutes idle or when Koihongo closes; reads pictures too (vision projector).
+- ✅ Deki-senpai (2026-10-24): all AI chat in one panel on every page (pops over or docks beside the page), a friendly senpai persona, page-aware context with switchable chips, chats kept per chapter or series in Reading, a connection menu, and slash commands (`src/deki/`). Explain and the mnemonic workshop go through it.
 - ✅ Mnemonic workshop chat on any item ("Ask AI" next to each mnemonic; prompts in `src/ai/prompts.ts`).
 - Tune the prompt after real use (e.g. which reading a reading mnemonic should target).
 - Bulk-draft mnemonics for upcoming items (marked AI, editable).
@@ -46,7 +47,7 @@ Each phase ends with something you can **use daily**. Don't start the next phase
 - ✅ Find kanji by parts: a "Find by parts" toggle in the Dictionary opens a radical chart of all 245 components by stroke count; picking parts lists every kanji containing them all and dims parts that can't narrow it further (`kanjiByParts` in `src/dictionary.ts`, from KRADFILE's `kanji_components`). Shortcuts from kanji pages ("Find kanji with these parts") and component pages ("Find all kanji with this part").
 - ✅ On-screen kana keyboard: a title-bar button (left of Settings) opens a floating gojūon chart that types into the last-used text box on any screen, with ゛ ゜ 小 (applied to the kana before the cursor), hiragana/katakana, backspace and Enter; drag it by its header, and it remembers where (`src/ui/KanaKeyboard.tsx`, logic in `src/kanaKeys.ts`).
 - ✅ Example sentences, preferring words you know: up to 20 per word from the Tanaka Corpus; a word page shows the 3 with the fewest words you haven't started. 15,755 words have some; 399 path words (mostly newspaper words like 県立) still have none.
-- ✅ "Explain this sentence" AI helper: an Explain button on each example opens a chat that breaks the sentence down (kana and romaji, piece by piece, grammar notes, translation), using readings from our dictionary; follow-up questions welcome (`explainSystemPrompt` in `src/ai/prompts.ts`).
+- ✅ "Explain this sentence" AI helper: an Explain button on each example opens a chat that breaks the sentence down (kana and romaji, piece by piece, grammar notes, translation), using readings from our dictionary; follow-up questions welcome (`explainSentenceRequest` in `src/ai/prompts.ts`; through Deki-senpai since 2026-10-24).
 
 ## Flashcard decks ✅ (2026-10-23)
 
