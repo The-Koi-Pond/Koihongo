@@ -127,3 +127,50 @@ Rules:
 - Explain any grammar word you use (particle, conjugation, polite form) in plain words the first time.
 - Keep it compact. For follow-up questions, answer briefly and directly, in plain text.`;
 }
+
+// --- Reading: "Explain" on a marked box ---
+
+export const EXPLAIN_BOX_OPENER = "Please explain this one for me.";
+
+/** A marked box to explain: its kind (speech bubble, sound effect…), its Japanese, and whether that was read automatically and unsure. */
+export type BoxToExplain = { kind: string; text: string; unsure: boolean };
+
+/**
+ * "Explain" on a box in the reader: the box, the page's other boxes in
+ * reading order (for the conversation around it), and the series' context
+ * (whatever the series' options let through).
+ */
+export function explainBoxPrompt(box: BoxToExplain, page: string[], context: string): string {
+  const sfx = box.kind === "SFX";
+  return `You explain Japanese from a manga to a beginner inside Koihongo, a study app where they read their own manga.
+
+About the learner: ${LEARNER_PROFILE} They can read hiragana and katakana, and know very little grammar yet.
+
+${context.trim() ? `About the manga (written by the learner; use it for names, who's who and tone):\n${context.trim()}\n\n` : ""}${page.length > 0 ? `Everything marked on this page, in reading order:\n${page.join("\n")}\n\n` : ""}The one to explain (${box.kind}): ${box.text}
+${box.unsure ? "It was read from the page automatically and the reader wasn't sure, so it may have a misread character or two. If something looks misread, say what it probably is.\n" : ""}
+Format your first answer like this, in plain text (no markdown, no bold, no headings with #):
+1. The text in kana, then the same in romaji on the next line.
+${
+  sfx
+    ? `2. A blank line, then what this sound effect depicts here (a sound, a movement, a feeling or a state), and the feel of it, in two or three short lines. If it's a well-known one, mention the word it comes from or its common uses.`
+    : `2. A blank line, then the text piece by piece, one piece per line: "piece (reading) – what it means and what it does here". Include particles, and split conjugated forms into their parts.
+3. A blank line, then at most 3 short grammar notes, only about things in this text. Name each one plainly (e.g. "〜たい = want to").
+4. If the manga's context or the page around it changes the meaning or tone (who's speaking, politeness, a name, a joke), a blank line, then "Context: " and one or two sentences on how.`
+}
+${sfx ? "3" : "5"}. A blank line, then "Translation: " and a short, natural English rendering that would fit the page.
+
+Rules:
+- If you aren't sure of a reading or a meaning, say so rather than guess.
+- Explain any grammar word you use (particle, conjugation, polite form) in plain words the first time.
+- Keep it compact. For follow-up questions, answer briefly and directly, in plain text.`;
+}
+
+/** The parts of an "Explain" reply the learner can keep: its kana line (a reading) and its translation. */
+export function explainedParts(reply: string): { kana?: string; translation?: string } {
+  const lines = reply.split("\n").map((l) => l.trim());
+  const kana = lines.find(Boolean)?.replace(/^1[.)]\s*/, "");
+  const translation = lines.find((l) => /^(\d[.)]\s*)?translation\s*:/i.test(l))?.replace(/^(\d[.)]\s*)?translation\s*:\s*/i, "");
+  // Only a kana line counts as a reading (not an apology or a question back).
+  const isKana = !!kana && /^[\p{Script=Hiragana}\p{Script=Katakana}ー〜\s、。！？!?…・「」『』　]+$/u.test(kana);
+  return { kana: isKana ? kana : undefined, translation: translation || undefined };
+}

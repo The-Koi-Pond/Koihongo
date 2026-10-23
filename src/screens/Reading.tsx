@@ -23,6 +23,7 @@ import {
   ScanText,
   Search,
   SkipBack,
+  Sparkles,
   SquarePlus,
   SkipForward,
   SlidersHorizontal,
@@ -79,6 +80,7 @@ import {
   removeBook,
   removeSeries,
   renameCategory,
+  readingContext,
   reorderMarks,
   renamePage,
   renameSeries,
@@ -116,6 +118,9 @@ import {
   type SeriesExtras,
 } from "../reading.ts";
 import { findText, readBoxes, type OcrText } from "../ocr.ts";
+import { EXPLAIN_BOX_OPENER, explainBoxPrompt, explainedParts } from "../ai/prompts.ts";
+import { useAiSettings } from "../ai/settings.ts";
+import { AiChat } from "../ui/AiChat.tsx";
 
 type View = { mode: "shelf"; series?: number } | { mode: "book"; id: number; page?: string } | { mode: "pages"; id: number } | { mode: "glossary" };
 
@@ -2094,6 +2099,7 @@ function Reader({ id, startPage, onBack, onEditPages }: { id: number; startPage?
                     extending={extending}
                     onExtend={() => setExtending(!extending)}
                     onReadText={() => (url ? readBoxes(url, markBoxes(m)) : Promise.reject(new Error("The page is still loading.")))}
+                    pageLines={markSections(marks).flatMap((s) => s.marks.flatMap((x, j) => (x.text.trim() && x.id !== m.id ? [`${s.name} ${j + 1}: ${x.text.trim()}`] : [])))}
                     onSaved={(saved) => setMarks((all) => all.map((x) => (x.id === saved.id ? saved : x)))}
                     onDelete={async () => {
                       await deleteMark(tauriDb, m.id);
@@ -2368,6 +2374,7 @@ function MarkEditor({
   extending,
   onExtend,
   onReadText,
+  pageLines,
   onSaved,
   onDelete,
   onClose,
@@ -2380,6 +2387,8 @@ function MarkEditor({
   onExtend: () => void;
   /** Reads the text in the mark's boxes (Baberu OCR, src-tauri/src/baberu.rs). */
   onReadText: () => Promise<OcrText>;
+  /** The page's other boxes with text, in reading order ("Speech 2: …"), for "Explain". */
+  pageLines: string[];
   onSaved: (m: Mark) => void;
   onDelete: () => Promise<void>;
   onClose: () => void;
@@ -2389,6 +2398,10 @@ function MarkEditor({
   const [seen, setSeen] = useState<SeenBefore[]>([]);
   const [dictionary, setDictionary] = useState<SfxMeaning[]>([]);
   const [reading, setReading] = useState(false);
+  const ai = useAiSettings(tauriDb);
+  /** "Explain": its chat is open (with the series' context, loaded first), or why it can't be. */
+  const [explain, setExplain] = useState<{ context: string } | { note: string }>();
+  useEffect(() => setExplain(undefined), [mark.id]);
   /** What "Read text" has to say: nothing found, not sure, or why it couldn't. */
   const [readNote, setReadNote] = useState<string>();
   const [confirmDelete, setConfirmDelete] = useState(false);
@@ -2428,6 +2441,15 @@ function MarkEditor({
     onBlur: () => save(fields, kind),
   });
   const written = Object.values(fields).some((v) => v.trim());
+
+  async function openExplain() {
+    if (!ai || ai.provider === "off") return setExplain({ note: "Turn on the AI helper in Settings → AI helper first." });
+    try {
+      setExplain({ context: await readingContext(tauriDb, mark.book_id) });
+    } catch (e) {
+      setExplain({ note: String(e) });
+    }
+  }
 
   async function readText() {
     setReading(true);
@@ -2573,6 +2595,52 @@ function MarkEditor({
             </div>
           ))}
         </div>
+      )}
+      {fields.text.trim() && !(explain && "context" in explain) && (
+        <button type="button" className="mark-explain" onClick={openExplain} title="Ask the AI helper what this says and how it works">
+          <Sparkles size={14} aria-hidden="true" /> Explain
+        </button>
+      )}
+      {explain && "note" in explain && <p className="muted mark-read-note">{explain.note}</p>}
+      {explain && "context" in explain && (
+        <AiChat
+          title={`${MARK_KINDS.find((k) => k.kind === kind)?.name ?? "Text"}: ${fields.text.trim()}`}
+          system={explainBoxPrompt(
+            { kind: MARK_KINDS.find((k) => k.kind === kind)?.name ?? kind, text: fields.text.trim(), unsure: !!mark.unsure },
+            pageLines,
+            explain.context,
+          )}
+          opener={EXPLAIN_BOX_OPENER}
+          placeholder="Ask about it, e.g. why is it written in katakana?"
+          footnote="Sent: this box, the other boxes on this page, and the series info its options let through. AI explanations can be wrong."
+          extras={(reply) => {
+            const { kana, translation } = explainedParts(reply);
+            if (!kana && !translation) return null;
+            return (
+              <div className="row explain-use">
+                {kana && kana !== fields.reading && (
+                  <button type="button" className="seen-use" onClick={() => {
+                    const next = { ...fields, reading: kana };
+                    setFields(next);
+                    save(next, kind);
+                  }}>
+                    Use as reading
+                  </button>
+                )}
+                {translation && translation !== fields.meaning && (
+                  <button type="button" className="seen-use" onClick={() => {
+                    const next = { ...fields, meaning: translation };
+                    setFields(next);
+                    save(next, kind);
+                  }}>
+                    Use as meaning
+                  </button>
+                )}
+              </div>
+            );
+          }}
+          onClose={() => setExplain(undefined)}
+        />
       )}
       <label>
         Reading

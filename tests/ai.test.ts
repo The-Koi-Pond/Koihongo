@@ -128,3 +128,25 @@ test("AI requests: each helper gets what it needs, and off sends nothing", () =>
 
   assert.throws(() => backendRequest({ ...DEFAULT_AI, provider: "openai-compatible" }, chat), /No model/);
 });
+
+test("explaining a manga box: the box, its page and the series context go in; SFX get their own format", async () => {
+  const { explainBoxPrompt } = await import("../src/ai/prompts.ts");
+  const speech = explainBoxPrompt({ kind: "Speech", text: "もう待ちません", unsure: false }, ["Speech 2: 邪魔者はもういないのだから…"], "Series: Koi Story\n\nCast:\nLily");
+  assert.match(speech, /The one to explain \(Speech\): もう待ちません/);
+  assert.match(speech, /Speech 2: 邪魔者はもういないのだから…/);
+  assert.match(speech, /Cast:\nLily/);
+  assert.match(speech, /piece by piece/);
+  assert.doesNotMatch(speech, /misread/);
+  const sfx = explainBoxPrompt({ kind: "SFX", text: "コツ", unsure: true }, [], "");
+  assert.match(sfx, /what this sound effect depicts/);
+  assert.match(sfx, /misread/);
+  assert.doesNotMatch(sfx, /About the manga|Everything marked on this page/);
+});
+
+test("an explanation's kana line and translation can be kept; other first lines aren't a reading", async () => {
+  const { explainedParts } = await import("../src/ai/prompts.ts");
+  const reply = "1. もう まちません\nmou machimasen\n\nもう (mou) – any more\n\nTranslation: I won't wait any longer.";
+  assert.deepEqual(explainedParts(reply), { kana: "もう まちません", translation: "I won't wait any longer." });
+  assert.deepEqual(explainedParts("Sorry, I can't read that.\n5. translation: Footsteps (tap, tap)."), { kana: undefined, translation: "Footsteps (tap, tap)." });
+  assert.deepEqual(explainedParts(""), { kana: undefined, translation: undefined });
+});
