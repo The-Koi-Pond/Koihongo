@@ -58,6 +58,11 @@ pub fn run() {
 /// The window-state plugin only writes to disk when the app exits cleanly, so
 /// a crash, a force-close or a dev restart forgets where you put the window.
 /// This also saves it (at most once a second) after you move or resize it.
+///
+/// The save itself runs on the main thread. Saving from the timer thread
+/// froze the app mid-resize: the plugin holds its lock while asking the main
+/// thread for the window's size, and the main thread, busy resizing, was
+/// waiting for that same lock.
 fn save_window_state_as_you_go(app: &tauri::App) {
     let Some(window) = app.get_webview_window("main") else { return };
     let moved = Arc::new(AtomicBool::new(false));
@@ -71,7 +76,10 @@ fn save_window_state_as_you_go(app: &tauri::App) {
     std::thread::spawn(move || loop {
         std::thread::sleep(Duration::from_secs(1));
         if moved.swap(false, Ordering::Relaxed) {
-            let _ = app.save_window_state(StateFlags::all());
+            let main = app.clone();
+            let _ = app.run_on_main_thread(move || {
+                let _ = main.save_window_state(StateFlags::all());
+            });
         }
     });
 }
