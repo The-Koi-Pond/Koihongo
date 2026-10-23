@@ -6734,3 +6734,101 @@ button.aka-add {
 .grip-se {
   cursor: nwse-resize;
 }
+
+/* "Read text" on the Japanese field of a mark's editor (Reading.tsx, MarkEditor). */
+.mark-text-field {
+  position: relative;
+}
+
+.mark-read {
+  position: absolute;
+  top: -2px;
+  right: 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 2px 9px;
+  font-size: 0.78rem;
+}
+
+.mark-read-note {
+  margin: -4px 0 0;
+  font-size: 0.8rem;
+}
+
+/* Settings → Reading text from manga: the model download (Settings.tsx, TextReadingCard). */
+.ocr-progress {
+  display: grid;
+  gap: 6px;
+}
+
+.ocr-progress-track {
+  display: block;
+  height: 10px;
+  border-radius: 5px;
+  background: rgb(255 255 255 / 0.1);
+  overflow: hidden;
+}
+
+.ocr-progress-track > span {
+  display: block;
+  height: 100%;
+  background: var(--accent);
+  transition: width 0.2s;
+}
+
+.ocr-ready {
+  font-weight: 700;
+}
+
+/* Reading all empty boxes on a page with manga-ocr (Reading.tsx, Reader). */
+.read-all {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  width: 100%;
+  margin-bottom: 8px;
+}
+
+/* A mark manga-ocr wasn't sure of (MarkEditor). */
+.mark-unsure {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: -4px 0 0;
+  padding: 6px 10px;
+  border-radius: 8px;
+  border: 1px dashed #ffe08a;
+  font-size: 0.8rem;
+}
+
+.mark-unsure > span {
+  flex: 1;
+}
+
+/* Hovering a box on the page shows what you wrote for it (PageView). */
+.mark-peek {
+  position: absolute;
+  z-index: 2;
+  max-width: 260px;
+  display: grid;
+  gap: 2px;
+  margin-top: calc(6px / var(--zoom));
+  padding: 6px 10px;
+  border: 1px solid var(--mark);
+  border-radius: 8px;
+  background: var(--surface);
+  color: var(--text);
+  box-shadow: 0 4px 14px rgb(0 0 0 / 0.45);
+  font-size: 0.85rem;
+  line-height: 1.35;
+  pointer-events: none;
+  transform: scale(calc(1 / var(--zoom)));
+  transform-origin: top left;
+  width: max-content;
+}
+
+.mark-peek-text {
+  font-size: 0.95rem;
+}

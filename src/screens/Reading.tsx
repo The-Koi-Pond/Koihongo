@@ -19,6 +19,8 @@ import {
   NotebookText,
   Pencil,
   Plus,
+  ScanSearch,
+  ScanText,
   Search,
   SkipBack,
   SquarePlus,
@@ -109,9 +111,11 @@ import {
   type MarkText,
   type SeenBefore,
   type Series,
+  unmarked,
   type SfxMeaning,
   type SeriesExtras,
 } from "../reading.ts";
+import { findText, readBoxes, type OcrText } from "../ocr.ts";
 
 type View = { mode: "shelf"; series?: number } | { mode: "book"; id: number; page?: string } | { mode: "pages"; id: number } | { mode: "glossary" };
 
@@ -1601,6 +1605,16 @@ function Reader({ id, startPage, onBack, onEditPages }: { id: number; startPage?
   const [selected, setSelected] = useState<number>();
   const [fresh, setFresh] = useState<number>();
   const [kind, setKind] = useState<MarkKind>("speech");
+  /** "Read all boxes": how far along, and what it found. */
+  const [readingAll, setReadingAll] = useState<{ done: number; total: number }>();
+  const [readAllNote, setReadAllNote] = useState<string>();
+  /** "Find text": running, and the marks it just added (for Undo). */
+  const [finding, setFinding] = useState(false);
+  const [foundIds, setFoundIds] = useState<number[]>();
+  useEffect(() => {
+    setReadAllNote(undefined);
+    setFoundIds(undefined);
+  }, [index]);
   /** The open mark is getting another box: the next one drawn joins it. */
   const [extending, setExtending] = useState(false);
   useEffect(() => setExtending(false), [selected]);
@@ -1731,6 +1745,78 @@ function Reader({ id, startPage, onBack, onEditPages }: { id: number; startPage?
     setMarks(await pageMarks(tauriDb, book.id, page));
     setSelected(markId);
     setFresh(markId);
+  }
+
+  /** Adds a box for every text area on the page you haven't marked (speech in bubbles, "other" elsewhere). */
+  async function findOnPage() {
+    if (!url || !book || !page) return;
+    setSelected(undefined);
+    setReadAllNote(undefined);
+    setFinding(true);
+    try {
+      const { found: all, spread } = await findText(url);
+      const found = unmarked(all, marks.flatMap(markBoxes), spread);
+      const ids: number[] = [];
+      for (const f of found) ids.push(await addMark(tauriDb, book.id, page, f.in_bubble ? "speech" : "other", { x: f.x, y: f.y, w: f.w, h: f.h }, Date.now()));
+      setMarks(await pageMarks(tauriDb, book.id, page));
+      setFoundIds(ids);
+      setReadAllNote(
+        ids.length === 0
+          ? "No new text found on this page."
+          : `Added ${ids.length} ${ids.length === 1 ? "box" : "boxes"}: fix or delete any that are off, then read them.`,
+      );
+    } catch (e) {
+      setReadAllNote(String(e).replace(/^Error: /, ""));
+    } finally {
+      setFinding(false);
+    }
+  }
+
+  /** Takes back the boxes "Find text" just added. */
+  async function undoFind() {
+    if (!foundIds || !book || !page) return;
+    setSelected(undefined);
+    for (const id of foundIds) await deleteMark(tauriDb, id);
+    setMarks(await pageMarks(tauriDb, book.id, page));
+    setFoundIds(undefined);
+    setReadAllNote(undefined);
+  }
+
+  /** Reads the text of every box on the page that has none yet (boxes you've written in are left alone). */
+  async function readAll() {
+    const todo = ordered.filter((m) => !m.text.trim());
+    if (!url || todo.length === 0) return;
+    setSelected(undefined); // an open editor would keep its old text
+    setReadAllNote(undefined);
+    setReadingAll({ done: 0, total: todo.length });
+    let [read, unsure] = [0, 0];
+    try {
+      for (const [i, m] of todo.entries()) {
+        const found = await readBoxes(url, markBoxes(m));
+        if (found.text) {
+          const doubt = found.confidence < OCR_UNSURE;
+          const now = Date.now();
+          await updateMark(tauriDb, m.id, m.kind, { ...m, text: found.text }, now, doubt);
+          setMarks((all) => all.map((x) => (x.id === m.id ? { ...x, text: found.text, unsure: Number(doubt), updated_at: now } : x)));
+          read++;
+          if (doubt) unsure++;
+        }
+        setReadingAll({ done: i + 1, total: todo.length });
+      }
+      setReadAllNote(
+        [
+          `Read ${read} of ${todo.length} ${todo.length === 1 ? "box" : "boxes"}.`,
+          unsure > 0 && `${unsure} marked ? (not sure): check those against the page.`,
+          read < todo.length && `No text found in ${todo.length - read}.`,
+        ]
+          .filter(Boolean)
+          .join(" "),
+      );
+    } catch (e) {
+      setReadAllNote(String(e).replace(/^Error: /, ""));
+    } finally {
+      setReadingAll(undefined);
+    }
   }
 
   async function saveMoreBoxes(mark: Mark, boxes: Box[]) {
@@ -1954,6 +2040,27 @@ function Reader({ id, startPage, onBack, onEditPages }: { id: number; startPage?
         <p className="mark-help muted">
           {showMarks ? "Drag a box on the page to mark it. Click a box to open it. Scroll to zoom; drag with the scroll wheel held (or hold Space and drag) to move around." : "Boxes are hidden. Show them to mark the page."}
         </p>
+        {showMarks && (
+          <button type="button" className="read-all" onClick={findOnPage} disabled={finding || !!readingAll || !url} title="Add a box for every text area on this page you haven't marked">
+            <ScanSearch size={15} aria-hidden="true" /> {finding ? "Finding text…" : "Find text on this page"}
+          </button>
+        )}
+        {showMarks && marks.some((m) => !m.text.trim()) && (
+          <button type="button" className="read-all" onClick={readAll} disabled={!!readingAll || !url} title="Read the text of every box that's still empty">
+            <ScanText size={15} aria-hidden="true" />{" "}
+            {readingAll ? `Reading ${readingAll.done + 1} of ${readingAll.total}…` : `Read all empty boxes (${marks.filter((m) => !m.text.trim()).length})`}
+          </button>
+        )}
+        {readAllNote && (
+          <p className="muted mark-read-note">
+            {readAllNote}{" "}
+            {foundIds && foundIds.length > 0 && (
+              <button type="button" className="seen-use" onClick={() => undoFind().catch((e) => setError(String(e)))}>
+                Undo
+              </button>
+            )}
+          </p>
+        )}
         {marks.length === 0 ? (
           <p className="muted mark-empty">Nothing marked on this page yet.</p>
         ) : (
@@ -1986,6 +2093,7 @@ function Reader({ id, startPage, onBack, onEditPages }: { id: number; startPage?
                     autoFocus={fresh === m.id}
                     extending={extending}
                     onExtend={() => setExtending(!extending)}
+                    onReadText={() => (url ? readBoxes(url, markBoxes(m)) : Promise.reject(new Error("The page is still loading.")))}
                     onSaved={(saved) => setMarks((all) => all.map((x) => (x.id === saved.id ? saved : x)))}
                     onDelete={async () => {
                       await deleteMark(tauriDb, m.id);
@@ -2002,7 +2110,10 @@ function Reader({ id, startPage, onBack, onEditPages }: { id: number; startPage?
                     data-reorder-grip
                     title="Click to open; drag to reorder"
                   >
-                    <span className="mark-num">{i + 1}</span>
+                    <span className="mark-num">
+                      {i + 1}
+                      {!!m.unsure && <span title="Read automatically, but not sure: check it"> ?</span>}
+                    </span>
                     <span className="mark-row-text" lang="ja">
                       {m.text || <span className="muted">(not written yet)</span>}
                     </span>
@@ -2090,6 +2201,16 @@ function PageView({
   const [panning, setPanning] = useState(false);
   const start = useRef<{ x: number; y: number }>(undefined);
   const [draft, setDraft] = useState<Box>();
+  /** The box under the pointer (not the open mark's): what you wrote for it shows below it. */
+  const [peek, setPeek] = useState<{ mark: Mark; box: Box; part: number }>();
+  /** The mark (and which of its boxes) at a point on the page: the newest, if they overlap. */
+  const markAt = (p: { x: number; y: number }) => {
+    for (const m of [...marks].reverse()) {
+      const boxes = markBoxes(m);
+      const part = boxes.findIndex((b) => p.x >= b.x && p.x <= b.x + b.w && p.y >= b.y && p.y <= b.y + b.h);
+      if (part >= 0) return { mark: m, box: boxes[part], part };
+    }
+  };
   /** An open mark's box being moved or resized, and where it is now. */
   const [adjusting, setAdjusting] = useState<{ mark: Mark; part: number; grip: BoxGrip; from: { x: number; y: number }; box: Box; now: Box }>();
 
@@ -2158,8 +2279,11 @@ function PageView({
               start.current = point(e);
             }}
             onPointerMove={(e) => {
-              if (start.current) setDraft(boxFrom(start.current, point(e)));
+              if (start.current) return setDraft(boxFrom(start.current, point(e)));
+              const hit = adjusting ? undefined : markAt(point(e));
+              if (hit?.mark !== peek?.mark || hit?.part !== peek?.part) setPeek(hit);
             }}
+            onPointerLeave={() => setPeek(undefined)}
             onPointerUp={(e) => {
               if (!start.current) return;
               const box = boxFrom(start.current, point(e));
@@ -2167,9 +2291,7 @@ function PageView({
               setDraft(undefined);
               if (box.w > 0.01 && box.h > 0.01) return onDraw(box);
               // A click, not a drag: select the box under it (the newest, if they overlap).
-              const p = point(e);
-              const hit = [...marks].reverse().find((m) => markBoxes(m).some((b) => p.x >= b.x && p.x <= b.x + b.w && p.y >= b.y && p.y <= b.y + b.h));
-              onSelect(hit?.id);
+              onSelect(markAt(point(e))?.mark.id);
             }}
             onPointerCancel={() => {
               start.current = undefined;
@@ -2187,7 +2309,10 @@ function PageView({
                   style={boxStyle(b)}
                   {...(open ? adjust(m, part, saved, "move") : {})}
                 >
-                  <span className="mark-num">{numbers.get(m.id)}</span>
+                  <span className="mark-num">
+                    {numbers.get(m.id)}
+                    {!!m.unsure && "?"}
+                  </span>
                   {/* An open mark's boxes move (drag inside) and resize (drag a grip). */}
                   {open &&
                     GRIPS.map((grip) => <span key={grip} className={`mark-grip grip-${grip}`} {...adjust(m, part, saved, grip)} />)}
@@ -2208,12 +2333,25 @@ function PageView({
               }),
             )}
             {draft && <div className={`mark-box draft kind-${kind}`} style={boxStyle(draft)} />}
+            {peek && !draft && peek.mark.id !== selected && (peek.mark.text || peek.mark.meaning) && (
+              <div className={`mark-peek kind-${peek.mark.kind}`} style={{ left: `${peek.box.x * 100}%`, top: `${(peek.box.y + peek.box.h) * 100}%` }}>
+                {peek.mark.text && (
+                  <span lang="ja" className="mark-peek-text">
+                    {peek.mark.text}
+                  </span>
+                )}
+                {peek.mark.meaning && <strong>{peek.mark.meaning}</strong>}
+              </div>
+            )}
           </div>
         </div>
       </TransformComponent>
     </TransformWrapper>
   );
 }
+
+/** Below this confidence, text read automatically is marked "?" (check it). */
+const OCR_UNSURE = 0.5;
 
 // No top-left grip: the mark's number sits on that corner.
 const GRIPS: BoxGrip[] = ["n", "ne", "e", "se", "s", "sw", "w"];
@@ -2229,6 +2367,7 @@ function MarkEditor({
   autoFocus,
   extending,
   onExtend,
+  onReadText,
   onSaved,
   onDelete,
   onClose,
@@ -2239,6 +2378,8 @@ function MarkEditor({
   /** The next box drawn joins this mark. */
   extending: boolean;
   onExtend: () => void;
+  /** Reads the text in the mark's boxes (Baberu OCR, src-tauri/src/baberu.rs). */
+  onReadText: () => Promise<OcrText>;
   onSaved: (m: Mark) => void;
   onDelete: () => Promise<void>;
   onClose: () => void;
@@ -2247,6 +2388,9 @@ function MarkEditor({
   const [kind, setKind] = useState<MarkKind>(mark.kind);
   const [seen, setSeen] = useState<SeenBefore[]>([]);
   const [dictionary, setDictionary] = useState<SfxMeaning[]>([]);
+  const [reading, setReading] = useState(false);
+  /** What "Read text" has to say: nothing found, not sure, or why it couldn't. */
+  const [readNote, setReadNote] = useState<string>();
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [error, setError] = useState<string>();
 
@@ -2265,13 +2409,15 @@ function MarkEditor({
     };
   }, [fields.text, kind, mark.id]);
 
-  async function save(next: MarkText, nextKind: MarkKind) {
-    const unchanged = nextKind === mark.kind && (Object.keys(next) as (keyof MarkText)[]).every((k) => next[k] === mark[k]);
+  /** `unsure`: whether the text needs checking (left out: changing the text clears it). */
+  async function save(next: MarkText, nextKind: MarkKind, unsure = next.text !== mark.text ? false : !!mark.unsure) {
+    const unchanged =
+      nextKind === mark.kind && unsure === !!mark.unsure && (Object.keys(next) as (keyof MarkText)[]).every((k) => next[k] === mark[k]);
     if (unchanged) return;
     try {
       const now = Date.now();
-      await updateMark(tauriDb, mark.id, nextKind, next, now);
-      onSaved({ ...mark, ...next, kind: nextKind, updated_at: now });
+      await updateMark(tauriDb, mark.id, nextKind, next, now, unsure);
+      onSaved({ ...mark, ...next, kind: nextKind, updated_at: now, unsure: Number(unsure) });
     } catch (e) {
       setError(String(e));
     }
@@ -2282,6 +2428,22 @@ function MarkEditor({
     onBlur: () => save(fields, kind),
   });
   const written = Object.values(fields).some((v) => v.trim());
+
+  async function readText() {
+    setReading(true);
+    setReadNote(undefined);
+    try {
+      const found = await onReadText();
+      if (!found.text) return setReadNote("No text found in this box.");
+      const next = { ...fields, text: found.text };
+      setFields(next);
+      save(next, kind, found.confidence < OCR_UNSURE);
+    } catch (e) {
+      setReadNote(String(e).replace(/^Error: /, ""));
+    } finally {
+      setReading(false);
+    }
+  }
 
   return (
     <div className={`mark-editor kind-${kind}`}>
@@ -2333,10 +2495,24 @@ function MarkEditor({
           {markBoxes(mark).length} boxes on the page; click × on a part to remove it.
         </p>
       )}
-      <label>
-        Japanese
-        <input lang="ja" className="mark-text" placeholder="What it says" autoFocus={autoFocus} {...field("text")} />
-      </label>
+      <div className="mark-text-field">
+        <label>
+          Japanese
+          <input lang="ja" className="mark-text" placeholder="What it says" autoFocus={autoFocus} {...field("text")} />
+        </label>
+        <button type="button" className="mark-read" onClick={readText} disabled={reading} title="Read the text in this box (set up in Settings)">
+          <ScanText size={14} aria-hidden="true" /> {reading ? "Reading…" : "Read text"}
+        </button>
+      </div>
+      {readNote && <p className="muted mark-read-note">{readNote}</p>}
+      {!!mark.unsure && (
+        <p className="mark-unsure">
+          <span>The text reader wasn't sure about this one: check it against the page.</span>
+          <button type="button" className="seen-use" onClick={() => save(fields, kind, false)}>
+            Looks right
+          </button>
+        </p>
+      )}
       {seen.length > 0 && (
         <div className="seen-before">
           <p className="seen-before-title">Seen before</p>

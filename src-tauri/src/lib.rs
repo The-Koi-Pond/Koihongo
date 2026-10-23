@@ -1,8 +1,10 @@
 mod ai;
 mod ai_api;
 mod backup;
+mod baberu;
 mod books;
 mod db;
+mod ocr;
 
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::{Arc, Mutex};
@@ -24,6 +26,7 @@ pub fn run() {
             let content = app.path().resolve("resources/content.db", BaseDirectory::Resource)?;
             let conn = db::open(&data_dir.join("user.db"), &content)?;
             app.manage(db::Db(Mutex::new(conn)));
+            app.manage(ocr::Ocr::default());
             save_window_state_as_you_go(app);
             Ok(())
         })
@@ -49,7 +52,12 @@ pub fn run() {
             books::book_rename_page,
             books::series_cover_pick,
             books::series_cover,
-            books::series_cover_remove
+            books::series_cover_remove,
+            ocr::ocr_status,
+            ocr::ocr_download,
+            ocr::ocr_remove,
+            ocr::ocr_read,
+            ocr::ocr_find
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

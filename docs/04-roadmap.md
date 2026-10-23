@@ -69,7 +69,8 @@ Your own manga, in stages (details: `02-features.md` F):
 
 - ✅ Stage 1: bookshelf (folders and .cbz), reader, boxes with text and meaning, "seen before" across books, glossary, "About this book".
 - Stage 2: split marked text into words, known-word colours, words to deck cards with sentence and panel cut-out. Study Yomitan first (`05-references.md`).
-- Stage 3 (study LunaTranslator and manga-ocr first, `05-references.md`): OCR (Windows built-in, optional manga-ocr) and AI reading of a box, with the context sent along (`readingContext` in `src/reading.ts`: the series page's info plus the chapter's notes) and the reply explaining how the context changes the meaning.
+- ✅ Stage 3, part 1: "Read text" (Baberu OCR) and "Find text on this page" (comic-text-and-bubble-detector), an optional download that runs offline (`src-tauri/src/ocr.rs`, `baberu.rs`). Tried manga-ocr first: Baberu matched it on speech and read all four sound effects on a test page that manga-ocr missed, at a quarter of the size. Windows' built-in OCR was dropped (weaker on vertical text).
+- Stage 3, part 2 (study LunaTranslator first, `05-references.md`): AI reading of a box, with the context sent along (`readingContext` in `src/reading.ts`: the series page's info plus the chapter's notes) and the reply explaining how the context changes the meaning.
 - Paste text → split into words → hover definitions, known words marked.
 
 ## After that (unordered)

@@ -36,6 +36,41 @@ export function Sources({ onExit }: { onExit: () => void }) {
           </li>
         ))}
       </ul>
+      <h2>Downloaded when you ask</h2>
+      <ul className="sources">
+        {/* Not in content.db: Settings → Reading text from manga downloads these, and src-tauri/src/ocr.rs runs them. */}
+        <li className="card">
+          <h2>Baberu OCR</h2>
+          <p>
+            The text-reading model, by genshiai-daichi. Its confidence calibration is adapted from manga-ocr-rs by Hideki A. Ikeda and CodeMonkeyNinja
+            (MIT).
+            <br />
+            Licence: Apache-2.0
+            <br />
+            <span className="muted">https://huggingface.co/genshiai-daichi/baberu-ocr</span>
+          </p>
+        </li>
+        <li className="card">
+          <h2>comic-text-and-bubble-detector</h2>
+          <p>
+            The model that finds the text on a page, by ogkalu.
+            <br />
+            Licence: Apache-2.0
+            <br />
+            <span className="muted">https://huggingface.co/ogkalu/comic-text-and-bubble-detector</span>
+          </p>
+        </li>
+        <li className="card">
+          <h2>ONNX Runtime</h2>
+          <p>
+            Runs both models, by Microsoft.
+            <br />
+            Licence: MIT
+            <br />
+            <span className="muted">https://onnxruntime.ai</span>
+          </p>
+        </li>
+      </ul>
       {builtAt && <p className="muted">Data last updated {new Date(builtAt).toLocaleDateString()}.</p>}
       <button onClick={onExit}>← Settings</button>
     </>

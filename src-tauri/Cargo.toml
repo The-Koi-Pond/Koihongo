@@ -31,6 +31,11 @@ keyring = { version = "3", features = ["windows-native", "apple-native", "linux-
 # Reading (books.rs): picking your manga folders and .cbz files, and reading pages out of .cbz (zip) files.
 tauri-plugin-dialog = "2"
 zip = { version = "9.0.5", default-features = false, features = ["deflate"] }
+# Reading the text in a box (ocr.rs): the manga-ocr model run by ONNX Runtime (prebuilt, linked in at
+# build time), PNG cut-outs from the window, and checking the downloaded model files.
+ort = { version = "=2.0.0-rc.12", default-features = false, features = ["std", "download-binaries", "tls-rustls"] }
+image = { version = "0.25", default-features = false, features = ["png"] }
+sha2 = "0.10"
 
 
 # Read the optimization guideline for more details: https://tauri.app/concept/size/#cargo-configuration

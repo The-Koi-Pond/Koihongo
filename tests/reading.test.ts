@@ -486,3 +486,21 @@ test("marks: boxes move and resize, staying on the page", async () => {
   [mark] = await pageMarks(db, book, "001.jpg");
   assert.deepEqual(markBoxes(mark), [moved, moved]);
 });
+
+test("marks: text manga-ocr wasn't sure of stays marked until changed or confirmed", async () => {
+  const { updateMark } = await import("../src/reading.ts");
+  const db = openTestDb(() => {});
+  await migrate(db);
+  await addBooks(db, [{ path: "C:/m/A", title: "A", kind: "folder", pages: 1 }], T0);
+  const book = (await listBooks(db))[0].id;
+  const id = await addMark(db, book, "001.jpg", "sfx", BOX, T0);
+  const text = { text: "フッ", reading: "", meaning: "", notes: "" };
+  const unsure = async () => (await pageMarks(db, book, "001.jpg"))[0].unsure;
+  assert.equal(await unsure(), 0);
+  await updateMark(db, id, "sfx", text, T0, true);
+  assert.equal(await unsure(), 1);
+  await updateMark(db, id, "sfx", { ...text, meaning: "a puff" }, T0);
+  assert.equal(await unsure(), 1, "left out: unchanged");
+  await updateMark(db, id, "sfx", text, T0, false);
+  assert.equal(await unsure(), 0);
+});
