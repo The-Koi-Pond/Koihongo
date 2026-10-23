@@ -165,7 +165,7 @@ AI is **off by default**, for everyone: nothing is sent anywhere until you pick 
 - **Anthropic API** (`src-tauri/src/ai_api.rs`): `POST https://api.anthropic.com/v1/messages` with an API key. Defaults to Claude Opus 5.5 (Sonnet 5.5 and Haiku 5.5 selectable). For models that support it, requests opt into Anthropic's server-side refusal fallback (`fallbacks: "default"`, beta `server-side-fallback-2026-07-01`): a request a model's safety classifiers wrongly decline is re-run on a recommended other model. A remaining `stop_reason: "refusal"` is shown as "the model declined".
 - **OpenAI-compatible**: any `/chat/completions` endpoint. Presets for OpenAI, OpenRouter, Google Gemini, and local Ollama / LM Studio (no key, nothing leaves the PC), or a custom address.
 
-API keys are stored in the OS credential store (Windows Credential Manager, via the `keyring` crate), one per service, never in user.db, so they don't end up in backups. The web side only learns whether a key is saved; requests are made in Rust. Settings has a "Test connection" button.
+API keys are stored in the OS credential store (Windows Credential Manager, via the `keyring` crate), one per service, never in user.db, so they don't end up in backups. The web side only learns whether a key is saved; requests are made in Rust, which also holds each known service's address (`compat_target` in `ai_api.rs`), so a key can only go to its own service, and never over plain http:// to another machine. Settings has a "Test connection" button.
 
 ### Backend: Claude Code CLI (decided 2026-10-20)
 
@@ -187,6 +187,7 @@ run from an empty working folder.
 ### Rules
 
 - **No spending log or cap** (decided 2026-10-20: not useful for personal use on a subscription).
+- **Hardening (2026-10-23 audit):** the UI sends its own SQL, so the Rust connection has an SQLite authorizer refusing ATTACH/DETACH (which can write files anywhere, also via VACUUM INTO) and every PRAGMA except user_version (`db.rs`). The Claude Code call adds `--strict-mcp-config` so no MCP tool servers load.
 - **One model per helper**, chosen in Settings (Claude Code defaults to Sonnet, the Anthropic API to Opus 5.5).
 - **Prompts live in one file**, [`src/ai/prompts.ts`](../src/ai/prompts.ts), so they're easy to read and tune. `LEARNER_PROFILE` there describes you to the AI.
 - **Japanese accuracy:** the AI's facts (readings, meanings) come *from our database* in the prompt, not from the AI's memory. The AI is used for creativity and explanation, not as the source of truth.

@@ -10,7 +10,7 @@ use std::thread;
 use std::time::{Duration, Instant};
 use tauri::Manager;
 
-use crate::ai_api::{anthropic, get_key, openai_compatible, ChatMessage};
+use crate::ai_api::{anthropic, compat_target, get_key, openai_compatible, ChatMessage};
 
 const TIMEOUT: Duration = Duration::from_secs(180);
 const MODELS: [&str; 3] = ["haiku", "sonnet", "opus"];
@@ -40,8 +40,9 @@ pub fn complete(claude: &Path, workdir: &Path, system: &str, prompt: &str, model
     }
     let mut cmd = Command::new(claude);
     cmd.args(["-p", "--system-prompt", system])
-        // Text only: no file or shell tools. No personal settings or CLAUDE.md.
-        .args(["--tools", "", "--setting-sources", "", "--no-session-persistence"])
+        // Text only: no file or shell tools, no MCP tool servers (--strict-mcp-config
+        // with no config loads none), no personal settings or CLAUDE.md.
+        .args(["--tools", "", "--strict-mcp-config", "--setting-sources", "", "--no-session-persistence"])
         .args(["--output-format", "json", "--model", model])
         .current_dir(workdir)
         .stdin(Stdio::piped())
@@ -111,9 +112,10 @@ fn parse_output(stdout: &str, stderr: &str) -> Result<String, String> {
 pub struct AiRequest {
     provider: String,
     model: String,
+    /// The OpenAI-compatible service ("openai", "ollama"…, or "custom"); see compat_target.
+    preset: Option<String>,
+    /// The address, for the "custom" service only (the others are fixed here, in Rust).
     base_url: Option<String>,
-    /// Which saved API key to send (see ai_api.rs); none for local models.
-    key_slot: Option<String>,
     system: String,
     messages: Vec<ChatMessage>,
     /// The conversation written out as one prompt, for Claude Code (one prompt per call).
@@ -122,7 +124,7 @@ pub struct AiRequest {
 
 #[tauri::command]
 pub async fn ai_complete(app: tauri::AppHandle, request: AiRequest) -> Result<String, String> {
-    let AiRequest { provider, model, base_url, key_slot, system, messages, prompt } = request;
+    let AiRequest { provider, model, preset, base_url, system, messages, prompt } = request;
     match provider.as_str() {
         "claude-code" => {
             let claude = find_claude().ok_or("Claude Code wasn't found. Install it, or check that `claude` works in a terminal.")?;
@@ -139,12 +141,8 @@ pub async fn ai_complete(app: tauri::AppHandle, request: AiRequest) -> Result<St
             anthropic(&key, &model, &system, &messages).await
         }
         "openai-compatible" => {
-            let key = match key_slot.as_deref() {
-                Some(slot) => Some(get_key(slot)?.ok_or("No API key is saved for this service. Add one in Settings → AI helper.")?),
-                None => None,
-            };
-            let base_url = base_url.ok_or("No service address is set.")?;
-            openai_compatible(&base_url, key.as_deref(), &model, &system, &messages).await
+            let (url, key) = compat_target(preset.as_deref().unwrap_or(""), base_url)?;
+            openai_compatible(&url, key.as_deref(), &model, &system, &messages).await
         }
         _ => Err("AI is turned off. You can turn it on in Settings → AI helper.".into()),
     }

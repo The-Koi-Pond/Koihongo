@@ -51,7 +51,11 @@ export const ANTHROPIC_MODELS: { id: string; name: string }[] = [
   { id: "claude-haiku-5-5", name: "Claude Haiku 5.5 (cheapest)" },
 ];
 
-/** OpenAI-compatible services. keySlot: where its API key is saved (null: none needed). */
+/**
+ * OpenAI-compatible services, for Settings. keySlot: where its API key is
+ * saved (null: none needed). The addresses here are for display; the ones
+ * actually used are fixed in src-tauri/src/ai_api.rs (compat_target).
+ */
 export const PRESETS: Record<CompatPreset, { name: string; baseUrl: string; keySlot: string | null; modelHint: string; keyUrl?: string }> = {
   openai: { name: "OpenAI", baseUrl: "https://api.openai.com/v1", keySlot: "openai", modelHint: "e.g. gpt-4o-mini", keyUrl: "platform.openai.com" },
   openrouter: {

@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import type { Grade } from "ts-fsrs";
 import { tauriDb } from "../db/tauriDb.ts";
 import { byRisk, deckCardId, deckQuestion, dueDeckCards, getDeckCard, recordDeckReview, type DeckCard } from "../decks.ts";
@@ -43,6 +43,8 @@ export function Reviews({
 }) {
   const [extra, setExtra] = useState(startExtra);
   const [session, setSession] = useState<Session<ReviewQuestion>>();
+  /** The session state already answered: a second answer to it (a double-pressed Enter) is ignored. */
+  const answered = useRef<Session<ReviewQuestion>>(undefined);
   const [total, setTotal] = useState(0);
   // Due reviews left out of this session by catch-up.
   const [waiting, setWaiting] = useState(0);
@@ -55,15 +57,18 @@ export function Reviews({
     const now = Date.now();
     Promise.all([dueCards(tauriDb, now), dueDeckCards(tauriDb, now), todaySummary(tauriDb, now)])
       .then(([pathCards, deckCards, summary]) => {
-        // One queue, most likely to be forgotten first, whichever kind of card.
-        const cards = byRisk(
+        // One queue, most likely to be forgotten first, whichever kind of card;
+        // brand-new deck cards come after all of it and aren't part of catch-up.
+        const reviews = byRisk(
           [
             ...pathCards.map((c) => ({ ...c, q: { item_key: c.item_key, card_type: c.card_type } as ReviewQuestion })),
-            ...deckCards.map((c) => ({ ...c, q: deckQuestion(c.id) as ReviewQuestion })),
+            ...deckCards.filter((c) => c.state !== 0).map((c) => ({ ...c, q: deckQuestion(c.id) as ReviewQuestion })),
           ],
           now,
         );
-        const asked = extra ? cards : cards.slice(0, summary.reviewsToday);
+        const fresh = deckCards.filter((c) => c.state === 0).map((c) => ({ q: deckQuestion(c.id) as ReviewQuestion }));
+        const cards = [...reviews, ...fresh];
+        const asked = extra ? cards : [...reviews.slice(0, summary.reviewsToday - summary.newDeckCardsDue), ...fresh];
         const s = startSession(spreadOutPairs(asked.map((c) => c.q)));
         setSession(s);
         setTotal(s.queue.length);
@@ -85,13 +90,19 @@ export function Reviews({
     [question, session],
   );
 
-  /** Moves on after an answer; `record` saves it for scheduling (first attempts only). */
+  /**
+   * Moves on after an answer; `record` saves it for scheduling (first attempts
+   * only). Each session state takes one answer: a double-pressed Enter, even
+   * one that arrives before the next card is shown, can't save a review twice.
+   */
   async function advance(correct: boolean, record: () => Promise<unknown>) {
-    if (!session) return;
+    if (!session || answered.current === session) return;
+    answered.current = session;
     const { session: next, firstAttempt } = answerCurrent(session, correct);
     try {
       if (firstAttempt) await record();
     } catch (e) {
+      answered.current = undefined;
       return setError(String(e));
     }
     setSession(next);

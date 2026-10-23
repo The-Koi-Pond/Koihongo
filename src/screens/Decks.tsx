@@ -1,10 +1,9 @@
 import { ArrowLeft, Pencil, Play, Plus, Trash2 } from "lucide-react";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import type { Grade } from "ts-fsrs";
 import { tauriDb } from "../db/tauriDb.ts";
 import {
   addDeckCard,
-  byRisk,
   createDeck,
   deckCards,
   deleteDeck,
@@ -13,6 +12,7 @@ import {
   getDeck,
   listDecks,
   recordDeckReview,
+  reviewedFirst,
   renameDeck,
   setDeckInDaily,
   updateDeckCard,
@@ -151,7 +151,7 @@ function DeckPage({ id, onBack, onStudy }: { id: number; onBack: () => void; onS
             <Play size={16} strokeWidth={2} aria-hidden="true" /> Study {deck.due} due
           </button>
         ) : (
-          <button type="button" className="primary" disabled={cards.length === 0} onClick={() => onStudy(true)} title="Nothing is due; go through every card anyway">
+          <button type="button" className="primary" disabled={cards.length === 0} onClick={() => onStudy(true)} title="Nothing is due. Go through every card for practice; your ratings won't change when cards come back.">
             <Play size={16} strokeWidth={2} aria-hidden="true" /> Practice all
           </button>
         )}
@@ -320,10 +320,12 @@ function DeckStudy({ id, all, onExit }: { id: number; all: boolean; onExit: () =
   const [turn, setTurn] = useState(0);
   const [stopped, setStopped] = useState(false);
   const [error, setError] = useState<string>();
+  /** The session state already rated: a second rating of it (a double press) is ignored. */
+  const answered = useRef<Session<DeckQuestion>>(undefined);
 
   useEffect(() => {
     const now = Date.now();
-    Promise.all([getDeck(tauriDb, id, now), all ? deckCards(tauriDb, id).then((c) => byRisk(c, now)) : dueDeckCards(tauriDb, now, id)])
+    Promise.all([getDeck(tauriDb, id, now), all ? deckCards(tauriDb, id).then((c) => reviewedFirst(c, now)) : dueDeckCards(tauriDb, now, id)])
       .then(([d, list]) => {
         setDeck(d);
         setCards(new Map(list.map((c) => [c.id, c])));
@@ -361,12 +363,16 @@ function DeckStudy({ id, all, onExit }: { id: number; all: boolean; onExit: () =
   const cardId = Number(question.item_key.slice("deck:".length));
   const card = cards.get(cardId)!;
 
+  // "Practice all" (`all`) is just for practice: ratings move you through the
+  // deck but aren't saved, so card schedules stay as they were.
   async function onRate(rating: Grade) {
-    if (!session) return;
+    if (!session || answered.current === session) return;
+    answered.current = session;
     const { session: next, firstAttempt } = answerCurrent(session, rating !== Rating.Again);
     try {
-      if (firstAttempt) await recordDeckReview(tauriDb, cardId, rating, Date.now());
+      if (firstAttempt && !all) await recordDeckReview(tauriDb, cardId, rating, Date.now());
     } catch (e) {
+      answered.current = undefined;
       return setError(String(e));
     }
     setSession(next);
@@ -379,7 +385,7 @@ function DeckStudy({ id, all, onExit }: { id: number; all: boolean; onExit: () =
         key={turn}
         card={card}
         deckName={deck?.name}
-        top={<SessionGauge done={stats.answered} total={total} note={all ? "practice" : undefined} />}
+        top={<SessionGauge done={stats.answered} total={total} note={all ? "practice · doesn't count" : undefined} />}
         onRate={onRate}
         onStop={() => setStopped(true)}
       />

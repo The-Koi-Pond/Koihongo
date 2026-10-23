@@ -103,7 +103,17 @@ export async function dueDeckCards(db: Db, now: number, deckId?: number): Promis
           [now],
         )
       : await db.all<DeckCard>("SELECT * FROM deck_cards WHERE deck_id = ? AND due <= ?", [deckId, now]);
-  return byRisk(rows, now);
+  return reviewedFirst(rows, now);
+}
+
+/**
+ * Cards you've reviewed before, most at risk first, then brand-new cards in
+ * the order they were added. (FSRS rates every new card as "most at risk", so
+ * plain risk order would put a fresh deck ahead of overdue reviews.)
+ */
+export function reviewedFirst<T extends FsrsFields & { id?: number }>(rows: T[], now: number): T[] {
+  const fresh = rows.filter((r) => r.state === 0).sort((a, b) => a.due - b.due || (a.id ?? 0) - (b.id ?? 0));
+  return [...byRisk(rows.filter((r) => r.state !== 0), now), ...fresh];
 }
 
 /** Most likely to be forgotten first, then oldest due. */

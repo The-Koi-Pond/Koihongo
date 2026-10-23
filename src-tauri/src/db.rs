@@ -3,6 +3,7 @@
 // App logic lives in TypeScript (src/db, src/srs); this only runs SQL.
 
 use rusqlite::types::{Value as SqlValue, ValueRef};
+use rusqlite::hooks::{AuthAction, AuthContext, Authorization};
 use rusqlite::{Connection, params_from_iter};
 use serde::Deserialize;
 use serde_json::{Map, Number, Value};
@@ -30,7 +31,20 @@ pub fn open(user_db: &Path, content_db: &Path) -> Result<Connection, String> {
         .map_err(|e| e.to_string())?;
     conn.execute("ATTACH DATABASE ?1 AS content", [read_only_uri(content_db)])
         .map_err(|e| e.to_string())?;
+    conn.authorizer(Some(authorize)).map_err(|e| e.to_string())?;
     Ok(conn)
+}
+
+/// The UI sends its own SQL, so from here on SQLite refuses what the app never
+/// needs and what could reach outside the two databases: attaching or
+/// detaching files (ATTACH can create a file anywhere on disk) and every
+/// PRAGMA except user_version (used by migrations).
+fn authorize(ctx: AuthContext<'_>) -> Authorization {
+    match ctx.action {
+        AuthAction::Attach { .. } | AuthAction::Detach { .. } => Authorization::Deny,
+        AuthAction::Pragma { pragma_name, .. } if !pragma_name.eq_ignore_ascii_case("user_version") => Authorization::Deny,
+        _ => Authorization::Allow,
+    }
 }
 
 /// `C:\a b\c.db` → `file:///C:/a%20b/c.db?mode=ro`
@@ -177,5 +191,28 @@ mod tests {
         let dir = temp_dir("missing");
         let err = open(&dir.join("user.db"), &dir.join("nope.db")).unwrap_err();
         assert!(err.contains("pnpm content:build"));
+    }
+
+    #[test]
+    fn ui_sql_cannot_reach_other_files() {
+        let dir = temp_dir("lockdown");
+        let content = dir.join("content.db");
+        Connection::open(&content).unwrap().execute_batch("CREATE TABLE kanji (character TEXT)").unwrap();
+        let mut conn = open(&dir.join("user.db"), &content).unwrap();
+        let outside = dir.join("planted.bat");
+        let out = outside.to_string_lossy().replace('\\', "/");
+
+        let attach = batch(&mut conn, &[Statement { sql: format!("ATTACH DATABASE '{out}' AS x"), params: vec![] }]);
+        assert!(attach.is_err(), "ATTACH must be refused");
+        let vacuum = batch(&mut conn, &[Statement { sql: format!("VACUUM INTO '{out}'"), params: vec![] }]);
+        assert!(vacuum.is_err(), "VACUUM INTO must be refused");
+        assert!(!outside.exists(), "no file was written");
+        assert!(query(&conn, "PRAGMA writable_schema = ON", &[]).is_err(), "other pragmas are refused");
+
+        // What the app does still works.
+        batch(&mut conn, &[Statement { sql: "PRAGMA user_version = 3".into(), params: vec![] }]).unwrap();
+        let rows = query(&conn, "PRAGMA user_version", &[]).unwrap();
+        assert_eq!(rows[0]["user_version"], json!(3));
+        assert!(query(&conn, "SELECT count(*) AS n FROM content.kanji", &[]).is_ok());
     }
 }

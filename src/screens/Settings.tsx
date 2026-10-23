@@ -167,26 +167,30 @@ function BackupsCard() {
     refresh();
   }, []);
 
-  async function run(action: () => Promise<unknown>) {
+  /** Runs an action, showing any error; true if it worked. */
+  async function run(action: () => Promise<unknown>): Promise<boolean> {
     setBusy(true);
     setError(undefined);
     try {
       await action();
       await refresh();
+      return true;
     } catch (e) {
       setError(String(e));
+      return false;
     } finally {
       setBusy(false);
     }
   }
 
   async function restore(name: string) {
-    await run(async () => {
+    const ok = await run(async () => {
       await restoreBackup(name);
       await migrate(tauriDb); // an older backup may need the newer tables
     });
-    // Start fresh so every screen shows the restored progress.
-    location.reload();
+    // Start fresh so every screen shows the restored progress (only if it worked:
+    // a failed restore keeps its error message on screen).
+    if (ok) location.reload();
   }
 
   return (

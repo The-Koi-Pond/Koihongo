@@ -118,16 +118,13 @@ test("AI requests: each helper gets what it needs, and off sends nothing", () =>
   const api = backendRequest({ ...DEFAULT_AI, provider: "anthropic" }, chat);
   assert.deepEqual(api, { provider: "anthropic", model: "claude-opus-5-5", system: "sys", messages: chat.messages });
 
-  const gemini = backendRequest({ ...DEFAULT_AI, provider: "openai-compatible", compatPreset: "gemini", compatModel: "m" }, chat);
-  assert.equal(gemini.keySlot, "gemini");
-  assert.match(gemini.baseUrl!, /^https:\/\/generativelanguage/);
-
-  const local = backendRequest({ ...DEFAULT_AI, provider: "openai-compatible", compatPreset: "ollama", compatModel: "m" }, chat);
-  assert.equal(local.keySlot, undefined, "local models get no key");
+  // Known services are named, not addressed: Rust fixes the address and the key.
+  const gemini = backendRequest({ ...DEFAULT_AI, provider: "openai-compatible", compatPreset: "gemini", compatModel: "m", compatBaseUrl: "https://evil.example" }, chat);
+  assert.equal(gemini.preset, "gemini");
+  assert.equal(gemini.baseUrl, undefined, "a stored address isn't sent for a known service");
 
   const custom = { ...DEFAULT_AI, provider: "openai-compatible" as const, compatPreset: "custom" as const, compatBaseUrl: "http://x/v1", compatModel: "m" };
-  assert.equal(backendRequest(custom, chat).keySlot, undefined, "no key unless one is saved");
-  assert.equal(backendRequest(custom, chat, true).keySlot, "custom");
+  assert.equal(backendRequest(custom, chat).baseUrl, "http://x/v1");
 
   assert.throws(() => backendRequest({ ...DEFAULT_AI, provider: "openai-compatible" }, chat), /No model/);
 });
