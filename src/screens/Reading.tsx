@@ -2,6 +2,8 @@ import {
   ArrowLeft,
   ArrowRight,
   BookOpen,
+  Bookmark as BookmarkIcon,
+  BookmarkCheck,
   ChevronLeft,
   ChevronRight,
   Eye,
@@ -18,11 +20,16 @@ import {
   Pencil,
   Plus,
   Search,
+  SkipBack,
+  SquarePlus,
+  SkipForward,
+  SlidersHorizontal,
   Trash2,
   UnfoldHorizontal,
   ZoomIn,
   ZoomOut,
   X,
+  type LucideIcon,
 } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { TransformComponent, TransformWrapper, type ReactZoomPanPinchRef } from "react-zoom-pan-pinch";
@@ -31,26 +38,36 @@ import {
   addBooks,
   addImages,
   addMark,
+  adjustBox,
   addSeriesBox,
   addSeriesTitle,
   arrangeChapter,
   bookPages,
   byChapter,
+  clearBookmark,
   chapterNumber,
   chapterSubtitle,
   clearSeriesCover,
+  createCategory,
   BOX_IDEAS,
+  contextOff,
   contextText,
   coverUrl,
   createSeries,
+  deleteCategory,
   deleteMark,
   deleteSeriesBox,
   getBook,
   glossary,
+  joinTags,
   listBooks,
+  listCategories,
   listSeries,
   makeChapter,
   MARK_KINDS,
+  markBoxes,
+  markNumbers,
+  markSections,
   marksPerPage,
   pageMarks,
   pageUrl,
@@ -59,14 +76,23 @@ import {
   relinkBook,
   removeBook,
   removeSeries,
+  renameCategory,
+  reorderMarks,
   renamePage,
   renameSeries,
   savePlace,
   seenBefore,
   seriesExtras,
+  seriesParts,
+  setBookmark,
+  setCategory,
+  setMarkBox,
+  setMoreBoxes,
+  sfxDictionary,
   setBookSeries,
   setSeriesBox,
   setSeriesTitle,
+  splitTags,
   textKey,
   timeAgo,
   updateBook,
@@ -74,12 +100,16 @@ import {
   updateSeriesInfo,
   type Book,
   type Box,
+  type BoxGrip,
+  type Category,
+  type ContextPart,
   type GlossaryEntry,
   type Mark,
   type MarkKind,
   type MarkText,
   type SeenBefore,
   type Series,
+  type SfxMeaning,
   type SeriesExtras,
 } from "../reading.ts";
 
@@ -88,6 +118,11 @@ type View = { mode: "shelf"; series?: number } | { mode: "book"; id: number; pag
 /** Reading: your bookshelf (or one series on it), a book open in the reader, a chapter's page editor, or your glossary. */
 export function Reading() {
   const [view, setView] = useState<View>({ mode: "shelf" });
+  const [category, setCategory] = useState<CategoryTab>(loadCategoryTab);
+  const chooseCategory = (tab: CategoryTab) => {
+    setCategory(tab);
+    saveCategoryTab(tab);
+  };
   /** The shelf you came from (a series, or the whole shelf), for the reader's back button. */
   const [from, setFrom] = useState<number>();
   useEffect(() => {
@@ -108,11 +143,34 @@ export function Reading() {
       key={view.series ?? "top"}
       seriesId={view.series}
       onSeries={shelf}
-      onOpen={(id) => setView({ mode: "book", id })}
+      onOpen={(id, page) => setView({ mode: "book", id, page })}
       onMade={(id) => setView({ mode: "pages", id })}
       onGlossary={() => setView({ mode: "glossary" })}
+      category={category}
+      onCategory={chooseCategory}
     />
   );
+}
+
+/** A bookshelf tab: everything, a category's id, or the uncategorised. */
+type CategoryTab = "all" | "none" | number;
+const CATEGORY_KEY = "koihongo.readingCategory";
+
+function loadCategoryTab(): CategoryTab {
+  try {
+    const saved = localStorage.getItem(CATEGORY_KEY);
+    return saved === null || saved === "all" ? "all" : saved === "none" ? "none" : Number(saved) || "all";
+  } catch {
+    return "all";
+  }
+}
+
+function saveCategoryTab(tab: CategoryTab) {
+  try {
+    localStorage.setItem(CATEGORY_KEY, String(tab));
+  } catch {
+    // Not remembered this time; harmless.
+  }
 }
 
 /** Where a page is, for people: "ch1/012.jpg" → "p. 12", "cover.jpg" → "cover". */
@@ -146,37 +204,60 @@ function Shelf({
   onOpen,
   onMade,
   onGlossary,
+  category: chosen,
+  onCategory,
 }: {
   seriesId?: number;
+  /** The category tab shown on the whole shelf. */
+  category: CategoryTab;
+  onCategory: (tab: CategoryTab) => void;
   onSeries: (id?: number) => void;
-  onOpen: (id: number) => void;
+  /** Opens a book, at `page` if given (a bookmark). */
+  onOpen: (id: number, page?: string) => void;
   /** Opens a chapter you made in the page editor (just made, or its pencil clicked). */
   onMade: (id: number) => void;
   onGlossary: () => void;
 }) {
   const [books, setBooks] = useState<Book[]>();
   const [series, setSeries] = useState<Series[]>();
+  const [categories, setCategories] = useState<Category[]>();
   const [message, setMessage] = useState<string>();
   const [error, setError] = useState<string>();
   /** A name being typed: for a new chapter, a new series, or renaming this series. */
   const [naming, setNaming] = useState<{ what: "chapter" | "series" | "rename"; text: string }>();
   const [confirmRemove, setConfirmRemove] = useState(false);
+  /** The chapter whose title is being edited, in the series' list. */
+  const [renamingChapter, setRenamingChapter] = useState<number>();
   const load = useCallback(() => {
-    Promise.all([listBooks(tauriDb), listSeries(tauriDb)])
-      .then(([b, s]) => {
+    Promise.all([listBooks(tauriDb), listSeries(tauriDb), listCategories(tauriDb)])
+      .then(([b, s, c]) => {
         setBooks(b);
         setSeries(s);
+        setCategories(c);
       })
       .catch((e) => setError(String(e)));
   }, []);
   useEffect(load, [load]);
 
   const current = series?.find((s) => s.id === seriesId);
-  const { drag, dragHandlers } = useBookDrag(async (book, to) => {
-    if (to === book.series_id) return;
+  // A tab for a category that's gone (or not loaded yet) shows everything.
+  const category: CategoryTab = typeof chosen === "number" && categories && !categories.some((c) => c.id === chosen) ? "all" : chosen;
+  /** Where new things go: the category you're looking at. */
+  const newCategory = typeof category === "number" ? category : null;
+  const { drag, dragHandlers } = useShelfDrag(async (item, target) => {
     try {
-      await setBookSeries(tauriDb, book.id, to);
-      setMessage(to === null ? `Took ${book.title} out of ${current?.title ?? "its series"}.` : `Moved ${book.title} into ${series?.find((s) => s.id === to)?.title}.`);
+      if (target.startsWith("cat:")) {
+        const to = target === "cat:none" ? null : Number(target.slice(4));
+        const now = "book" in item ? item.book.category_id : item.series.category_id;
+        if (to === now) return;
+        await setCategory(tauriDb, "book" in item ? { book: item.book.id } : { series: item.series.id }, to);
+        setMessage(`Moved ${dragTitle(item)} to ${categories?.find((c) => c.id === to)?.name ?? "Uncategorised"}.`);
+      } else if ("book" in item) {
+        const to = target === "shelf" ? null : Number(target);
+        if (to === item.book.series_id) return;
+        await setBookSeries(tauriDb, item.book.id, to);
+        setMessage(to === null ? `Took ${item.book.title} out of ${current?.title ?? "its series"}.` : `Moved ${item.book.title} into ${series?.find((s) => s.id === to)?.title}.`);
+      } else return; // a series dropped on a series
       load();
     } catch (e) {
       setError(String(e));
@@ -194,7 +275,7 @@ function Shelf({
         setMessage("No pages found there. Pick a folder with page images in it (or with chapter folders inside), or .cbz files.");
         return;
       }
-      const added = await addBooks(tauriDb, found, Date.now(), seriesId);
+      const added = await addBooks(tauriDb, found, Date.now(), seriesId, newCategory);
       const already = found.length - added;
       const into = current?.title ?? (found.every((f) => f.series && f.series === found[0].series) ? found[0].series : undefined);
       setMessage(
@@ -216,9 +297,9 @@ function Shelf({
     const text = naming?.text.trim();
     if (!naming || !text) return;
     try {
-      if (naming.what === "chapter") return onMade(await makeChapter(tauriDb, text, Date.now(), seriesId));
+      if (naming.what === "chapter") return onMade(await makeChapter(tauriDb, text, Date.now(), seriesId, newCategory));
       if (naming.what === "series") {
-        const id = await createSeries(tauriDb, text, Date.now());
+        const id = await createSeries(tauriDb, text, Date.now(), newCategory);
         return onSeries(id);
       }
       if (seriesId !== undefined) await renameSeries(tauriDb, seriesId, text);
@@ -242,6 +323,11 @@ function Shelf({
       tiles.sort((a, b) => recent(b) - recent(a));
     }
   }
+  const tileCategory = (t: Tile) => ("book" in t ? t.book.category_id : t.series.category_id);
+  const inTab = (t: Tile, tab: CategoryTab) => tab === "all" || (tab === "none" ? tileCategory(t) === null : tileCategory(t) === tab);
+  const shown = current ? tiles : tiles.filter((t) => inTab(t, category));
+  const counts = new Map<CategoryTab, number>([["all", tiles.length], ["none", tiles.filter((t) => tileCategory(t) === null).length]]);
+  for (const c of categories ?? []) counts.set(c.id, tiles.filter((t) => tileCategory(t) === c.id).length);
 
   const naming_form = naming && (
     <form className="deck-new make-chapter" onSubmit={submitName}>
@@ -268,6 +354,12 @@ function Shelf({
     </form>
   );
   const toggle = (what: "chapter" | "series" | "rename", text = "") => setNaming(naming?.what === what ? undefined : { what, text });
+  const addItems = [
+    { icon: FolderOpen, text: "Add a folder", onClick: () => add("folder") },
+    { icon: FileArchive, text: "Add .cbz files", onClick: () => add("files") },
+    { icon: ImagePlus, text: "Make a chapter", onClick: () => setNaming({ what: "chapter", text: "" }) },
+    { icon: FolderPlus, text: "New series", onClick: () => setNaming({ what: "series", text: "" }) },
+  ];
 
   return (
     <>
@@ -310,6 +402,8 @@ function Shelf({
             series={current}
             first={tiles.flatMap((t) => ("book" in t && t.book.pages > 0 ? [t.book] : []))[0]}
             onCoverChanged={load}
+            chapters={tiles.flatMap((t) => ("book" in t ? [t.book] : []))}
+            onOpen={onOpen}
           />
           <h2 className="series-chapters">
             Chapters <span className="series-chapters-count">{current.chapters}</span>
@@ -317,93 +411,119 @@ function Shelf({
         </>
       ) : (
         <>
-          <h1>
-            <span lang="ja">読書</span> Reading
-          </h1>
+          <div className="reading-top">
+            <h1>
+              <span lang="ja">読書</span> Reading
+            </h1>
+            <button type="button" onClick={onGlossary}>
+              <NotebookText size={16} strokeWidth={2.25} aria-hidden="true" /> Glossary
+            </button>
+          </div>
           <p className="muted reading-intro">
             Read your own manga with help. Mark speech bubbles and sound effects, write down what they say, and anything you've written down before
             is recognised on every page. Your files stay where they are; Koihongo only reads them.
           </p>
         </>
       )}
-      {!current && (
-        <div className="reading-actions">
-          <button type="button" className="primary" onClick={() => add("folder")}>
-            <FolderOpen size={16} strokeWidth={2.25} aria-hidden="true" /> Add a folder
-          </button>
-          <button type="button" onClick={() => add("files")}>
-            <FileArchive size={16} strokeWidth={2.25} aria-hidden="true" /> Add .cbz files
-          </button>
-          <button type="button" onClick={() => toggle("chapter")} aria-expanded={naming?.what === "chapter"}>
-            <ImagePlus size={16} strokeWidth={2.25} aria-hidden="true" /> Make a chapter
-          </button>
-          <button type="button" onClick={() => toggle("series")} aria-expanded={naming?.what === "series"}>
-            <FolderPlus size={16} strokeWidth={2.25} aria-hidden="true" /> New series
-          </button>
-          <button type="button" onClick={onGlossary}>
-            <NotebookText size={16} strokeWidth={2.25} aria-hidden="true" /> Glossary
-          </button>
-        </div>
+      {!current && categories && (
+        <CategoryTabs
+          categories={categories}
+          active={category}
+          counts={counts}
+          dropClass={dropClass}
+          onChoose={onCategory}
+          onChanged={(choose) => {
+            if (choose !== undefined) onCategory(choose);
+            load();
+          }}
+          onError={(e) => setError(String(e))}
+        />
       )}
       {naming?.what !== "rename" && naming_form}
       {message && <p className="reading-message">{message}</p>}
       {error && <p className="error">{error}</p>}
-      {books && series && tiles.length === 0 && (
+      {books && series && shown.length === 0 && (
         <p className="muted">
           {current
             ? "No chapters yet. Use the + below to add folders or .cbz files, or make a chapter from separate images: they go straight into this series. Or move a book in from its ⓘ panel."
-            : "No books yet. Add a folder of page images (a folder of chapter folders works too: it becomes a series) or .cbz files, or make a chapter from separate images."}
+            : tiles.length === 0
+              ? "No books yet. Use + Add for a folder of page images (a folder of chapter folders becomes a series), .cbz files, or a chapter made from separate images."
+              : "Nothing here yet. Anything you add while this tab is open goes in it, or drag a book or series onto its tab."}
         </p>
       )}
-      {!current && !!series?.length && tiles.some((t) => "book" in t) && (
-        <p className="muted shelf-hint">Drag a book onto a series to put it in.</p>
+      {!current && tiles.length > 0 && (
+        <p className="muted shelf-hint">Drag a book onto a series to put it in, or a book or series onto a tab to move it to that category.</p>
       )}
       {drag && (
         <div className="drag-ghost" style={{ left: drag.x, top: drag.y }} aria-hidden="true">
-          {drag.book.title}
+          {dragTitle(drag.item)}
         </div>
       )}
       {current && (
         <ul className={`chapter-list ${drag ? "dragging" : ""}`}>
           {tiles.flatMap((t) => ("book" in t ? [t.book] : [])).map((b) => (
             <li key={b.id}>
-              <ChapterBar
-                book={b}
-                seriesTitle={current.title}
-                dragging={drag?.book.id === b.id}
-                onOpen={() => onOpen(b.id)}
-                dragHandlers={dragHandlers(b)}
-              />
-              {b.kind === "made" && (
-                <button
-                  type="button"
-                  className="icon-action shelf-edit"
-                  onClick={() => onMade(b.id)}
-                  title="Edit pages: add, reorder, rename or remove"
-                  aria-label={`Edit the pages of ${b.title}`}
-                >
-                  <Pencil size={15} strokeWidth={2} />
-                </button>
+              {renamingChapter === b.id ? (
+                <ChapterRename
+                  title={b.title}
+                  onDone={(title) => {
+                    setRenamingChapter(undefined);
+                    if (title.trim() && title.trim() !== b.title)
+                      updateBook(tauriDb, b.id, { title: title.trim() })
+                        .then(load)
+                        .catch((e) => setError(String(e)));
+                  }}
+                  onCancel={() => setRenamingChapter(undefined)}
+                />
+              ) : (
+                <>
+                  <ChapterBar
+                    book={b}
+                    seriesTitle={current.title}
+                    dragging={!!drag && "book" in drag.item && drag.item.book.id === b.id}
+                    onOpen={() => onOpen(b.id)}
+                    dragHandlers={dragHandlers({ book: b })}
+                    tools={b.kind === "made" ? 2 : 1}
+                  />
+                  <span className="chapter-tools">
+                    <button type="button" className="icon-action" onClick={() => setRenamingChapter(b.id)} title="Rename this chapter" aria-label={`Rename ${b.title}`}>
+                      <Pencil size={15} strokeWidth={2} />
+                    </button>
+                    {/* Chapters you made can have their pages edited (your own folders and .cbz files are never changed). */}
+                    {b.kind === "made" && (
+                      <button
+                        type="button"
+                        className="icon-action"
+                        onClick={() => onMade(b.id)}
+                        title="Edit pages: add, reorder, rename or remove"
+                        aria-label={`Edit the pages of ${b.title}`}
+                      >
+                        <Images size={15} strokeWidth={2} />
+                      </button>
+                    )}
+                  </span>
+                </>
               )}
             </li>
           ))}
           {books && (
             <li>
-              <AddChapters onFolder={() => add("folder")} onFiles={() => add("files")} onMake={() => setNaming({ what: "chapter", text: "" })} />
+              <AddMenu label="Add chapters" items={addItems.slice(0, 3)} />
             </li>
           )}
         </ul>
       )}
       {!current && (
         <ul className={`shelf ${drag ? "dragging" : ""}`}>
-          {tiles.map((t) =>
+          {shown.map((t) =>
             "series" in t ? (
               <li key={`s${t.series.id}`}>
                 <button
                   type="button"
-                  className={`shelf-book shelf-series ${dropClass(String(t.series.id))}`}
+                  className={`shelf-book shelf-series ${dropClass(String(t.series.id))} ${drag && "series" in drag.item && drag.item.series.id === t.series.id ? "drag-source" : ""}`}
                   onClick={() => onSeries(t.series.id)}
                   data-drop={t.series.id}
+                  {...dragHandlers({ series: t.series })}
                 >
                   <SeriesCover series={t.series} first={t.chapters.find((b) => b.pages > 0)} />
                   <span className="shelf-title">
@@ -418,9 +538,9 @@ function Shelf({
               <li key={t.book.id}>
                 <button
                   type="button"
-                  className={`shelf-book ${drag?.book.id === t.book.id ? "drag-source" : ""}`}
+                  className={`shelf-book ${drag && "book" in drag.item && drag.item.book.id === t.book.id ? "drag-source" : ""}`}
                   onClick={() => onOpen(t.book.id)}
-                  {...dragHandlers(t.book)}
+                  {...dragHandlers({ book: t.book })}
                 >
                   <Cover book={t.book} />
                   <span className="shelf-title">{t.book.title}</span>
@@ -445,16 +565,125 @@ function Shelf({
                     title="Edit pages: add, reorder, rename or remove"
                     aria-label={`Edit the pages of ${t.book.title}`}
                   >
-                    <Pencil size={15} strokeWidth={2} />
+                    <Images size={15} strokeWidth={2} />
                   </button>
                 )}
               </li>
             ),
           )}
+          {books && (
+            <li>
+              <AddMenu label="Add" items={addItems} />
+            </li>
+          )}
         </ul>
       )}
       {current && tiles.length > 0 && <p className="muted shelf-hint shelf-hint-below">Tip: drag a chapter onto “Bookshelf” to take it out of this series.</p>}
     </>
+  );
+}
+
+/**
+ * The bookshelf's category tabs: All, your categories, Uncategorised (when
+ * anything is). Each takes drops (a book or series dragged onto it moves
+ * there); + makes a category; the open one can be renamed or removed.
+ */
+function CategoryTabs({
+  categories,
+  active,
+  counts,
+  dropClass,
+  onChoose,
+  onChanged,
+  onError,
+}: {
+  categories: Category[];
+  active: CategoryTab;
+  counts: Map<CategoryTab, number>;
+  dropClass: (target: string) => string;
+  onChoose: (tab: CategoryTab) => void;
+  /** After a change; `choose`: a tab to show now. */
+  onChanged: (choose?: CategoryTab) => void;
+  onError: (e: unknown) => void;
+}) {
+  const [adding, setAdding] = useState(false);
+  const [renaming, setRenaming] = useState(false);
+  const [confirmDelete, setConfirmDelete] = useState(false);
+  const activeCategory = categories.find((c) => c.id === active);
+  const tab = (key: CategoryTab, name: React.ReactNode, drop?: string) => (
+    <button
+      key={String(key)}
+      type="button"
+      role="tab"
+      aria-selected={active === key}
+      className={`category-tab ${active === key ? "on" : ""} ${drop ? dropClass(drop) : ""}`}
+      onClick={() => onChoose(key)}
+      data-drop={drop}
+    >
+      {name} <span className="category-count">{counts.get(key) ?? 0}</span>
+    </button>
+  );
+  return (
+    <div className="category-bar">
+      <nav className="category-tabs" role="tablist" aria-label="Categories">
+        {tab("all", "All")}
+        {categories.map((c) =>
+          renaming && c.id === active ? (
+            <TagInput
+              key={c.id}
+              initial={c.name}
+              label="Category name"
+              placeholder="Category name"
+              onDone={(text) => {
+                setRenaming(false);
+                if (text.trim() && text.trim() !== c.name) renameCategory(tauriDb, c.id, text).then(() => onChanged(), onError);
+              }}
+              onCancel={() => setRenaming(false)}
+            />
+          ) : (
+            tab(c.id, c.name, `cat:${c.id}`)
+          ),
+        )}
+        {(counts.get("none") ?? 0) > 0 && tab("none", "Uncategorised", "cat:none")}
+        {adding ? (
+          <TagInput
+            initial=""
+            label="New category"
+            placeholder="e.g. Light novels"
+            onDone={(text) => {
+              setAdding(false);
+              if (text.trim()) createCategory(tauriDb, text).then((id) => onChanged(id), onError);
+            }}
+            onCancel={() => setAdding(false)}
+          />
+        ) : (
+          <button type="button" className="category-add" onClick={() => setAdding(true)} title="New category" aria-label="New category">
+            <Plus size={15} strokeWidth={2.25} />
+          </button>
+        )}
+      </nav>
+      {activeCategory && !renaming && (
+        <div className="category-tools">
+          <button type="button" className="icon-action" onClick={() => setRenaming(true)} title={`Rename ${activeCategory.name}`} aria-label="Rename this category">
+            <Pencil size={14} strokeWidth={1.75} />
+          </button>
+          <button
+            type="button"
+            className={`icon-action ${confirmDelete ? "danger" : ""}`}
+            onBlur={() => setConfirmDelete(false)}
+            onClick={() => {
+              if (!confirmDelete) return setConfirmDelete(true);
+              setConfirmDelete(false);
+              deleteCategory(tauriDb, activeCategory.id).then(() => onChanged("all"), onError);
+            }}
+            title={confirmDelete ? `Click again: remove ${activeCategory.name} (what's in it stays, uncategorised)` : `Remove ${activeCategory.name}`}
+            aria-label={confirmDelete ? "Click again to remove this category" : "Remove this category"}
+          >
+            <Trash2 size={14} />
+          </button>
+        </div>
+      )}
+    </div>
   );
 }
 
@@ -465,12 +694,15 @@ function ChapterBar({
   dragging,
   onOpen,
   dragHandlers,
+  tools,
 }: {
   book: Book;
   seriesTitle: string;
   dragging: boolean;
   onOpen: () => void;
   dragHandlers: React.HTMLAttributes<HTMLButtonElement>;
+  /** How many buttons sit over its right end (rename, edit pages), to leave room for. */
+  tools: number;
 }) {
   const number = chapterNumber(book.title);
   const subtitle = number ? chapterSubtitle(book.title, seriesTitle) : book.title;
@@ -481,7 +713,14 @@ function ChapterBar({
     !!book.marks && `${book.marks} ${book.marks === 1 ? "mark" : "marks"}`,
   ].filter(Boolean);
   return (
-    <button type="button" className={`chapter-bar ${dragging ? "drag-source" : ""}`} onClick={onOpen} title={book.title} {...dragHandlers}>
+    <button
+      type="button"
+      className={`chapter-bar ${dragging ? "drag-source" : ""}`}
+      style={{ paddingRight: 16 + tools * 38 }}
+      onClick={onOpen}
+      title={book.title}
+      {...dragHandlers}
+    >
       <span className="chapter-head">
         <span className="chapter-num">{number ? `CH.${number}` : subtitle}</span>
         {number && subtitle && <span className="chapter-sub">{subtitle}</span>}
@@ -499,8 +738,31 @@ function ChapterBar({
   );
 }
 
-/** The + bar after a series' chapters: a menu of ways to add more. */
-function AddChapters({ onFolder, onFiles, onMake }: { onFolder: () => void; onFiles: () => void; onMake: () => void }) {
+/** A chapter's bar while you rename it: Enter or clicking away saves, Esc cancels. */
+function ChapterRename({ title, onDone, onCancel }: { title: string; onDone: (title: string) => void; onCancel: () => void }) {
+  const cancelled = useRef(false);
+  return (
+    <input
+      className="chapter-rename"
+      autoFocus
+      defaultValue={title}
+      aria-label="Chapter title"
+      placeholder="e.g. Chapter 1"
+      onFocus={(e) => e.currentTarget.select()}
+      onKeyDown={(e) => {
+        if (e.key === "Enter") e.currentTarget.blur();
+        if (e.key === "Escape") {
+          cancelled.current = true;
+          onCancel();
+        }
+      }}
+      onBlur={(e) => !cancelled.current && onDone(e.currentTarget.value)}
+    />
+  );
+}
+
+/** The + tile or bar at the end of the shelf or a series' chapters: a menu of ways to add more. */
+function AddMenu({ label, items }: { label: string; items: { icon: LucideIcon; text: string; onClick: () => void }[] }) {
   const [open, setOpen] = useState(false);
   const box = useRef<HTMLDivElement>(null);
   useEffect(() => {
@@ -520,42 +782,39 @@ function AddChapters({ onFolder, onFiles, onMake }: { onFolder: () => void; onFi
   };
   return (
     <div className="shelf-add" ref={box}>
-      <button type="button" className="shelf-add-btn" aria-haspopup="menu" aria-expanded={open} title="Add chapters" onClick={() => setOpen(!open)}>
-        <Plus size={18} strokeWidth={2} aria-hidden="true" /> Add chapters
+      <button type="button" className="shelf-add-btn" aria-haspopup="menu" aria-expanded={open} title={label} onClick={() => setOpen(!open)}>
+        <Plus size={18} strokeWidth={2} aria-hidden="true" /> {label}
       </button>
       {open && (
         <div className="add-to-deck-menu shelf-add-menu" role="menu">
-          <button type="button" role="menuitem" onClick={choose(onFolder)}>
-            <span>
-              <FolderOpen size={15} aria-hidden="true" /> Add a folder
-            </span>
-          </button>
-          <button type="button" role="menuitem" onClick={choose(onFiles)}>
-            <span>
-              <FileArchive size={15} aria-hidden="true" /> Add .cbz files
-            </span>
-          </button>
-          <button type="button" role="menuitem" onClick={choose(onMake)}>
-            <span>
-              <ImagePlus size={15} aria-hidden="true" /> Make a chapter
-            </span>
-          </button>
+          {items.map(({ icon: Icon, text, onClick }) => (
+            <button key={text} type="button" role="menuitem" onClick={choose(onClick)}>
+              <span>
+                <Icon size={15} aria-hidden="true" /> {text}
+              </span>
+            </button>
+          ))}
         </div>
       )}
     </div>
   );
 }
 
+/** What's being dragged on the shelf. */
+type DragItem = { book: Book } | { series: Series };
+const dragTitle = (item: DragItem) => ("book" in item ? item.book.title : item.series.title);
+
 /**
- * Dragging a book tile and dropping it on something marked `data-drop`: a
- * series tile (its id) or the back button ("shelf": out of its series). Made
- * from pointer events rather than the browser's drag and drop, which Tauri
- * takes over on Windows for dropping files from outside. A press that barely
- * moves is still a click; Esc cancels.
+ * Dragging a book or series tile and dropping it on something marked
+ * `data-drop`: a series tile (its id), the back button ("shelf": out of its
+ * series) or a category tab ("cat:3", "cat:none"); `onDrop` gets that mark.
+ * Made from pointer events rather than the browser's drag and drop, which
+ * Tauri takes over on Windows for dropping files from outside. A press that
+ * barely moves is still a click; Esc cancels.
  */
-function useBookDrag(onDrop: (book: Book, seriesId: number | null) => void) {
-  const [drag, setDrag] = useState<{ book: Book; x: number; y: number; over?: string }>();
-  const pressed = useRef<{ book: Book; x: number; y: number }>(undefined);
+function useShelfDrag(onDrop: (item: DragItem, target: string) => void) {
+  const [drag, setDrag] = useState<{ item: DragItem; x: number; y: number; over?: string }>();
+  const pressed = useRef<{ item: DragItem; x: number; y: number }>(undefined);
   /** A drag happened: the click that may follow it isn't a click. */
   const dragged = useRef(false);
   const drop = useRef(onDrop);
@@ -567,7 +826,7 @@ function useBookDrag(onDrop: (book: Book, seriesId: number | null) => void) {
       const p = pressed.current;
       if (!p || (!dragged.current && Math.hypot(e.clientX - p.x, e.clientY - p.y) < 6)) return;
       dragged.current = true;
-      setDrag({ book: p.book, x: e.clientX, y: e.clientY, over: targetAt(e)?.dataset.drop });
+      setDrag({ item: p.item, x: e.clientX, y: e.clientY, over: targetAt(e)?.dataset.drop });
     }
     function up(e: PointerEvent) {
       const p = pressed.current;
@@ -575,7 +834,7 @@ function useBookDrag(onDrop: (book: Book, seriesId: number | null) => void) {
       if (!p || !dragged.current) return;
       setDrag(undefined);
       const target = targetAt(e)?.dataset.drop;
-      if (target) drop.current(p.book, target === "shelf" ? null : Number(target));
+      if (target) drop.current(p.item, target);
     }
     function cancel(e: KeyboardEvent) {
       if (e.key !== "Escape" || !pressed.current) return;
@@ -592,10 +851,10 @@ function useBookDrag(onDrop: (book: Book, seriesId: number | null) => void) {
     };
   }, []);
 
-  const dragHandlers = (book: Book) => ({
+  const dragHandlers = (item: DragItem) => ({
     onPointerDown: (e: React.PointerEvent) => {
       if (e.button !== 0) return;
-      pressed.current = { book, x: e.clientX, y: e.clientY };
+      pressed.current = { item, x: e.clientX, y: e.clientY };
       dragged.current = false;
     },
     onClickCapture: (e: React.MouseEvent) => {
@@ -613,11 +872,26 @@ function useBookDrag(onDrop: (book: Book, seriesId: number | null) => void) {
  * the context sent with translation requests, so the page shows exactly what
  * the AI helper will see. Saves as you leave each field.
  */
-function SeriesInfo({ series, first, onCoverChanged }: { series: Series; first?: Book; onCoverChanged: () => void }) {
-  const [info, setInfo] = useState({ synopsis: series.synopsis });
+function SeriesInfo({
+  series,
+  first,
+  chapters,
+  onCoverChanged,
+  onOpen,
+}: {
+  series: Series;
+  first?: Book;
+  /** Its chapters in reading order. */
+  chapters: Book[];
+  onCoverChanged: () => void;
+  onOpen: (id: number, page?: string) => void;
+}) {
+  const [info, setInfo] = useState({ synopsis: series.synopsis, genres: series.genres });
   /** What's saved, so leaving a field unchanged writes nothing. */
   const saved = useRef(info);
   const [extras, setExtras] = useState<SeriesExtras>();
+  /** Parts of the info not to send to the AI helper (keys from seriesParts). */
+  const [off, setOff] = useState(() => contextOff(series.context_off));
   /** The synopsis reads like a page; its pencil opens it for editing. */
   const [editingSynopsis, setEditingSynopsis] = useState(false);
   /** Esc pressed: leaving the box shouldn't save. */
@@ -659,10 +933,13 @@ function SeriesInfo({ series, first, onCoverChanged }: { series: Series; first?:
     saved.current = { ...saved.current, [field]: info[field] };
     updateSeriesInfo(tauriDb, series.id, { [field]: info[field] }).catch(fail);
   };
-  /** Saves a name ("new": adds it); an empty one is removed. */
-  const saveTitle = async (id: number | "new", text: string) => {
-    setEditingTitle(undefined);
+  /**
+   * Saves a name ("new": adds it); an empty one is removed. `next`: a new name
+   * ended with Enter, so the box for another opens straight away.
+   */
+  const saveTitle = async (id: number | "new", text: string, next = false) => {
     const title = text.trim();
+    setEditingTitle(id === "new" && title && next ? "new" : undefined);
     try {
       if (id === "new") {
         if (title) setExtras({ ...extras, titles: [...extras.titles, { id: await addSeriesTitle(tauriDb, series.id, title), title }] });
@@ -677,10 +954,17 @@ function SeriesInfo({ series, first, onCoverChanged }: { series: Series; first?:
   const setBox = (id: number, change: Partial<SeriesExtras["boxes"][number]>) =>
     setExtras({ ...extras, boxes: extras.boxes.map((b) => (b.id === id ? { ...b, ...change } : b)) });
   const used = new Set(extras.boxes.map((b) => b.label.trim().toLowerCase()));
-  const context = contextText({ series: { title: series.title, ...info, ...extras } });
+  const parts = seriesParts({ title: series.title, ...info, ...extras });
+  const context = contextText({ series: { title: series.title, ...info, ...extras, off } });
+  const toggle = (key: string) => {
+    const next = off.includes(key) ? off.filter((k) => k !== key) : [...off, key];
+    setOff(next);
+    updateSeriesInfo(tauriDb, series.id, { context_off: JSON.stringify(next) }).catch(fail);
+  };
 
   return (
     <section className="series-info">
+      <ContextOptions parts={parts} off={off} preview={context} onToggle={toggle} />
       <div className="series-poster">
         <button
           type="button"
@@ -697,6 +981,7 @@ function SeriesInfo({ series, first, onCoverChanged }: { series: Series; first?:
             <ImageUp size={16} aria-hidden="true" /> Change cover
           </span>
         </button>
+        <SeriesNav series={series} chapters={chapters} onOpen={onOpen} onCleared={onCoverChanged} />
       </div>
       <div className="series-fields">
         <div className="series-field reveal-tools">
@@ -718,7 +1003,13 @@ function SeriesInfo({ series, first, onCoverChanged }: { series: Series; first?:
               ),
             )}
             {editingTitle === "new" ? (
-              <TagInput initial="" label="New name" onDone={(text) => saveTitle("new", text)} onCancel={() => setEditingTitle(undefined)} />
+              <TagInput
+                key={`new:${extras.titles.length}`}
+                initial=""
+                label="New name"
+                onDone={(text, next) => saveTitle("new", text, next)}
+                onCancel={() => setEditingTitle(undefined)}
+              />
             ) : (
               <button
                 type="button"
@@ -770,6 +1061,20 @@ function SeriesInfo({ series, first, onCoverChanged }: { series: Series; first?:
             </button>
           )}
         </div>
+        <div className="series-field reveal-tools">
+          <span className="series-label">Genre</span>
+          <TagList
+            tags={splitTags(info.genres)}
+            label="Genre"
+            startAdding={false}
+            onChange={(tags) => {
+              const genres = joinTags(tags);
+              setInfo({ ...info, genres });
+              saved.current = { ...saved.current, genres };
+              updateSeriesInfo(tauriDb, series.id, { genres }).catch(fail);
+            }}
+          />
+        </div>
         {extras.boxes.map((b) => (
           <div key={b.id} className="series-box">
             <div className="series-row">
@@ -808,63 +1113,286 @@ function SeriesInfo({ series, first, onCoverChanged }: { series: Series; first?:
             />
           </div>
         ))}
-        <div className="series-ideas">
-          <span className="series-label">Add a box</span>
-          {[...BOX_IDEAS.filter((i) => !used.has(i.label.toLowerCase())), { label: "", hint: "A box you name yourself" }].map((idea) => (
-            <button
-              key={idea.label || "other"}
-              type="button"
-              className="series-add"
-              title={idea.hint}
-              disabled={adding}
-              onClick={() =>
-                addRow(
-                  () => addSeriesBox(tauriDb, series.id, idea.label),
-                  (id) => {
-                    setExtras({ ...extras, boxes: [...extras.boxes, { id, label: idea.label, text: "" }] });
-                    setAdded(`b${id}`);
-                  },
-                )
-              }
-            >
-              <Plus size={14} aria-hidden="true" /> {idea.label || "Other…"}
-            </button>
-          ))}
-        </div>
+        <AddMore
+          ideas={[...BOX_IDEAS.filter((i) => !used.has(i.label.toLowerCase())), { label: "", hint: "A box you name yourself" }]}
+          disabled={adding}
+          onPick={(label) =>
+            addRow(
+              () => addSeriesBox(tauriDb, series.id, label),
+              (id) => {
+                setExtras({ ...extras, boxes: [...extras.boxes, { id, label, text: "" }] });
+                setAdded(`b${id}`);
+              },
+            )
+          }
+        />
         {error && <p className="error">{error}</p>}
-        <details className="series-context">
-          <summary>What the AI helper will see</summary>
-          <pre lang="ja">{context}</pre>
-          <p className="muted about-hint">
-            Sent with translation requests for this series' chapters, followed by the chapter's own notes (ⓘ in the reader).
-          </p>
-        </details>
       </div>
     </section>
   );
 }
 
+/** Under a series' cover: back to your bookmark, and the first and latest chapters. */
+function SeriesNav({
+  series,
+  chapters,
+  onOpen,
+  onCleared,
+}: {
+  series: Series;
+  chapters: Book[];
+  onOpen: (id: number, page?: string) => void;
+  onCleared: () => void;
+}) {
+  const marked = chapters.find((c) => c.id === series.bookmark_book);
+  const label = (b: Book) => {
+    const n = chapterNumber(b.title);
+    return n ? `CH.${n}` : b.title;
+  };
+  const first = chapters[0];
+  const latest = chapters[chapters.length - 1];
+  if (!first) return null;
+  return (
+    <div className="series-nav">
+      <div className="series-bookmark">
+        {marked && series.bookmark_page ? (
+          <>
+            <button type="button" className="series-bookmark-go" onClick={() => onOpen(marked.id, series.bookmark_page!)} title={`Back to your bookmark: ${marked.title}`}>
+              <BookmarkCheck size={15} aria-hidden="true" />
+              <span className="series-nav-text">
+                <span className="series-nav-kind">Bookmark</span>
+                <span className="series-nav-value">
+                  {label(marked)}
+                  {series.bookmark_page_no ? ` · p.${series.bookmark_page_no}` : ""}
+                </span>
+              </span>
+            </button>
+            <button
+              type="button"
+              className="series-bookmark-clear"
+              title="Remove the bookmark"
+              aria-label="Remove the bookmark"
+              onClick={() => clearBookmark(tauriDb, series.id).then(onCleared)}
+            >
+              <X size={14} />
+            </button>
+          </>
+        ) : (
+          <p className="series-bookmark-none" title="Bookmark a page with the bookmark button in the reader's toolbar">
+            <BookmarkIcon size={15} aria-hidden="true" /> No bookmark yet
+          </p>
+        )}
+      </div>
+      <div className="series-nav-ends">
+        <button type="button" onClick={() => onOpen(first.id)} title={`The first chapter: ${first.title}`}>
+          <SkipBack size={14} aria-hidden="true" />
+          <span className="series-nav-text">
+            <span className="series-nav-kind">Start</span>
+            <span className="series-nav-value">{label(first)}</span>
+          </span>
+        </button>
+        <button type="button" onClick={() => onOpen(latest.id)} title={`The latest chapter: ${latest.title}`}>
+          <SkipForward size={14} aria-hidden="true" />
+          <span className="series-nav-text">
+            <span className="series-nav-kind">Latest</span>
+            <span className="series-nav-value">{label(latest)}</span>
+          </span>
+        </button>
+      </div>
+    </div>
+  );
+}
+
+/**
+ * The options button in the corner of a series' info: which parts of it the
+ * AI helper is sent with translation requests, and a preview of exactly that.
+ */
+function ContextOptions({
+  parts,
+  off,
+  preview,
+  onToggle,
+}: {
+  parts: ContextPart[];
+  off: string[];
+  preview: string;
+  onToggle: (key: string) => void;
+}) {
+  const [open, setOpen] = useState(false);
+  const box = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (!open) return;
+    const close = (e: MouseEvent) => box.current && !box.current.contains(e.target as Node) && setOpen(false);
+    const esc = (e: KeyboardEvent) => e.key === "Escape" && setOpen(false);
+    window.addEventListener("mousedown", close);
+    window.addEventListener("keydown", esc);
+    return () => {
+      window.removeEventListener("mousedown", close);
+      window.removeEventListener("keydown", esc);
+    };
+  }, [open]);
+  return (
+    <div className="context-options" ref={box}>
+      <button
+        type="button"
+        className={`icon-action ${open ? "on" : ""}`}
+        aria-expanded={open}
+        title="What the AI helper is sent"
+        aria-label="What the AI helper is sent"
+        onClick={() => setOpen(!open)}
+      >
+        <SlidersHorizontal size={16} strokeWidth={2} />
+      </button>
+      {open && (
+        <div className="context-panel" role="dialog" aria-label="What the AI helper is sent">
+          <h3>What the AI helper is sent</h3>
+          <p className="muted about-hint">With translation requests for this series' chapters, followed by the chapter's own notes (ⓘ in the reader).</p>
+          <ul className="context-parts">
+            {parts.map((p) => (
+              <li key={p.key}>
+                <label className={p.text ? "" : "muted"}>
+                  <input type="checkbox" checked={!!p.text && !off.includes(p.key)} disabled={!p.text} onChange={() => onToggle(p.key)} />
+                  {p.name}
+                  {!p.text && <span className="context-empty"> (nothing written)</span>}
+                </label>
+              </li>
+            ))}
+          </ul>
+          <p className="series-label">Preview</p>
+          <pre lang="ja">{preview || "Nothing is sent from this series yet."}</pre>
+        </div>
+      )}
+    </div>
+  );
+}
+
+/** "+ Add more" on a series page: a menu of boxes to add (Cast, Setting…, or one you name). */
+function AddMore({ ideas, disabled, onPick }: { ideas: { label: string; hint: string }[]; disabled: boolean; onPick: (label: string) => void }) {
+  const [open, setOpen] = useState(false);
+  const box = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (!open) return;
+    const close = (e: MouseEvent) => box.current && !box.current.contains(e.target as Node) && setOpen(false);
+    const esc = (e: KeyboardEvent) => e.key === "Escape" && setOpen(false);
+    window.addEventListener("mousedown", close);
+    window.addEventListener("keydown", esc);
+    return () => {
+      window.removeEventListener("mousedown", close);
+      window.removeEventListener("keydown", esc);
+    };
+  }, [open]);
+  return (
+    <div className="series-more" ref={box}>
+      <button type="button" className="series-add" aria-haspopup="menu" aria-expanded={open} disabled={disabled} onClick={() => setOpen(!open)}>
+        <Plus size={14} aria-hidden="true" /> Add more
+      </button>
+      {open && (
+        <div className="add-to-deck-menu series-more-menu" role="menu">
+          {ideas.map((idea) => (
+            <button
+              key={idea.label || "other"}
+              type="button"
+              role="menuitem"
+              onClick={() => {
+                setOpen(false);
+                onPick(idea.label);
+              }}
+            >
+              <span className="series-more-item">
+                <strong>{idea.label || "Other…"}</strong>
+                <span className="muted">{idea.hint}</span>
+              </span>
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
 /** A small text box standing in for a tag while you type: Enter or clicking away saves, Esc cancels. */
-function TagInput({ initial, label, onDone, onCancel }: { initial: string; label: string; onDone: (text: string) => void; onCancel: () => void }) {
+function TagInput({
+  initial,
+  label,
+  placeholder = "A name",
+  onDone,
+  onCancel,
+}: {
+  initial: string;
+  label: string;
+  placeholder?: string;
+  /** `next`: it ended with Enter, so another tag can follow. */
+  onDone: (text: string, next: boolean) => void;
+  onCancel: () => void;
+}) {
   const cancelled = useRef(false);
+  const entered = useRef(false);
   return (
     <input
       className="aka-input"
       autoFocus
       defaultValue={initial}
       aria-label={label}
-      placeholder="A name"
+      placeholder={placeholder}
       size={Math.max(initial.length, 12)}
       onFocus={(e) => e.currentTarget.select()}
       onKeyDown={(e) => {
-        if (e.key === "Enter") e.currentTarget.blur();
+        if (e.key === "Enter") {
+          entered.current = true;
+          e.currentTarget.blur();
+        }
         if (e.key === "Escape") {
           cancelled.current = true;
           onCancel();
         }
       }}
-      onBlur={(e) => !cancelled.current && onDone(e.currentTarget.value)}
+      onBlur={(e) => !cancelled.current && onDone(e.currentTarget.value, entered.current)}
     />
+  );
+}
+
+/**
+ * A row of tags: click one to edit it, × (on hover) removes it, + adds one.
+ * Enter after a new tag starts the next; Enter on an empty one, Esc or
+ * clicking away stops.
+ */
+function TagList({ tags, label, startAdding, onChange }: { tags: string[]; label: string; startAdding: boolean; onChange: (tags: string[]) => void }) {
+  const [editing, setEditing] = useState<number | "new" | undefined>(startAdding ? "new" : undefined);
+  const save = (at: number | "new", text: string, next: boolean) => {
+    const tag = text.trim();
+    if (at === "new") {
+      if (tag && !tags.includes(tag)) onChange([...tags, tag]);
+      setEditing(tag && next ? "new" : undefined);
+      return;
+    }
+    setEditing(undefined);
+    onChange(tag ? tags.map((t, i) => (i === at ? tag : t)) : tags.filter((_, i) => i !== at));
+  };
+  return (
+    <div className="aka-tags">
+      {tags.length === 0 && editing === undefined && <span className="muted series-none">None yet.</span>}
+      {tags.map((t, i) =>
+        editing === i ? (
+          <TagInput key={`${i}:${t}`} initial={t} label={label} onDone={(text) => save(i, text, false)} onCancel={() => setEditing(undefined)} />
+        ) : (
+          <span key={`${i}:${t}`} className="aka-tag">
+            <button type="button" className="aka-text" onClick={() => setEditing(i)} title="Click to edit">
+              {t}
+            </button>
+            <button type="button" className="aka-remove tool" onClick={() => onChange(tags.filter((_, j) => j !== i))} title="Remove" aria-label={`Remove ${t}`}>
+              <X size={11} strokeWidth={3} />
+            </button>
+          </span>
+        ),
+      )}
+      {editing === "new" ? (
+        <TagInput key={`new:${tags.length}`} initial="" label={`New ${label.toLowerCase()}`} placeholder={label} onDone={(text, next) => save("new", text, next)} onCancel={() => setEditing(undefined)} />
+      ) : (
+        <button type="button" className="aka-tag aka-add tool" onClick={() => setEditing("new")} title={`Add a ${label.toLowerCase()}`} aria-label={`Add a ${label.toLowerCase()}`}>
+          <Plus size={13} strokeWidth={2.5} aria-hidden="true" />
+        </button>
+      )}
+    </div>
   );
 }
 
@@ -874,11 +1402,20 @@ function TagInput({ initial, label, onDone, onCancel }: { initial: string; label
  * after the item under the pointer, by which half of it the pointer is over.
  * Near the window's top or bottom edge the page scrolls, for long lists. A
  * press that barely moves is still a click; Esc cancels. Presses on buttons
- * and text boxes inside an item are left alone.
+ * and text boxes inside an item are left alone (a button marked
+ * data-reorder-grip is the item itself, so it drags). `axis` "y": a list
+ * going down, where before/after is the top or bottom half.
  */
-function useReorderDrag(onMove: (from: number, to: number) => void, enabled: boolean) {
+function useReorderDrag(onMove: (from: number, to: number) => void, enabled: boolean, axis: "x" | "y" = "x") {
   const [drag, setDrag] = useState<{ from: number; x: number; y: number; over?: number; side?: "before" | "after" }>();
   const pressed = useRef<{ from: number; x: number; y: number }>(undefined);
+  const vertical = useRef(axis === "y");
+  /** Which half of an item the pointer is over: left/right, or top/bottom in a vertical list. */
+  const sideOf = (el: HTMLElement, x: number, y: number) => {
+    const r = el.getBoundingClientRect();
+    const before = vertical.current ? y < r.top + r.height / 2 : x < r.left + r.width / 2;
+    return before ? ("before" as const) : ("after" as const);
+  };
   const dragged = useRef(false);
   const pointer = useRef({ x: 0, y: 0 });
   const move = useRef(onMove);
@@ -888,8 +1425,7 @@ function useReorderDrag(onMove: (from: number, to: number) => void, enabled: boo
     const targetAt = (x: number, y: number) => {
       const el = (document.elementFromPoint(x, y) as HTMLElement | null)?.closest<HTMLElement>("[data-reorder]");
       if (!el) return {};
-      const r = el.getBoundingClientRect();
-      return { over: Number(el.dataset.reorder), side: x < r.left + r.width / 2 ? ("before" as const) : ("after" as const) };
+      return { over: Number(el.dataset.reorder), side: sideOf(el, x, y) };
     };
     function onMove(e: PointerEvent) {
       const p = pressed.current;
@@ -939,8 +1475,7 @@ function useReorderDrag(onMove: (from: number, to: number) => void, enabled: boo
       window.scrollBy(0, by);
       const el = (document.elementFromPoint(x, y) as HTMLElement | null)?.closest<HTMLElement>("[data-reorder]");
       if (!el) return;
-      const r = el.getBoundingClientRect();
-      setDrag((d) => d && { ...d, over: Number(el.dataset.reorder), side: x < r.left + r.width / 2 ? "before" : "after" });
+      setDrag((d) => d && { ...d, over: Number(el.dataset.reorder), side: sideOf(el, x, y) });
     }, 16);
     return () => window.clearInterval(timer);
   }, [dragging]);
@@ -949,7 +1484,8 @@ function useReorderDrag(onMove: (from: number, to: number) => void, enabled: boo
     "data-reorder": index,
     onPointerDown: (e: React.PointerEvent) => {
       dragged.current = false; // a new press: any click after it is a real one
-      if (!enabled || e.button !== 0 || (e.target as HTMLElement).closest("button, input, textarea, select")) return;
+      // Buttons and text boxes inside an item keep their presses, unless the button is the item's grip.
+      if (!enabled || e.button !== 0 || (e.target as HTMLElement).closest("button:not([data-reorder-grip]), input, textarea, select")) return;
       pressed.current = { from: index, x: e.clientX, y: e.clientY };
     },
     onClickCapture: (e: React.MouseEvent) => {
@@ -1065,6 +1601,26 @@ function Reader({ id, startPage, onBack, onEditPages }: { id: number; startPage?
   const [selected, setSelected] = useState<number>();
   const [fresh, setFresh] = useState<number>();
   const [kind, setKind] = useState<MarkKind>("speech");
+  /** The open mark is getting another box: the next one drawn joins it. */
+  const [extending, setExtending] = useState(false);
+  useEffect(() => setExtending(false), [selected]);
+  /** The side list's marks, section after section: what a drag's indexes count. */
+  const ordered = markSections(marks).flatMap((s) => s.marks);
+  // Dragged within its own section (a drop in another section moves it to that end of its own).
+  const markDrag = useReorderDrag(
+    (from, to) => {
+      if (ordered[to].kind !== ordered[from].kind) return;
+      const next = [...ordered];
+      next.splice(to, 0, ...next.splice(from, 1));
+      setMarks(next.map((m, i) => ({ ...m, position: i + 1 })));
+      reorderMarks(
+        tauriDb,
+        next.map((m) => m.id),
+      ).catch((e) => setError(String(e)));
+    },
+    true,
+    "y",
+  );
   /** The page's zoom (react-zoom-pan-pinch), for the toolbar's buttons. */
   const zoom = useRef<ReactZoomPanPinchRef>(null);
   const [scale, setScale] = useState(1);
@@ -1137,13 +1693,16 @@ function Reader({ id, startPage, onBack, onEditPages }: { id: number; startPage?
       if (typing(e)) return;
       if (e.key === "ArrowLeft") go(rtl ? 1 : -1);
       else if (e.key === "ArrowRight") go(rtl ? -1 : 1);
-      else if (e.key === "Escape") setSelected(undefined);
-      else return;
+      else if (e.key === "Escape") {
+        // Esc first stops adding a box, then closes the mark.
+        if (extending) setExtending(false);
+        else setSelected(undefined);
+      } else return;
       e.preventDefault();
     }
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [go, rtl]);
+  }, [go, rtl, extending]);
 
   async function relink() {
     if (!book) return;
@@ -1163,10 +1722,34 @@ function Reader({ id, startPage, onBack, onEditPages }: { id: number; startPage?
 
   async function draw(box: Box) {
     if (!book || !page) return;
+    const open = extending ? marks.find((m) => m.id === selected) : undefined;
+    if (open) {
+      setExtending(false);
+      return saveMoreBoxes(open, [...markBoxes(open).slice(1), box]);
+    }
     const markId = await addMark(tauriDb, book.id, page, kind, box, Date.now());
     setMarks(await pageMarks(tauriDb, book.id, page));
     setSelected(markId);
     setFresh(markId);
+  }
+
+  async function saveMoreBoxes(mark: Mark, boxes: Box[]) {
+    await setMoreBoxes(tauriDb, mark.id, boxes);
+    const more_boxes = JSON.stringify(boxes);
+    setMarks((all) => all.map((m) => (m.id === mark.id ? { ...m, more_boxes } : m)));
+  }
+
+  /** This page is the series' bookmark. */
+  const bookmarked = !!book && !!page && book.bookmark_book === book.id && book.bookmark_page === page;
+  async function toggleBookmark() {
+    if (!book || book.series_id === null || !page) return;
+    if (bookmarked) {
+      await clearBookmark(tauriDb, book.series_id);
+      setBook({ ...book, bookmark_book: null, bookmark_page: null });
+    } else {
+      await setBookmark(tauriDb, book.series_id, book.id, page, index + 1);
+      setBook({ ...book, bookmark_book: book.id, bookmark_page: page });
+    }
   }
 
   async function saveBook(fields: Parameters<typeof updateBook>[2]) {
@@ -1249,13 +1832,13 @@ function Reader({ id, startPage, onBack, onEditPages }: { id: number; startPage?
             {rtl ? prev : next}
           </div>
           <div className="reader-zoom-tools" role="group" aria-label="Zoom">
-            <button type="button" className="icon-action" onClick={() => zoomBy(zoom.current, 1 / ZOOM_STEP)} disabled={scale <= 1.001} title="Zoom out (Ctrl + scroll)" aria-label="Zoom out">
+            <button type="button" className="icon-action" onClick={() => zoomBy(zoom.current, 1 / ZOOM_STEP)} disabled={scale <= 1.001} title="Zoom out (scroll down)" aria-label="Zoom out">
               <ZoomOut size={18} />
             </button>
             <button type="button" className="reader-zoom-level" onClick={() => zoom.current?.setTransform(0, 0, 1, 0)} title="Back to the whole page" aria-label="Back to the whole page">
               <span className="num">{Math.round(scale * 100)}</span>%
             </button>
-            <button type="button" className="icon-action" onClick={() => zoomBy(zoom.current, ZOOM_STEP)} disabled={scale >= MAX_ZOOM - 0.001} title="Zoom in (Ctrl + scroll)" aria-label="Zoom in">
+            <button type="button" className="icon-action" onClick={() => zoomBy(zoom.current, ZOOM_STEP)} disabled={scale >= MAX_ZOOM - 0.001} title="Zoom in (scroll up)" aria-label="Zoom in">
               <ZoomIn size={18} />
             </button>
             <button type="button" className="icon-action" onClick={() => fitWidth(zoom.current)} title="Fit the width" aria-label="Fit the width">
@@ -1272,6 +1855,18 @@ function Reader({ id, startPage, onBack, onEditPages }: { id: number; startPage?
           >
             {showMarks ? <Eye size={18} /> : <EyeOff size={18} />}
           </button>
+          {book.series_id !== null && page && (
+            <button
+              type="button"
+              className={`icon-action ${bookmarked ? "on" : ""}`}
+              onClick={() => toggleBookmark().catch((e) => setError(String(e)))}
+              title={bookmarked ? "Remove the bookmark" : "Bookmark this page (the series page takes you back to it)"}
+              aria-pressed={bookmarked}
+              aria-label="Bookmark this page"
+            >
+              {bookmarked ? <BookmarkCheck size={18} /> : <BookmarkIcon size={18} />}
+            </button>
+          )}
           {book.kind === "made" && onEditPages && (
             <button type="button" className="icon-action" onClick={onEditPages} title="Edit pages: add, reorder or remove" aria-label="Edit pages">
               <Images size={18} />
@@ -1301,9 +1896,23 @@ function Reader({ id, startPage, onBack, onEditPages }: { id: number; startPage?
               alt={`Page ${index + 1}`}
               marks={showMarks ? marks : []}
               selected={selected}
-              kind={kind}
+              kind={(extending && marks.find((m) => m.id === selected)?.kind) || kind}
               onDraw={(box) => draw(box).catch((e) => setError(String(e)))}
               onSelect={setSelected}
+              onMoveBox={(mark, part, box) =>
+                setMarkBox(tauriDb, mark, part, box)
+                  .then((saved) => setMarks((all) => all.map((m) => (m.id === saved.id ? saved : m))))
+                  .catch((e) => setError(String(e)))
+              }
+              onRemoveBox={(mark, part) =>
+                saveMoreBoxes(
+                  mark,
+                  markBoxes(mark)
+                    .slice(1)
+                    .filter((_, i) => i !== part - 1),
+                ).catch((e) => setError(String(e)))
+              }
+              spaceHeld={spaceHeld}
             />
           ) : (
             <p className="muted">Loading page…</p>
@@ -1343,19 +1952,40 @@ function Reader({ id, startPage, onBack, onEditPages }: { id: number; startPage?
           ))}
         </div>
         <p className="mark-help muted">
-          {showMarks ? "Drag a box on the page to mark it. Click a box to open it. Zoom with Ctrl + scroll; move around by scrolling, or hold Space and drag." : "Boxes are hidden. Show them to mark the page."}
+          {showMarks ? "Drag a box on the page to mark it. Click a box to open it. Scroll to zoom; drag with the scroll wheel held (or hold Space and drag) to move around." : "Boxes are hidden. Show them to mark the page."}
         </p>
         {marks.length === 0 ? (
           <p className="muted mark-empty">Nothing marked on this page yet.</p>
         ) : (
+          <div className={`mark-sections ${markDrag.drag ? "dragging" : ""}`}>
+            {markDrag.drag && (
+              <div className="drag-ghost" style={{ left: markDrag.drag.x, top: markDrag.drag.y }} aria-hidden="true">
+                {ordered[markDrag.drag.from]?.text || "Mark"}
+              </div>
+            )}
+            {markSections(marks).map((section) => (
+              <section key={section.kind} className="mark-section">
+                <h3 className={`mark-section-title kind-${section.kind}`}>
+                  {section.name} <span className="mark-section-count">{section.marks.length}</span>
+                </h3>
           <ol className="mark-list">
-            {marks.map((m, i) => (
-              <li key={m.id}>
+            {section.marks.map((m, i) => {
+              const at = ordered.indexOf(m);
+              const drop = markDrag.drag && markDrag.drag.over === at && markDrag.drag.from !== at ? `drop-${markDrag.drag.side}` : "";
+              const handlers = markDrag.handlers(at);
+              return (
+              <li
+                key={m.id}
+                className={`${markDrag.drag?.from === at ? "drag-source" : ""} ${drop}`}
+                {...(selected === m.id ? { "data-reorder": at } : handlers)}
+              >
                 {selected === m.id ? (
                   <MarkEditor
                     mark={m}
                     number={i + 1}
                     autoFocus={fresh === m.id}
+                    extending={extending}
+                    onExtend={() => setExtending(!extending)}
                     onSaved={(saved) => setMarks((all) => all.map((x) => (x.id === saved.id ? saved : x)))}
                     onDelete={async () => {
                       await deleteMark(tauriDb, m.id);
@@ -1365,7 +1995,13 @@ function Reader({ id, startPage, onBack, onEditPages }: { id: number; startPage?
                     onClose={() => setSelected(undefined)}
                   />
                 ) : (
-                  <button type="button" className={`mark-row kind-${m.kind}`} onClick={() => setSelected(m.id)}>
+                  <button
+                    type="button"
+                    className={`mark-row kind-${m.kind}`}
+                    onClick={() => setSelected(m.id)}
+                    data-reorder-grip
+                    title="Click to open; drag to reorder"
+                  >
                     <span className="mark-num">{i + 1}</span>
                     <span className="mark-row-text" lang="ja">
                       {m.text || <span className="muted">(not written yet)</span>}
@@ -1374,8 +2010,12 @@ function Reader({ id, startPage, onBack, onEditPages }: { id: number; startPage?
                   </button>
                 )}
               </li>
-            ))}
+              );
+            })}
           </ol>
+              </section>
+            ))}
+          </div>
         )}
       </aside>
     </div>
@@ -1410,7 +2050,8 @@ function fitWidth(zoom: ReactZoomPanPinchRef | null) {
 
 /**
  * A page with its boxes: drag to draw a new box, click a box to select it.
- * Zoom with Ctrl + scroll or a pinch; scroll, or drag with Space held, to pan.
+ * Zoom with the scroll wheel or a pinch; pan by dragging with the wheel
+ * held down, or with Space held (or swipe sideways on a trackpad).
  * The boxes sit inside the zoomed page, so they zoom along with it.
  */
 function PageView({
@@ -1424,6 +2065,9 @@ function PageView({
   kind,
   onDraw,
   onSelect,
+  onMoveBox,
+  onRemoveBox,
+  spaceHeld,
 }: {
   zoom: React.Ref<ReactZoomPanPinchRef>;
   scale: number;
@@ -1435,10 +2079,19 @@ function PageView({
   kind: MarkKind;
   onDraw: (box: Box) => void;
   onSelect: (id: number | undefined) => void;
+  /** An open mark's box was moved or resized (`part`: its place in markBoxes). */
+  onMoveBox: (mark: Mark, part: number, box: Box) => void;
+  /** Removes an open mark's extra part (`part` ≥ 1: its place in markBoxes). */
+  onRemoveBox: (mark: Mark, part: number) => void;
+  /** Space is held: a left-button drag pans (the wheel button always does). */
+  spaceHeld: boolean;
 }) {
   const layer = useRef<HTMLDivElement>(null);
+  const [panning, setPanning] = useState(false);
   const start = useRef<{ x: number; y: number }>(undefined);
   const [draft, setDraft] = useState<Box>();
+  /** An open mark's box being moved or resized, and where it is now. */
+  const [adjusting, setAdjusting] = useState<{ mark: Mark; part: number; grip: BoxGrip; from: { x: number; y: number }; box: Box; now: Box }>();
 
   function point(e: React.PointerEvent) {
     const r = layer.current!.getBoundingClientRect();
@@ -1452,6 +2105,31 @@ function PageView({
   });
 
   useEffect(() => () => onScale(1), [onScale]); // a new page starts unzoomed
+  const numbers = markNumbers(marks);
+
+  /** Pointer handlers for moving (the box) or resizing (a grip) an open mark's box. */
+  const adjust = (mark: Mark, part: number, box: Box, grip: BoxGrip) => ({
+    onPointerDown: (e: React.PointerEvent) => {
+      if (e.button !== 0) return;
+      e.stopPropagation(); // not a new box
+      e.currentTarget.setPointerCapture(e.pointerId);
+      setAdjusting({ mark, part, grip, from: point(e), box, now: box });
+    },
+    onPointerMove: (e: React.PointerEvent) => {
+      if (!adjusting) return;
+      const p = point(e);
+      setAdjusting({ ...adjusting, now: adjustBox(adjusting.box, adjusting.grip, p.x - adjusting.from.x, p.y - adjusting.from.y) });
+    },
+    onPointerUp: (e: React.PointerEvent) => {
+      if (!adjusting) return;
+      e.stopPropagation();
+      const { now } = adjusting;
+      setAdjusting(undefined);
+      const moved = (["x", "y", "w", "h"] as const).some((k) => now[k] !== adjusting.box[k]);
+      if (moved && now.w > 0.005 && now.h > 0.005) onMoveBox(adjusting.mark, adjusting.part, now);
+    },
+    onPointerCancel: () => setAdjusting(undefined),
+  });
 
   return (
     <TransformWrapper
@@ -1459,13 +2137,16 @@ function PageView({
       minScale={1}
       maxScale={MAX_ZOOM}
       limitToBounds
-      wheel={{ activationKeys: ["Control"], step: 0.002 }}
-      panning={{ excluded: ["mark-layer"], velocityDisabled: true }}
+      wheel={{ step: 0.002 }}
+      // A left-button drag draws a box, so only Space makes it pan.
+      panning={{ allowLeftClickPan: spaceHeld, allowMiddleClickPan: true, velocityDisabled: true }}
+      onPanningStart={() => setPanning(true)}
+      onPanningStop={() => setPanning(false)}
       trackPadPanning={{ disabled: false, velocityDisabled: true }}
       doubleClick={{ disabled: true }}
       onTransform={(_, state) => onScale(state.scale)}
     >
-      <TransformComponent wrapperClass="reader-zoom" contentClass="reader-zoom-content">
+      <TransformComponent wrapperClass={`reader-zoom ${panning ? "is-panning" : ""}`} contentClass="reader-zoom-content">
         <div className="reader-page" style={{ "--zoom": scale } as React.CSSProperties}>
           <img src={url} alt={alt} draggable={false} />
           <div
@@ -1487,7 +2168,7 @@ function PageView({
               if (box.w > 0.01 && box.h > 0.01) return onDraw(box);
               // A click, not a drag: select the box under it (the newest, if they overlap).
               const p = point(e);
-              const hit = [...marks].reverse().find((m) => p.x >= m.x && p.x <= m.x + m.w && p.y >= m.y && p.y <= m.y + m.h);
+              const hit = [...marks].reverse().find((m) => markBoxes(m).some((b) => p.x >= b.x && p.x <= b.x + b.w && p.y >= b.y && p.y <= b.y + b.h));
               onSelect(hit?.id);
             }}
             onPointerCancel={() => {
@@ -1495,11 +2176,37 @@ function PageView({
               setDraft(undefined);
             }}
           >
-            {marks.map((m, i) => (
-              <div key={m.id} className={`mark-box kind-${m.kind} ${selected === m.id ? "selected" : ""}`} style={boxStyle(m)}>
-                <span className="mark-num">{i + 1}</span>
-              </div>
-            ))}
+            {marks.flatMap((m) =>
+              markBoxes(m).map((saved, part) => {
+                const open = selected === m.id;
+                const b = adjusting?.mark.id === m.id && adjusting.part === part ? adjusting.now : saved;
+                return (
+                <div
+                  key={`${m.id}:${part}`}
+                  className={`mark-box kind-${m.kind} ${open ? "selected" : ""}`}
+                  style={boxStyle(b)}
+                  {...(open ? adjust(m, part, saved, "move") : {})}
+                >
+                  <span className="mark-num">{numbers.get(m.id)}</span>
+                  {/* An open mark's boxes move (drag inside) and resize (drag a grip). */}
+                  {open &&
+                    GRIPS.map((grip) => <span key={grip} className={`mark-grip grip-${grip}`} {...adjust(m, part, saved, grip)} />)}
+                  {part > 0 && selected === m.id && (
+                    <button
+                      type="button"
+                      className="mark-box-remove"
+                      title="Remove this part of the mark"
+                      aria-label="Remove this part of the mark"
+                      onPointerDown={(e) => e.stopPropagation()}
+                      onClick={() => onRemoveBox(m, part)}
+                    >
+                      <X size={12} strokeWidth={3} />
+                    </button>
+                  )}
+                </div>
+                );
+              }),
+            )}
             {draft && <div className={`mark-box draft kind-${kind}`} style={boxStyle(draft)} />}
           </div>
         </div>
@@ -1507,6 +2214,9 @@ function PageView({
     </TransformWrapper>
   );
 }
+
+// No top-left grip: the mark's number sits on that corner.
+const GRIPS: BoxGrip[] = ["n", "ne", "e", "se", "s", "sw", "w"];
 
 function boxStyle(b: Box): React.CSSProperties {
   return { left: `${b.x * 100}%`, top: `${b.y * 100}%`, width: `${b.w * 100}%`, height: `${b.h * 100}%` };
@@ -1517,6 +2227,8 @@ function MarkEditor({
   mark,
   number,
   autoFocus,
+  extending,
+  onExtend,
   onSaved,
   onDelete,
   onClose,
@@ -1524,6 +2236,9 @@ function MarkEditor({
   mark: Mark;
   number: number;
   autoFocus: boolean;
+  /** The next box drawn joins this mark. */
+  extending: boolean;
+  onExtend: () => void;
   onSaved: (m: Mark) => void;
   onDelete: () => Promise<void>;
   onClose: () => void;
@@ -1531,6 +2246,7 @@ function MarkEditor({
   const [fields, setFields] = useState<MarkText>({ text: mark.text, reading: mark.reading, meaning: mark.meaning, notes: mark.notes });
   const [kind, setKind] = useState<MarkKind>(mark.kind);
   const [seen, setSeen] = useState<SeenBefore[]>([]);
+  const [dictionary, setDictionary] = useState<SfxMeaning[]>([]);
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [error, setError] = useState<string>();
 
@@ -1539,6 +2255,11 @@ function MarkEditor({
     seenBefore(tauriDb, textKey(fields.text, kind), mark.id)
       .then((s) => live && setSeen(s))
       .catch(() => {});
+    if (kind === "sfx")
+      sfxDictionary(tauriDb, textKey(fields.text, "sfx"))
+        .then((d) => live && setDictionary(d))
+        .catch(() => {});
+    else setDictionary([]);
     return () => {
       live = false;
     };
@@ -1584,6 +2305,16 @@ function MarkEditor({
         <span className="mark-editor-space" />
         <button
           type="button"
+          className={`icon-action ${extending ? "on" : ""}`}
+          onClick={onExtend}
+          aria-pressed={extending}
+          title="Add a box: mark another part of the same bubble"
+          aria-label="Add a box to this mark"
+        >
+          <SquarePlus size={16} />
+        </button>
+        <button
+          type="button"
           className={`icon-action ${confirmDelete ? "danger" : ""}`}
           title={confirmDelete ? "Click again to delete" : "Delete this mark"}
           aria-label={confirmDelete ? "Click again to delete" : "Delete this mark"}
@@ -1596,6 +2327,12 @@ function MarkEditor({
           <X size={16} />
         </button>
       </div>
+      {extending && <p className="mark-extend-hint">Draw a box around the other part on the page. Esc cancels.</p>}
+      {!extending && markBoxes(mark).length > 1 && (
+        <p className="muted mark-parts">
+          {markBoxes(mark).length} boxes on the page; click × on a part to remove it.
+        </p>
+      )}
       <label>
         Japanese
         <input lang="ja" className="mark-text" placeholder="What it says" autoFocus={autoFocus} {...field("text")} />
@@ -1623,6 +2360,34 @@ function MarkEditor({
                 className="seen-use"
                 onClick={() => {
                   const next = { ...fields, reading: s.reading, meaning: s.meaning, notes: fields.notes || s.notes };
+                  setFields(next);
+                  save(next, kind);
+                }}
+              >
+                Use
+              </button>
+            </div>
+          ))}
+        </div>
+      )}
+      {dictionary.length > 0 && (
+        <div className="seen-before sfx-dictionary">
+          <p className="seen-before-title">SFX dictionary</p>
+          {dictionary.slice(0, 4).map((d) => (
+            <div key={d.forms.join()} className="seen-before-row">
+              <span>
+                <span lang="ja" className="seen-reading">
+                  {d.forms.slice(0, 2).join("・")}{" "}
+                </span>
+                {d.loose && <span className="sfx-related">related </span>}
+                <strong>{d.meanings.slice(0, 2).join(" / ")}</strong>
+              </span>
+              <button
+                type="button"
+                className="seen-use"
+                title="Use this meaning"
+                onClick={() => {
+                  const next = { ...fields, meaning: d.meanings[0] };
                   setFields(next);
                   save(next, kind);
                 }}

@@ -189,6 +189,52 @@ const MIGRATIONS: string[][] = [
     `INSERT INTO series_titles (series_id, title) SELECT id, trim(japanese_title) FROM series WHERE trim(japanese_title) != ''`,
     `UPDATE series SET japanese_title = ''`,
   ],
+  [
+    // A series' genres, as tags (comma-separated), a field of their own under
+    // the synopsis; any "Genre" box you'd made moves into it.
+    `ALTER TABLE series ADD COLUMN genres TEXT NOT NULL DEFAULT ''`,
+    `UPDATE series SET genres = coalesce((SELECT group_concat(trim(b.text), ', ') FROM series_boxes b
+       WHERE b.series_id = series.id AND lower(trim(b.label)) = 'genre' AND trim(b.text) != ''), '')`,
+    `DELETE FROM series_boxes WHERE lower(trim(label)) = 'genre'`,
+  ],
+  [
+    // Parts of a series' info you chose not to send to the AI helper: a JSON
+    // list of keys ("synopsis", "box:3"…; see contextKeys in src/reading.ts).
+    `ALTER TABLE series ADD COLUMN context_off TEXT NOT NULL DEFAULT '[]'`,
+  ],
+  [
+    // A series' bookmark: a chapter (book) and its page (file name), plus the
+    // page's number when bookmarked, to show ("CH.3 · p.12").
+    `ALTER TABLE series ADD COLUMN bookmark_book INTEGER`,
+    `ALTER TABLE series ADD COLUMN bookmark_page TEXT`,
+    `ALTER TABLE series ADD COLUMN bookmark_page_no INTEGER`,
+  ],
+  [
+    // Categories on the bookshelf (Manga, Light novels…), as tabs. A series has
+    // one, and so does a book on the shelf by itself (a chapter in a series
+    // goes by its series'). NULL: uncategorised. Everything so far is manga.
+    `CREATE TABLE categories (
+      id       INTEGER PRIMARY KEY,
+      name     TEXT NOT NULL,
+      position INTEGER NOT NULL
+    )`,
+    `INSERT INTO categories (id, name, position) VALUES (1, 'Manga', 0)`,
+    `ALTER TABLE series ADD COLUMN category_id INTEGER`,
+    `ALTER TABLE books ADD COLUMN category_id INTEGER`,
+    `UPDATE series SET category_id = 1`,
+    `UPDATE books SET category_id = 1 WHERE series_id IS NULL`,
+  ],
+  [
+    // Marks keep the order you drag them into (within their kind's section of
+    // the page's list). Until now they went in the order made, as ids do.
+    `ALTER TABLE book_marks ADD COLUMN position INTEGER NOT NULL DEFAULT 0`,
+    `UPDATE book_marks SET position = id`,
+  ],
+  [
+    // More boxes for one mark: a speech bubble in two parts is one mark. JSON
+    // Box[] beyond its first box (x, y, w, h).
+    `ALTER TABLE book_marks ADD COLUMN more_boxes TEXT NOT NULL DEFAULT '[]'`,
+  ],
 ];
 
 export const SCHEMA_VERSION = MIGRATIONS.length;

@@ -18,6 +18,7 @@ import { buildPath, type PathKanji, type PathWord } from "./path.ts";
 import { NO_PRIORITY, parsePriorities } from "./priority.ts";
 import { entryTerms } from "../../src/searchTerms.ts";
 import { linkSentences, parseTanaka } from "./sentences.ts";
+import { sfxKeys, sfxWords } from "./sfx.ts";
 
 const ROOT = join(import.meta.dirname, "..", "..");
 const RAW = join(ROOT, "data", "raw");
@@ -308,6 +309,17 @@ async function main() {
     });
   }
 
+  // The SFX dictionary: every JMdict sound/mimetic word (common or not) and our extras.
+  const insertSfxWord = db.prepare("INSERT INTO sfx_words (id, forms, meanings, source, rank) VALUES (?, ?, ?, ?, ?)");
+  const insertSfxKey = db.prepare("INSERT OR IGNORE INTO sfx_keys (key, word_id, loose) VALUES (?, ?, ?)");
+  const sfx = sfxWords(jmdict.words, (id) => priorities.get(id) ?? NO_PRIORITY);
+  sfx.forEach((w, i) => {
+    insertSfxWord.run(i + 1, JSON.stringify(w.forms), JSON.stringify(w.meanings), w.source, w.rank);
+    // The same word's own key wins over its loose one (INSERT OR IGNORE keeps the first).
+    const keys = w.forms.flatMap(sfxKeys).sort((a, b) => Number(a.loose) - Number(b.loose));
+    for (const k of keys) insertSfxKey.run(k.key, i + 1, k.loose ? 1 : 0);
+  });
+
   const insertKana = db.prepare(
     "INSERT INTO kana (character, romaji, accept, script, grp, counterpart, stroke_svg, example_word_id, example_form) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
   );
@@ -381,6 +393,7 @@ async function main() {
   const pathWordsWithout = path.filter((p) => p.kind === "word" && !wordsWithSentences.has(p.key.slice(5))).length;
   console.log(`  example sentences: ${sentences.length}, for ${wordsWithSentences.size} words (${pathWordsWithout} path words have none)`);
   console.log(`  dictionary search: ${searchRows} terms`);
+  console.log(`  SFX dictionary: ${sfx.length} entries (${sfx.filter((w) => w.source === "koihongo").length} written for Koihongo)`);
   console.log(`  default mnemonics: ${Object.keys(mnemonics).length} items`);
   const regionLevels = [...new Set(levels.map((l) => l.region))].map((r) => `${r} ${levels.filter((l) => l.region === r).length}`);
   console.log(`  levels: ${levels.length} (${regionLevels.join(", ")})`);
