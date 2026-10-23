@@ -110,6 +110,79 @@ const MIGRATIONS: string[][] = [
     // don't slow lessons down either.
     `ALTER TABLE srs_cards ADD COLUMN started_known INTEGER NOT NULL DEFAULT 0`,
   ],
+  [
+    // Reading (see src/reading.ts): your own manga, read from where it is on your PC.
+    // page/pages: where you are, and how many pages it had when last opened.
+    // about: your notes on the book (setting, genre, who's who) for the AI helper.
+    `CREATE TABLE books (
+      id            INTEGER PRIMARY KEY,
+      title         TEXT NOT NULL,
+      path          TEXT NOT NULL UNIQUE,
+      kind          TEXT NOT NULL,
+      pages         INTEGER NOT NULL,
+      page          INTEGER NOT NULL DEFAULT 0,
+      right_to_left INTEGER NOT NULL DEFAULT 1,
+      about         TEXT NOT NULL DEFAULT '',
+      added_at      INTEGER NOT NULL,
+      opened_at     INTEGER
+    )`,
+    // What you marked on a page: a box (x, y, w, h as fractions of the page)
+    // and what's in it. page is the page's file name, so marks stay put if
+    // pages are added. text_key: the text normalised, for "seen before".
+    `CREATE TABLE book_marks (
+      id         INTEGER PRIMARY KEY,
+      book_id    INTEGER NOT NULL,
+      page       TEXT NOT NULL,
+      kind       TEXT NOT NULL,
+      x          REAL NOT NULL,
+      y          REAL NOT NULL,
+      w          REAL NOT NULL,
+      h          REAL NOT NULL,
+      text       TEXT NOT NULL DEFAULT '',
+      text_key   TEXT NOT NULL DEFAULT '',
+      reading    TEXT NOT NULL DEFAULT '',
+      meaning    TEXT NOT NULL DEFAULT '',
+      notes      TEXT NOT NULL DEFAULT '',
+      created_at INTEGER NOT NULL,
+      updated_at INTEGER NOT NULL
+    )`,
+    `CREATE INDEX book_marks_by_page ON book_marks(book_id, page)`,
+    `CREATE INDEX book_marks_by_text ON book_marks(text_key)`,
+  ],
+  [
+    // A series on your bookshelf, holding its chapters (books.series_id; null:
+    // on the shelf by itself). Only an arrangement: no files move.
+    `CREATE TABLE series (
+      id         INTEGER PRIMARY KEY,
+      title      TEXT NOT NULL,
+      created_at INTEGER NOT NULL
+    )`,
+    `ALTER TABLE books ADD COLUMN series_id INTEGER`,
+  ],
+  [
+    // What you know about a series, sent as context with AI translation
+    // requests (see readingContext in src/reading.ts).
+    `ALTER TABLE series ADD COLUMN japanese_title TEXT NOT NULL DEFAULT ''`,
+    `ALTER TABLE series ADD COLUMN synopsis TEXT NOT NULL DEFAULT ''`,
+    // Its English titles (official, fan translations…), as many as you like.
+    `CREATE TABLE series_titles (
+      id        INTEGER PRIMARY KEY,
+      series_id INTEGER NOT NULL,
+      title     TEXT NOT NULL
+    )`,
+    // Your own boxes: Cast, Genre, Setting… (label and text).
+    `CREATE TABLE series_boxes (
+      id        INTEGER PRIMARY KEY,
+      series_id INTEGER NOT NULL,
+      label     TEXT NOT NULL,
+      text      TEXT NOT NULL DEFAULT ''
+    )`,
+  ],
+  [
+    // A cover you picked for a series: its copy's file name in
+    // Documents\Koihongo\Covers (null: the first chapter's first page).
+    `ALTER TABLE series ADD COLUMN cover TEXT`,
+  ],
 ];
 
 export const SCHEMA_VERSION = MIGRATIONS.length;

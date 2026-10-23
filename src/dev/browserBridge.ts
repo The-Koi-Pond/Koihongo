@@ -17,6 +17,8 @@ export function installBrowserBridge() {
           headers: { "content-type": "application/json" },
           body: JSON.stringify({ cmd, args }),
         });
+        // Page images come back as raw bytes (an ArrayBuffer, as in Tauri).
+        if (res.ok && res.headers.get("content-type") === "application/octet-stream") return res.arrayBuffer();
         const text = await res.text();
         // Tauri commands reject with their error string; do the same.
         if (!res.ok) throw text;

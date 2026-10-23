@@ -57,6 +57,7 @@ html {
 body {
   --bg-low: #1f2470;
   margin: 0;
+  min-height: 100vh; /* short pages too: the gradient fills the window */
   background: linear-gradient(var(--bg) 20%, var(--bg-low)) fixed var(--bg);
   overflow-x: clip; /* full-width banners use 100vw, which includes the scrollbar */
 }
@@ -448,25 +449,6 @@ textarea {
 .window-controls .win-min:hover { background: color-mix(in srgb, #e3b341 18%, transparent); color: #e3b341; }
 .window-controls .win-max:hover { background: color-mix(in srgb, #3fb9a7 18%, transparent); color: #3fb9a7; }
 .window-controls .win-close:hover { background: #d9442b; color: #fff; }
-
-/* Placeholder pages */
-
-.coming-soon ul {
-  margin: 4px 0 0;
-  padding-left: 1.2em;
-}
-
-.soon-tag {
-  display: inline-block;
-  font-size: 0.75rem;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
-  color: var(--accent);
-  border: 1px solid var(--accent);
-  border-radius: 999px;
-  padding: 2px 10px;
-}
 
 /* Today */
 
@@ -4294,6 +4276,7 @@ select {
 }
 
 .deck-back {
+  justify-self: start;
   display: inline-flex;
   align-items: center;
   gap: 4px;
@@ -4911,4 +4894,922 @@ button.danger {
 
 .section-toggle svg {
   align-self: center;
+}
+
+/* Reading (Reading.tsx): your bookshelf, the reader, and your glossary. */
+.kind-speech { --mark: #7fd8ff; }
+.kind-sfx { --mark: #ff8fd0; }
+.kind-sign { --mark: #ffe08a; }
+.kind-narration { --mark: #b48cff; }
+.kind-other { --mark: #7ee0a8; }
+
+.reading-intro {
+  margin: -4px 0 14px;
+  max-width: 46em;
+}
+
+.reading-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 14px;
+}
+
+.reading-actions button {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.reading-message {
+  margin: 0 0 14px;
+  color: var(--right);
+}
+
+.shelf {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+  gap: 14px;
+}
+
+.shelf-book {
+  width: 100%;
+  height: 100%;
+  display: grid;
+  grid-template-rows: auto 1fr auto auto;
+  gap: 6px;
+  padding: 8px 8px 10px;
+  text-align: left;
+  border: 2px solid var(--panel-border);
+  border-radius: 10px;
+  background: var(--surface-2);
+}
+
+.shelf-book:hover {
+  border-color: #fd93bb;
+}
+
+.shelf-cover {
+  display: grid;
+  place-items: center;
+  aspect-ratio: 2 / 3;
+  overflow: hidden;
+  border-radius: 6px;
+  background: rgb(0 0 0 / 0.25);
+  color: var(--muted);
+}
+
+.shelf-cover img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.shelf-title {
+  font-weight: 700;
+  line-height: 1.3;
+  overflow-wrap: anywhere;
+}
+
+.shelf-meta {
+  font-size: 0.8rem;
+  color: var(--muted);
+}
+
+.shelf-progress {
+  height: 4px;
+  border-radius: 2px;
+  background: rgb(0 0 0 / 0.3);
+  overflow: hidden;
+}
+
+.shelf-progress span {
+  display: block;
+  height: 100%;
+  background: var(--accent);
+}
+
+.reading-missing {
+  display: grid;
+  justify-items: start;
+  gap: 4px;
+  padding: 16px;
+  border: 2px solid var(--panel-border);
+  border-radius: 10px;
+  background: var(--surface-2);
+}
+
+.reading-missing p {
+  margin: 0 0 6px;
+}
+
+.reading-missing code,
+.about-hint code {
+  overflow-wrap: anywhere;
+}
+
+.reading-missing button {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+/* The reader uses the whole window: the page on the left, your marks on the right. */
+.app:has(.reader) {
+  max-width: none;
+  padding: 10px 12px 12px;
+}
+
+.reader {
+  --reader-h: calc(100vh - var(--titlebar-h) - 22px);
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(300px, 380px);
+  gap: 12px;
+  height: var(--reader-h);
+}
+
+.reader-main {
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr);
+  gap: 8px;
+  min-height: 0;
+}
+
+.reader-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+.reader-toolbar .deck-back {
+  margin: 0;
+  flex: none;
+}
+
+.reader-title {
+  flex: 1;
+  min-width: 0;
+  margin: 0;
+  font-size: 1.15rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.reader-pager {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.reader-count {
+  min-width: 4.5em;
+  text-align: center;
+  color: var(--muted);
+}
+
+.reader-count .num {
+  font-family: var(--font-num);
+  font-size: 1.1em;
+  color: var(--text);
+}
+
+.icon-action.on {
+  color: var(--accent-text);
+  background: var(--accent);
+  border-color: var(--accent);
+}
+
+.icon-action.danger {
+  color: #fff;
+  background: #d84d6e;
+  border-color: #d84d6e;
+}
+
+.reader-stage {
+  min-height: 0;
+  overflow: auto;
+  display: grid;
+  justify-items: center;
+  align-items: start;
+  border-radius: 10px;
+  background: rgb(0 0 0 / 0.28);
+}
+
+.reader-page {
+  position: relative;
+  user-select: none;
+}
+
+.reader-page img {
+  display: block;
+  max-width: 100%;
+  max-height: calc(var(--reader-h) - 52px);
+}
+
+.reader-stage.fit-width .reader-page {
+  width: 100%;
+}
+
+.reader-stage.fit-width .reader-page img {
+  width: 100%;
+  max-height: none;
+}
+
+.mark-layer {
+  position: absolute;
+  inset: 0;
+  cursor: crosshair;
+  touch-action: none;
+}
+
+.mark-box {
+  position: absolute;
+  border: 2px solid var(--mark);
+  border-radius: 6px;
+  background: color-mix(in srgb, var(--mark) 12%, transparent);
+  pointer-events: none;
+}
+
+.mark-box.selected {
+  background: color-mix(in srgb, var(--mark) 22%, transparent);
+  box-shadow: 0 0 0 2px #fff, 0 0 0 4px var(--mark);
+}
+
+.mark-box.draft {
+  border-style: dashed;
+}
+
+.mark-num {
+  display: inline-grid;
+  place-items: center;
+  min-width: 20px;
+  height: 20px;
+  padding: 0 4px;
+  border-radius: 10px;
+  background: var(--mark, var(--accent));
+  color: var(--accent-text);
+  font: 400 13px/1 var(--font-num);
+}
+
+.mark-box .mark-num {
+  position: absolute;
+  top: -10px;
+  left: -10px;
+  box-shadow: 0 1px 3px rgb(0 0 0 / 0.5);
+}
+
+.reader-side {
+  min-height: 0;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 12px;
+  border: 2px solid var(--panel-border);
+  border-radius: 10px;
+  background: var(--surface-2);
+}
+
+.mark-tools {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.mark-kind {
+  --mark: var(--panel-border);
+  padding: 3px 9px;
+  border: 2px solid var(--mark);
+  border-radius: 999px;
+  background: transparent;
+  font-size: 0.85rem;
+  font-weight: 700;
+}
+
+.mark-kind.on {
+  background: var(--mark);
+  color: var(--accent-text);
+}
+
+.mark-help,
+.mark-empty {
+  margin: 0;
+  font-size: 0.85rem;
+}
+
+.mark-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 6px;
+}
+
+.mark-row {
+  width: 100%;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: center;
+  gap: 2px 10px;
+  padding: 8px 10px;
+  text-align: left;
+  border: 1px solid var(--panel-border);
+  border-left: 4px solid var(--mark);
+  border-radius: 8px;
+  background: rgb(0 0 0 / 0.14);
+}
+
+.mark-row:hover {
+  border-color: var(--mark);
+}
+
+.mark-row-text {
+  font-size: 1.1rem;
+  overflow-wrap: anywhere;
+}
+
+.mark-row-meaning {
+  grid-column: 2;
+  font-size: 0.85rem;
+  color: var(--muted);
+}
+
+.mark-editor {
+  display: grid;
+  gap: 8px;
+  padding: 10px 12px 12px;
+  border: 2px solid var(--mark);
+  border-radius: 10px;
+  background: var(--surface);
+}
+
+.mark-editor-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.mark-editor-head select {
+  padding: 4px 8px;
+}
+
+.mark-editor-space {
+  flex: 1;
+}
+
+.mark-editor label,
+.about-book label {
+  display: grid;
+  gap: 2px;
+  font-size: 0.8rem;
+  color: var(--muted);
+}
+
+.mark-editor input,
+.mark-editor textarea,
+.about-book input,
+.about-book textarea {
+  font-size: 0.95rem;
+  color: var(--text);
+}
+
+.mark-editor input.mark-text {
+  font-size: 1.25rem;
+}
+
+.mark-editor textarea,
+.about-book textarea {
+  resize: vertical;
+}
+
+.seen-before {
+  display: grid;
+  gap: 4px;
+  padding: 8px 10px;
+  border-radius: 8px;
+  border: 1px dashed var(--hint);
+  background: color-mix(in srgb, var(--hint) 8%, transparent);
+}
+
+.seen-before-title {
+  margin: 0;
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--hint);
+}
+
+.seen-before-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.9rem;
+}
+
+.seen-before-row > span {
+  flex: 1;
+}
+
+.seen-where {
+  font-size: 0.8rem;
+}
+
+.seen-use {
+  padding: 2px 10px;
+  font-size: 0.8rem;
+}
+
+.about-book {
+  display: grid;
+  gap: 8px;
+  padding: 10px 12px 12px;
+  border-radius: 10px;
+  background: var(--surface);
+}
+
+.about-book h2 {
+  margin: 0;
+  font-size: 1rem;
+}
+
+.about-hint {
+  margin: 0;
+  font-size: 0.8rem;
+}
+
+.about-book button {
+  justify-self: start;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.85rem;
+  padding: 5px 12px;
+}
+
+/* Narrow windows: your marks go under the page. */
+@media (max-width: 860px) {
+  .reader {
+    grid-template-columns: 1fr;
+    height: auto;
+  }
+
+  .reader-stage {
+    max-height: var(--reader-h);
+  }
+}
+
+.glossary-filters {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 14px;
+}
+
+.glossary-search {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex: 1 1 240px;
+  color: var(--muted);
+}
+
+.glossary-search input {
+  flex: 1;
+}
+
+.glossary {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 8px;
+}
+
+.glossary-entry {
+  display: grid;
+  gap: 6px;
+  padding: 12px 14px;
+  border: 2px solid var(--panel-border);
+  border-radius: 10px;
+  background: var(--surface-2);
+}
+
+.glossary-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+
+.glossary-text {
+  font-size: 1.4rem;
+  margin-right: 4px;
+}
+
+.mark-chip {
+  padding: 1px 8px;
+  border-radius: 999px;
+  background: var(--mark);
+  color: var(--accent-text);
+  font-size: 0.72rem;
+  font-weight: 700;
+}
+
+.glossary-meanings {
+  margin: 0;
+  padding-left: 1.2em;
+}
+
+.glossary-places {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.8rem;
+}
+
+.glossary-place {
+  padding: 2px 10px;
+  border-radius: 999px;
+  font-size: 0.8rem;
+}
+
+/* Making a chapter from separate images (Reading.tsx: Shelf, PageEditor). */
+.make-chapter {
+  flex-wrap: wrap;
+  max-width: 640px;
+}
+
+.make-chapter-hint {
+  flex-basis: 100%;
+  margin: 0;
+  font-size: 0.85rem;
+}
+
+.page-grid {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  gap: 12px;
+}
+
+.page-tile {
+  display: grid;
+  gap: 6px;
+  padding: 8px;
+  border: 2px solid var(--panel-border);
+  border-radius: 10px;
+  background: var(--surface-2);
+}
+
+
+.page-tile .shelf-cover img {
+  object-fit: contain;
+}
+
+.page-tile-label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+}
+
+.page-tile-name {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  min-width: 0;
+  padding: 2px 4px;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  background: none;
+  color: var(--text);
+  font-size: 0.8rem;
+}
+
+.page-tile-name span {
+  min-width: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.page-tile-name svg {
+  flex: none;
+  color: var(--muted);
+}
+
+.page-tile-name:hover {
+  border-color: var(--panel-border);
+}
+
+.page-tile-rename {
+  flex: 1;
+  min-width: 0;
+  padding: 2px 6px;
+  font-size: 0.8rem;
+}
+
+.page-tile-marks {
+  font-size: 0.75rem;
+}
+
+.page-tile-tools {
+  display: flex;
+  justify-content: space-between;
+}
+
+/* Series on the bookshelf: a tile with pages stacked behind it, opening like a folder. */
+.shelf-series {
+  position: relative;
+  box-shadow:
+    5px -5px 0 -2px var(--surface-2),
+    5px -5px 0 0 var(--panel-border),
+    10px -10px 0 -2px var(--surface-2),
+    10px -10px 0 0 var(--panel-border);
+  margin: 10px 10px 0 0;
+  width: calc(100% - 10px);
+  height: calc(100% - 10px);
+}
+
+.shelf-series .shelf-title {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.shelf-series .shelf-title svg {
+  flex: none;
+  color: var(--accent);
+}
+
+.series-title {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.series-title > svg {
+  color: var(--accent);
+}
+
+/* Dragging a book onto a series (Reading.tsx, useBookDrag). */
+.shelf {
+  user-select: none;
+}
+
+.shelf-hint {
+  margin: -4px 0 12px;
+  font-size: 0.85rem;
+}
+
+.shelf.dragging,
+.shelf.dragging * {
+  cursor: grabbing;
+}
+
+.shelf-book.drag-source {
+  opacity: 0.45;
+}
+
+.drop-ready[data-drop] {
+  border-color: color-mix(in srgb, var(--accent) 55%, var(--panel-border));
+}
+
+.drop-over[data-drop] {
+  border-color: var(--accent);
+  outline: 3px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.drag-ghost {
+  position: fixed;
+  z-index: 100;
+  max-width: 220px;
+  padding: 6px 12px;
+  border: 2px solid var(--accent);
+  border-radius: 8px;
+  background: var(--surface);
+  color: var(--text);
+  font-weight: 700;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  transform: translate(12px, 12px);
+  box-shadow: 0 6px 18px rgb(0 0 0 / 0.45);
+  pointer-events: none;
+}
+
+/* A series' info (Reading.tsx, SeriesInfo): the context for translation requests. */
+.series-info {
+  display: grid;
+  grid-template-columns: 180px minmax(0, 1fr);
+  gap: 18px;
+  margin-bottom: 18px;
+  padding: 16px;
+  border: 2px solid var(--panel-border);
+  border-radius: 12px;
+  background: var(--surface-2);
+}
+
+.series-poster {
+  align-self: start;
+}
+
+.series-fields {
+  display: grid;
+  gap: 12px;
+  min-width: 0;
+}
+
+.series-fields label,
+.series-field {
+  display: grid;
+  gap: 4px;
+}
+
+.series-fields label,
+.series-label {
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: var(--muted);
+}
+
+.series-fields input,
+.series-fields textarea {
+  font-size: 0.95rem;
+  font-weight: 400;
+  color: var(--text);
+}
+
+.series-fields textarea {
+  resize: vertical;
+}
+
+.series-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.series-row input {
+  flex: 1;
+  min-width: 0;
+}
+
+.series-box {
+  display: grid;
+  gap: 4px;
+}
+
+.series-fields input.series-box-label {
+  font-weight: 700;
+  background: transparent;
+  border-color: transparent;
+  padding-left: 2px;
+}
+
+.series-fields input.series-box-label:hover,
+.series-fields input.series-box-label:focus {
+  border-color: var(--border);
+}
+
+.series-add {
+  justify-self: start;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 10px;
+  border-style: dashed;
+  border-radius: 999px;
+  background: transparent;
+  font-size: 0.8rem;
+}
+
+.series-ideas {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+}
+
+.series-context summary {
+  cursor: pointer;
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: var(--hint);
+}
+
+.series-context pre {
+  margin: 8px 0 4px;
+  padding: 10px 12px;
+  border-radius: 8px;
+  background: rgb(0 0 0 / 0.25);
+  font: inherit;
+  font-size: 0.85rem;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.series-chapters {
+  margin: 0 0 10px;
+  font-size: 1.1rem;
+}
+
+@media (max-width: 640px) {
+  .series-info {
+    grid-template-columns: 1fr;
+  }
+
+  .series-poster {
+    max-width: 160px;
+  }
+}
+
+/* A series' cover on its page: click to change it. */
+.series-cover-button {
+  position: relative;
+  display: block;
+  width: 100%;
+  padding: 0;
+  border: none;
+  border-radius: 6px;
+  background: none;
+  overflow: hidden;
+}
+
+.series-cover-change {
+  position: absolute;
+  inset: auto 0 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 8px;
+  background: linear-gradient(transparent, rgb(11 10 73 / 0.9) 40%);
+  color: var(--text);
+  font-size: 0.85rem;
+  font-weight: 700;
+  opacity: 0;
+  transition: opacity 0.15s;
+}
+
+.series-cover-button:hover .series-cover-change,
+.series-cover-button:focus-visible .series-cover-change {
+  opacity: 1;
+}
+
+.series-cover-reset {
+  margin-top: 6px;
+  font-size: 0.8rem;
+}
+
+/* Series page: tools (remove, add, edit) show when you point at their section or tab into it. */
+.reveal-tools .tool {
+  opacity: 0;
+  transition: opacity 0.15s;
+}
+
+.reveal-tools:hover .tool,
+.reveal-tools:focus-within .tool {
+  opacity: 1;
+}
+
+.series-none {
+  font-size: 0.85rem;
+}
+
+/* The synopsis reads like a web page; the pencil opens it for editing. */
+.series-synopsis {
+  position: relative;
+}
+
+.series-synopsis p {
+  margin: 0;
+  padding-right: 36px;
+  white-space: pre-wrap;
+  line-height: 1.65;
+}
+
+.series-synopsis .icon-action {
+  position: absolute;
+  top: -4px;
+  right: 0;
+}
+
+.series-fields textarea.series-synopsis-edit {
+  field-sizing: content;
+  min-height: 6lh;
+  overflow: hidden;
+  resize: none;
+  line-height: 1.65;
 }

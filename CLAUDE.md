@@ -13,13 +13,13 @@ Koihongo is Xel's personal Windows desktop app for learning Japanese from zero: 
 
 | Path | What |
 |---|---|
-| `src/screens/` | Today, Lessons, Reviews, Library, Dictionary, Decks, Grammar, Settings, Sources, ComingSoon (reading) |
+| `src/screens/` | Today, Lessons, Reviews, Library, Dictionary, Decks, Grammar, Reading, Settings, Sources |
 | `src/ui/` | Shared UI: ItemView/ItemInfo (item pages), QuestionCard (quiz), Scene (banner scenery), AiChat, Examples, InfoTip… |
 | `src/srs/` | Scheduling (FSRS via ts-fsrs), sessions, answer checking, pacing settings |
-| `src/items.ts`, `library.ts`, `dictionary.ts`, `backup.ts` | Item details, statuses, dictionary search, backups |
+| `src/items.ts`, `library.ts`, `dictionary.ts`, `backup.ts`, `decks.ts`, `reading.ts` | Item details, statuses, dictionary search, backups, your decks, your manga and marks |
 | `src/ai/` | Claude CLI backend and all prompts (`prompts.ts`) |
 | `src/App.css` | All styles; theme tokens on `:root` at the top |
-| `src-tauri/src/` | Rust: `db.rs` (SQL bridge), `ai.rs` (Claude CLI), `backup.rs` |
+| `src-tauri/src/` | Rust: `db.rs` (SQL bridge), `ai.rs` / `ai_api.rs` (AI helpers), `backup.rs`, `books.rs` (reading your manga files) |
 | `scripts/content/` | Content build: datasets → `src-tauri/resources/content.db` (schema in `schema.sql`) |
 | `scripts/content/mnemonics/` | Koihongo's default mnemonics, one file per batch, registered in `index.ts` |
 | `tests/` | Node tests (`tests/nodeDb.ts` mirrors the Rust DB setup) |
@@ -46,6 +46,8 @@ Use **browser mode** with the Playwright tools: while `pnpm tauri dev` runs, ope
 - `src/dev/browserBridge.ts` stands in for Tauri's bridge when there's no Tauri window, in dev builds only. It sends calls to the dev server.
 - `scripts/dev/browser-mode.ts` answers them like `src-tauri` does, using a fresh copy of Xel's `user.db`, made per dev-server start, with `content.db` attached. Lessons and reviews you do there never touch real progress.
 - Backups and AI calls only work in the desktop app. In browser mode the startup auto-backup logs a harmless warning.
+- Reading's file pickers can't open in a browser: start the dev server with `KOIHONGO_TEST_BOOKS` set to a folder of test books ("Add a folder" adds what's in it) and `KOIHONGO_TEST_IMAGES` set to a folder of images ("Add images" copies them all). While `pnpm tauri dev` holds port 1420, run a second server with `pnpm exec vite --port 1430`. Editing `scripts/dev/browser-mode.ts` restarts the server, which starts a fresh copy of the data.
+- Running the desktop app (dev or release) migrates Xel's real `user.db`. After a new migration, older installed builds refuse to open it ("newer app version"), so tell Xel to install the new build.
 - Test at the real window size (`browser_resize`, for example 1100×760). Hover states, animations and layout shifts can all be checked; use `browser_wait_for` before screenshotting.
 - For visual tuning with Xel, prefer a **playground** (the playground skill): the real component with sliders, so Xel picks values directly instead of describing them.
 - Only screenshot the browser or the app, never the desktop.
