@@ -187,7 +187,7 @@ run from an empty working folder.
 ### Rules
 
 - **No spending log or cap** (decided 2026-10-20: not useful for personal use on a subscription).
-- **Hardening (2026-10-23 audit):** the UI sends its own SQL, so the Rust connection has an SQLite authorizer refusing ATTACH/DETACH (which can write files anywhere, also via VACUUM INTO) and every PRAGMA except user_version (`db.rs`). The Claude Code call adds `--strict-mcp-config` so no MCP tool servers load.
+- **Hardening (2026-10-23 audit):** the UI sends its own SQL, so the Rust connection has an SQLite authorizer refusing ATTACH/DETACH (which can write files anywhere, also via VACUUM INTO) and every PRAGMA except user_version (`db.rs`). The Claude Code call adds `--strict-mcp-config` so no MCP tool servers load. A content security policy (`tauri.conf.json`) lets the page load only its own scripts, styles, fonts and images and talk only to the Rust side; `dangerousDisableAssetCspModification: ["style-src"]` keeps inline styles working (Tauri would otherwise add nonces, which switch `unsafe-inline` off). Checked on a release build over WebView2 remote debugging: every screen loads, all fonts load, no violations.
 - **One model per helper**, chosen in Settings (Claude Code defaults to Sonnet, the Anthropic API to Opus 5.5).
 - **Prompts live in one file**, [`src/ai/prompts.ts`](../src/ai/prompts.ts), so they're easy to read and tune. `LEARNER_PROFILE` there describes you to the AI.
 - **Japanese accuracy:** the AI's facts (readings, meanings) come *from our database* in the prompt, not from the AI's memory. The AI is used for creativity and explanation, not as the source of truth.
