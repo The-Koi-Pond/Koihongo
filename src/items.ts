@@ -34,6 +34,7 @@ export type ComponentDetails = Common & {
   kind: "component";
   display: string;
   name: string;
+  strokeSvg: string | null;
   usedIn: { character: string; meaning: string }[];
 };
 
@@ -135,8 +136,12 @@ export async function getItemDetails(db: Db, itemKey: string): Promise<ItemDetai
   }
 
   if (kind === "component") {
-    const [c] = await db.all<{ display: string; name: string }>("SELECT display, name FROM content.components WHERE glyph = ?", [id]);
-    if (!c) throw new Error(`Unknown component ${id}`);
+    const [row] = await db.all<{ display: string; name: string; stroke_svg: string | null }>(
+      "SELECT display, name, stroke_svg FROM content.components WHERE glyph = ?",
+      [id],
+    );
+    if (!row) throw new Error(`Unknown component ${id}`);
+    const c = { display: row.display, name: row.name, strokeSvg: row.stroke_svg };
     const usedIn = await db.all<{ character: string; meanings: string }>(
       `SELECT k.character, k.meanings FROM content.kanji_components kc
        JOIN content.kanji k ON k.character = kc.kanji

@@ -168,18 +168,7 @@ async function main() {
     kanjidic.characters.map((c) => [c.literal, c.readingMeaning?.groups[0]?.meanings[0]?.value]),
   );
 
-  const svgName = (ch: string) => `kanji/${ch.codePointAt(0)!.toString(16).padStart(5, "0")}.svg`;
   const kana = allKana();
-  const singleKana = kana.filter((k) => [...k.character].length === 1).map((k) => k.character);
-  const wantedSvgs = new Set([...kanjiSet, ...singleKana].map(svgName));
-  const svgs = unzipSync(kanjivgZip, { filter: (f) => wantedSvgs.has(f.name) });
-  // Drop the XML prolog/DOCTYPE; the KanjiVG credit lives in the sources table.
-  const strokeSvg = (ch: string) => {
-    const file = svgs[svgName(ch)];
-    if (!file) return null;
-    const text = strFromU8(file);
-    return text.slice(text.indexOf("<svg"));
-  };
 
   const words = jmdict.words
     .map((w) => toWord(w, priorities.get(w.id) ?? NO_PRIORITY))
@@ -188,6 +177,23 @@ async function main() {
   const componentsOf = (ch: string) => krad.kanji[KRAD_VARIANTS[ch] ?? ch] ?? [];
   const componentGlyphs = new Set(kanjiChars.flatMap((c) => componentsOf(c.literal)));
   const componentStrokes = new Map([...componentGlyphs].map((g) => [g, radk.radicals[g]?.strokeCount ?? 0]));
+  const componentDisplay = new Map([...componentGlyphs].map((g) => [g, describeComponent(g, (ch) => firstMeaning.get(ch))]));
+
+  // Stroke orders from KanjiVG: kanji, single kana, and components (by their
+  // displayed shape, e.g. ⺅, else the glyph itself; KanjiVG has nearly all of them).
+  const svgName = (ch: string) => `kanji/${ch.codePointAt(0)!.toString(16).padStart(5, "0")}.svg`;
+  const singleKana = kana.filter((k) => [...k.character].length === 1).map((k) => k.character);
+  const componentChars = [...componentGlyphs].flatMap((g) => [componentDisplay.get(g)!.display, g]).filter((ch) => [...ch].length === 1);
+  const wantedSvgs = new Set([...kanjiSet, ...singleKana, ...componentChars].map(svgName));
+  const svgs = unzipSync(kanjivgZip, { filter: (f) => wantedSvgs.has(f.name) });
+  // Drop the XML prolog/DOCTYPE; the KanjiVG credit lives in the sources table.
+  const strokeSvg = (ch: string) => {
+    if ([...ch].length !== 1) return null;
+    const file = svgs[svgName(ch)];
+    if (!file) return null;
+    const text = strFromU8(file);
+    return text.slice(text.indexOf("<svg"));
+  };
 
   const pathKanji: PathKanji[] = joyo.map((c) => ({
     character: c.literal,
@@ -224,10 +230,10 @@ async function main() {
   insertSource.run("Tatoeba (Tanaka Corpus, indexed by EDRDG)", tanakaVersion, "CC BY 2.0 FR", "https://tatoeba.org", "Tatoeba contributors; word index by the Electronic Dictionary Research and Development Group (EDRDG)");
   insertSource.run("jmdict-simplified (JSON conversion)", examplesAsset.version, "CC BY-SA 4.0", "https://github.com/scriptin/jmdict-simplified", "Dmitry Shpika and contributors");
 
-  const insertComponent = db.prepare("INSERT INTO components (glyph, display, name, stroke_count) VALUES (?, ?, ?, ?)");
+  const insertComponent = db.prepare("INSERT INTO components (glyph, display, name, stroke_count, stroke_svg) VALUES (?, ?, ?, ?, ?)");
   for (const g of componentGlyphs) {
-    const { display, name } = describeComponent(g, (ch) => firstMeaning.get(ch));
-    insertComponent.run(g, display, name, componentStrokes.get(g) ?? 0);
+    const { display, name } = componentDisplay.get(g)!;
+    insertComponent.run(g, display, name, componentStrokes.get(g) ?? 0, strokeSvg(display) ?? strokeSvg(g));
   }
 
   const insertKanji = db.prepare(

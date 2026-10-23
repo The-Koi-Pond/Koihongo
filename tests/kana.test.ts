@@ -19,7 +19,7 @@ async function freshDb() {
       INSERT INTO kana (character, romaji, accept, script, grp, counterpart, stroke_svg) VALUES ('あ', 'a', '[]', 'hiragana', 'basic', 'ア', '<svg/>'), ('い', 'i', '[]', 'hiragana', 'basic', 'イ', NULL),
         ('か', 'ka', '[]', 'hiragana', 'basic', 'カ', NULL), ('が', 'ga', '[]', 'hiragana', 'dakuten', 'ガ', NULL),
         ('を', 'wo', '["o"]', 'hiragana', 'basic', 'ヲ', NULL);
-      INSERT INTO components VALUES ('木', '木', 'tree', 4);
+      INSERT INTO components (glyph, display, name, stroke_count) VALUES ('木', '木', 'tree', 4);
       INSERT INTO kanji (character, meanings, on_readings, kun_readings, nanori, stroke_count) VALUES ('木', '["tree"]', '["モク"]', '["き"]', '[]', 4);
       INSERT INTO path (position, item_key, kind, track) VALUES (1, 'kana:あ', 'kana', 'kana'), (2, 'kana:い', 'kana', 'kana'), (3, 'kana:か', 'kana', 'kana'),
         (4, 'kana:が', 'kana', 'kana'), (5, 'kana:を', 'kana', 'kana'),
