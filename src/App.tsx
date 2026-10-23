@@ -16,6 +16,7 @@ import { todaySummary, type TodaySummary } from "./srs/progress.ts";
 import { FindByPartsContext } from "./ui/findByParts.ts";
 import { KanaKeyboard } from "./ui/KanaKeyboard.tsx";
 import { NavBar, type Screen } from "./ui/NavBar.tsx";
+import { DekiPanel } from "./deki/DekiPanel.tsx";
 import "./App.css";
 
 // Shared so React's double-run of effects in dev can't migrate (or back up) twice at once.
@@ -119,6 +120,8 @@ function App() {
           )}
         </main>
       </FindByPartsContext.Provider>
+      {/* Deki-senpai, on every page (in lessons and reviews only when a mnemonic asks for it). */}
+      {ready && <DekiPanel inSession={SESSIONS.includes(screen)} />}
     </>
   );
 }

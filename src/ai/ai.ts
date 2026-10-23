@@ -1,4 +1,4 @@
-// "Messages in, text out", through whichever AI helper you picked in Settings
+// "Messages in, text out", through whichever connection you picked in Settings
 // (src/ai/settings.ts). The requests themselves are made in Rust
 // (src-tauri/src/ai.rs and ai_api.rs), so API keys never reach this side.
 
@@ -42,7 +42,7 @@ export function backendRequest(s: AiSettings, { system, messages, image }: AiReq
     case "anthropic":
       return { provider: s.provider, model: s.anthropicModel, system, messages, image };
     case "openai-compatible": {
-      if (!s.compatModel.trim()) throw new Error("No model is set. Choose one in Settings → AI helper.");
+      if (!s.compatModel.trim()) throw new Error("No model is set. Choose one in Settings → Deki-senpai.");
       return {
         provider: s.provider,
         model: s.compatModel.trim(),
@@ -54,11 +54,11 @@ export function backendRequest(s: AiSettings, { system, messages, image }: AiReq
       };
     }
     default:
-      throw new Error("AI is turned off. You can turn it on in Settings → AI helper.");
+      throw new Error("AI is turned off. You can turn it on in Settings → Deki-senpai.");
   }
 }
 
-/** One reply from your AI helper. `settings` overrides the saved ones (Settings' test button). */
+/** One reply from Deki-senpai. `settings` overrides the saved ones (Settings' test button). */
 export async function aiComplete(request: AiRequest, settings?: AiSettings): Promise<string> {
   const s = settings ?? (await getAiSettings(tauriDb));
   return invoke<string>("ai_complete", { request: backendRequest(s, request) });

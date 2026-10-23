@@ -6,7 +6,7 @@ import { addSynonym, removeSynonym, saveNote, type ItemDetails, type Note, type 
 import { Examples } from "./Examples.tsx";
 import { Gloss } from "./Gloss.tsx";
 import { InfoTip } from "./InfoTip.tsx";
-import { MnemonicWorkshop } from "./MnemonicWorkshop.tsx";
+import { askForMnemonics } from "./MnemonicWorkshop.tsx";
 import { soundHint } from "../kanaSounds.ts";
 import { FindByPartsContext } from "./findByParts.ts";
 import { ItemHover } from "./Popover.tsx";
@@ -296,7 +296,6 @@ function NoteEditor({
 }) {
   const note = item.notes[kind];
   const [editing, setEditing] = useState(false);
-  const [workshop, setWorkshop] = useState(false);
   const ai = useAiSettings(tauriDb);
   const aiOn = !!ai && ai.provider !== "off";
   const [text, setText] = useState(note?.text ?? "");
@@ -346,24 +345,24 @@ function NoteEditor({
             >
               <Pencil size={16} strokeWidth={1.75} />
             </button>
-            {aiOn && kind !== "note" && !workshop && (
-              <button type="button" className="icon-action" aria-label="Ask AI" title="Ask AI" onClick={() => setWorkshop(true)}>
+            {aiOn && kind !== "note" && (
+              <button
+                type="button"
+                className="icon-action"
+                aria-label="Ask Deki-senpai"
+                title="Ask Deki-senpai for mnemonics"
+                onClick={() =>
+                  askForMnemonics(item, kind === "mnemonic_meaning" ? "meaning" : "reading", async (suggestion) => {
+                    await saveNote(tauriDb, item.item_key, kind, suggestion, "ai", Date.now());
+                    onSaved();
+                  })
+                }
+              >
                 <Sparkles size={16} strokeWidth={1.75} />
               </button>
             )}
           </div>
         </div>
-      )}
-      {workshop && kind !== "note" && (
-        <MnemonicWorkshop
-          item={item}
-          focus={kind === "mnemonic_meaning" ? "meaning" : "reading"}
-          onUse={async (suggestion) => {
-            await saveNote(tauriDb, item.item_key, kind, suggestion, "ai", Date.now());
-            onSaved();
-          }}
-          onClose={() => setWorkshop(false)}
-        />
       )}
     </Field>
   );

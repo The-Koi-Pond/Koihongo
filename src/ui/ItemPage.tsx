@@ -1,5 +1,8 @@
 import { useEffect, useState } from "react";
+import { describeItem } from "../ai/prompts.ts";
 import { tauriDb } from "../db/tauriDb.ts";
+import { useDekiPage } from "../deki/store.ts";
+import type { ItemDetails } from "../items.ts";
 import { itemProgress, STATUS_NAME, type ItemProgress } from "../library.ts";
 import { ErrorView } from "../screens/Reviews.tsx";
 import { RANK_NAME, rankFor } from "../srs/ranks.ts";
@@ -21,6 +24,18 @@ export function ItemPage({ itemKey, backLabel, onOpen, onBack }: { itemKey: stri
       .then(setProgress)
       .catch(() => setProgress(null));
   }, [itemKey]);
+
+  useDekiPage(
+    item && {
+      id: "item",
+      label: `${item.kind[0].toUpperCase()}${item.kind.slice(1)} · ${itemName(item)}`,
+      instructions: "They're looking at a study item's page (its meanings, readings, their mnemonics and notes). Help them understand and remember it.",
+      parts: [
+        { key: "item", name: "The item", text: describeItem(item) },
+        { key: "notes", name: "Their notes", text: Object.entries(item.notes).map(([k, n]) => `${k.replace("_", " ")}: ${n?.text}`).join("\n") },
+      ],
+    },
+  );
 
   if (error) return <ErrorView message={error} onExit={onBack} />;
 
@@ -47,6 +62,19 @@ export function ItemPage({ itemKey, backLabel, onOpen, onBack }: { itemKey: stri
       )}
     </div>
   );
+}
+
+/** What the item is called, for Deki's header. */
+function itemName(item: ItemDetails): string {
+  switch (item.kind) {
+    case "kana":
+    case "kanji":
+      return item.character;
+    case "component":
+      return item.display;
+    case "word":
+      return item.written;
+  }
 }
 
 function OffPath() {

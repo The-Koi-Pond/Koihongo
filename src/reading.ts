@@ -47,7 +47,7 @@ export type Series = {
   synopsis: string;
   /** Its genres as tags, comma-separated (see splitTags). */
   genres: string;
-  /** Parts of its info not to send to the AI helper: a JSON list of context keys (see ContextPart). */
+  /** Parts of its info not to send to Deki-senpai: a JSON list of context keys (see ContextPart). */
   context_off: string;
   /** Its category on the shelf (null: uncategorised). */
   category_id: number | null;
@@ -349,7 +349,7 @@ export type ContextParts = {
 /** One part of a series' info, as it's sent: its key (for switching it off), name, and text. */
 export type ContextPart = { key: string; name: string; text: string; multiline: boolean };
 
-/** A series' info as the parts the AI helper can be sent, in order (empty ones included, with text ""). */
+/** A series' info as the parts Deki-senpai can be sent, in order (empty ones included, with text ""). */
 export function seriesParts(series: NonNullable<ContextParts["series"]>): ContextPart[] {
   return [
     { key: "name", name: "Series", text: series.title.trim(), multiline: false },

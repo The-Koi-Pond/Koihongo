@@ -113,7 +113,7 @@ const MIGRATIONS: string[][] = [
   [
     // Reading (see src/reading.ts): your own manga, read from where it is on your PC.
     // page/pages: where you are, and how many pages it had when last opened.
-    // about: your notes on the book (setting, genre, who's who) for the AI helper.
+    // about: your notes on the book (setting, genre, who's who) for Deki-senpai.
     `CREATE TABLE books (
       id            INTEGER PRIMARY KEY,
       title         TEXT NOT NULL,
@@ -198,7 +198,7 @@ const MIGRATIONS: string[][] = [
     `DELETE FROM series_boxes WHERE lower(trim(label)) = 'genre'`,
   ],
   [
-    // Parts of a series' info you chose not to send to the AI helper: a JSON
+    // Parts of a series' info you chose not to send to Deki-senpai: a JSON
     // list of keys ("synopsis", "box:3"…; see contextKeys in src/reading.ts).
     `ALTER TABLE series ADD COLUMN context_off TEXT NOT NULL DEFAULT '[]'`,
   ],
@@ -255,6 +255,26 @@ const MIGRATIONS: string[][] = [
     `INSERT INTO categories (name, position)
      SELECT 'Manhwa', (SELECT coalesce(max(position), -1) + 1 FROM categories)
      WHERE NOT EXISTS (SELECT 1 FROM categories WHERE lower(name) = 'manhwa')`,
+  ],
+  [
+    // Deki-senpai's kept chats (src/deki/deki.ts): one per chapter or series
+    // you chose to keep a chat for, and its messages.
+    `CREATE TABLE deki_threads (
+      id         INTEGER PRIMARY KEY,
+      scope      TEXT NOT NULL,
+      scope_id   INTEGER NOT NULL,
+      created_at INTEGER NOT NULL,
+      updated_at INTEGER NOT NULL,
+      UNIQUE (scope, scope_id)
+    )`,
+    `CREATE TABLE deki_messages (
+      id         INTEGER PRIMARY KEY,
+      thread_id  INTEGER NOT NULL,
+      role       TEXT NOT NULL,
+      text       TEXT NOT NULL,
+      created_at INTEGER NOT NULL
+    )`,
+    `CREATE INDEX deki_messages_by_thread ON deki_messages(thread_id)`,
   ],
 ];
 

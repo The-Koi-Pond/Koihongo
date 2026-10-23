@@ -134,9 +134,9 @@ import {
 import { getCurrentWindow } from "@tauri-apps/api/window";
 import { findText, pictureOf, readBoxes, readBoxesWithAi, type OcrText } from "../ocr.ts";
 import { coverage, wordsIn, wordsInAll, type Coverage, type Word } from "../words.ts";
-import { EXPLAIN_BOX_OPENER, explainBoxPrompt, explainedParts } from "../ai/prompts.ts";
+import { explainBoxRequest, explainedParts, TRANSLATE_PAGE_REQUEST } from "../ai/prompts.ts";
+import { askDeki, useDekiPage } from "../deki/store.ts";
 import { useAiSettings } from "../ai/settings.ts";
-import { AiChat } from "../ui/AiChat.tsx";
 import { ReadableBar, WordHelp } from "../ui/WordHelp.tsx";
 import { TextReader } from "./TextReader.tsx";
 import { useFileDrop } from "../ui/useFileDrop.ts";
@@ -939,7 +939,7 @@ function useShelfDrag(onDrop: (item: DragItem, target: string) => void) {
 /**
  * A series' info: its titles, synopsis and your boxes (Cast, Genre…). This is
  * the context sent with translation requests, so the page shows exactly what
- * the AI helper will see. Saves as you leave each field.
+ * Deki-senpai will see. Saves as you leave each field.
  */
 function SeriesInfo({
   series,
@@ -959,7 +959,7 @@ function SeriesInfo({
   /** What's saved, so leaving a field unchanged writes nothing. */
   const saved = useRef(info);
   const [extras, setExtras] = useState<SeriesExtras>();
-  /** Parts of the info not to send to the AI helper (keys from seriesParts). */
+  /** Parts of the info not to send to Deki-senpai (keys from seriesParts). */
   const [off, setOff] = useState(() => contextOff(series.context_off));
   /** The synopsis reads like a page; its pencil opens it for editing. */
   const [editingSynopsis, setEditingSynopsis] = useState(false);
@@ -1273,8 +1273,8 @@ function SeriesNav({
 }
 
 /**
- * The options button in the corner of a series' info: which parts of it the
- * AI helper is sent with translation requests, and a preview of exactly that.
+ * The options button in the corner of a series' info: which parts of it
+ * Deki-senpai is sent in Reading, and a preview of exactly that.
  */
 function ContextOptions({
   parts,
@@ -1306,15 +1306,15 @@ function ContextOptions({
         type="button"
         className={`icon-action ${open ? "on" : ""}`}
         aria-expanded={open}
-        title="What the AI helper is sent"
-        aria-label="What the AI helper is sent"
+        title="What Deki-senpai is sent"
+        aria-label="What Deki-senpai is sent"
         onClick={() => setOpen(!open)}
       >
         <SlidersHorizontal size={16} strokeWidth={2} />
       </button>
       {open && (
-        <div className="context-panel" role="dialog" aria-label="What the AI helper is sent">
-          <h3>What the AI helper is sent</h3>
+        <div className="context-panel" role="dialog" aria-label="What Deki-senpai is sent">
+          <h3>What Deki-senpai is sent</h3>
           <p className="muted about-hint">With translation requests for this series' chapters, followed by the chapter's own notes (ⓘ in the reader).</p>
           <ul className="context-parts">
             {parts.map((p) => (
@@ -1753,6 +1753,56 @@ function Reader({
   const [error, setError] = useState<string>();
   const page = pages?.[index];
   const { url, error: pageError } = usePageImage(book?.path, pages, index);
+
+  // Deki-senpai: where you are, the manga's notes, this page's boxes and the open one;
+  // its chat can be kept for this chapter or the whole series.
+  const [mangaNotes, setMangaNotes] = useState("");
+  useEffect(() => {
+    // Again after About closes (the notes may have changed).
+    if (!aboutOpen) readingContext(tauriDb, id).then(setMangaNotes, () => setMangaNotes(""));
+  }, [id, aboutOpen]);
+  const openMark = marks.find((m) => m.id === selected && m.text.trim());
+  const boxLines = markSections(marks).flatMap((s) => s.marks.flatMap((m, j) => (m.text.trim() ? [`${s.name} ${j + 1}: ${m.text.trim()}`] : [])));
+  const chapter = book && chapterLabel(book.title, book.series_title ?? "");
+  useDekiPage(
+    book && chapter
+      ? {
+          id: "reading",
+          label: `Reading · ${chapter} · p.${index + 1}`,
+          instructions:
+            "They're reading a manga chapter in Koihongo's reader: they mark boxes on the page (speech bubbles, sound effects, signs…) and write down what each says. Help them understand it. The boxes' Japanese may have been read off the page automatically, so it can have misread characters. Use the manga's notes for names, who's who and tone.",
+          parts: [
+            { key: "manga", name: "About the manga", text: mangaNotes },
+            { key: "page", name: "This page's boxes", text: boxLines.join("\n") },
+            {
+              key: "box",
+              name: "The open box",
+              text: openMark
+                ? [
+                    `${MARK_KINDS.find((k) => k.kind === openMark.kind)?.name}: ${openMark.text.trim()}`,
+                    openMark.reading.trim() && `Their reading: ${openMark.reading.trim()}`,
+                    openMark.meaning.trim() && `Their meaning: ${openMark.meaning.trim()}`,
+                    openMark.notes.trim() && `Their notes: ${openMark.notes.trim()}`,
+                  ]
+                    .filter(Boolean)
+                    .join("\n")
+                : "",
+            },
+          ],
+          scopes: {
+            chapter: { id: book.id, label: chapter },
+            ...(book.series_id !== null && { series: { id: book.series_id, label: book.series_title ?? "the series" } }),
+          },
+          commands: {
+            explain: () =>
+              openMark
+                ? explainBoxRequest({ kind: MARK_KINDS.find((k) => k.kind === openMark.kind)?.name ?? openMark.kind, text: openMark.text.trim(), unsure: !!openMark.unsure })
+                : "Open a box with text first (click it on the page), or press Explain in it.",
+            translate: () => (boxLines.length ? TRANSLATE_PAGE_REQUEST : "This page has no boxes with text yet."),
+          },
+        }
+      : undefined,
+  );
 
   const open = useCallback(async () => {
     const b = await getBook(tauriDb, id);
@@ -2294,7 +2344,6 @@ function Reader({
                     onReadText={() => (url ? readBoxes(url, markBoxes(m)) : Promise.reject(new Error("The page is still loading.")))}
                     onReadWithAi={(kindName) => (url ? readBoxesWithAi(url, markBoxes(m), kindName) : Promise.reject(new Error("The page is still loading.")))}
                     picture={() => (url ? pictureOf(url, aroundBoxes(markBoxes(m))) : Promise.resolve(undefined))}
-                    pageLines={markSections(marks).flatMap((s) => s.marks.flatMap((x, j) => (x.text.trim() && x.id !== m.id ? [`${s.name} ${j + 1}: ${x.text.trim()}`] : [])))}
                     onSaved={(saved) => setMarks((all) => all.map((x) => (x.id === saved.id ? saved : x)))}
                     onDelete={async () => {
                       await deleteMark(tauriDb, m.id);
@@ -2752,7 +2801,6 @@ function MarkEditor({
   onReadText,
   onReadWithAi,
   picture,
-  pageLines,
   onSaved,
   onDelete,
   onClose,
@@ -2765,10 +2813,8 @@ function MarkEditor({
   onExtend: () => void;
   /** Reads the text in the mark's boxes (Baberu OCR, src-tauri/src/baberu.rs). */
   onReadText: () => Promise<OcrText>;
-  /** Reads the text in the mark's boxes with your AI helper, from their pictures (`kind`: Speech, SFX…). */
+  /** Reads the text in the mark's boxes with Deki-senpai, from their pictures (`kind`: Speech, SFX…). */
   onReadWithAi: (kind: string) => Promise<string>;
-  /** The page's other boxes with text, in reading order ("Speech 2: …"), for "Explain". */
-  pageLines: string[];
   /** The box with the panel around it, as a picture for cards. */
   picture: () => Promise<string | undefined>;
   onSaved: (m: Mark) => void;
@@ -2785,9 +2831,6 @@ function MarkEditor({
   /** The reading word help last filled in: it's replaced as the text changes, until you edit it. */
   const autoReading = useRef<string>(undefined);
   const ai = useAiSettings(tauriDb);
-  /** "Explain": its chat is open (with the series' context, loaded first), or why it can't be. */
-  const [explain, setExplain] = useState<{ context: string } | { note: string }>();
-  useEffect(() => setExplain(undefined), [mark.id]);
   /** What "Read text" has to say: nothing found, not sure, or why it couldn't. */
   const [readNote, setReadNote] = useState<string>();
   const [confirmDelete, setConfirmDelete] = useState(false);
@@ -2828,13 +2871,39 @@ function MarkEditor({
   });
   const written = Object.values(fields).some((v) => v.trim());
 
-  async function openExplain() {
-    if (!ai || ai.provider === "off") return setExplain({ note: "Turn on the AI helper in Settings → AI helper first." });
-    try {
-      setExplain({ context: await readingContext(tauriDb, mark.book_id) });
-    } catch (e) {
-      setExplain({ note: String(e) });
-    }
+  // The box as it is now, for Deki's "Use as…" buttons (pressed later, maybe after more edits).
+  const latest = useRef({ fields, kind, save });
+  latest.current = { fields, kind, save };
+  const keep = (field: "reading" | "meaning", value: string) => {
+    const { fields: now, kind: k, save: store } = latest.current;
+    const next = { ...now, [field]: value };
+    setFields(next);
+    store(next, k);
+  };
+
+  /** Explain: Deki-senpai opens (in this chapter's or series' kept chat, if you keep one) with this box. */
+  function explainWithDeki() {
+    askDeki({
+      ...explainBoxRequest({ kind: MARK_KINDS.find((k) => k.kind === kind)?.name ?? kind, text: fields.text.trim(), unsure: !!mark.unsure }),
+      actions: (reply) => {
+        const { kana, translation } = explainedParts(reply);
+        if (!kana && !translation) return null;
+        return (
+          <div className="deki-actions">
+            {kana && (
+              <button type="button" className="seen-use" onClick={() => keep("reading", kana)}>
+                Use as reading
+              </button>
+            )}
+            {translation && (
+              <button type="button" className="seen-use" onClick={() => keep("meaning", translation)}>
+                Use as meaning
+              </button>
+            )}
+          </div>
+        );
+      },
+    });
   }
 
   const aiOn = !!ai && ai.provider !== "off";
@@ -2843,11 +2912,11 @@ function MarkEditor({
     setReadNote(undefined);
     try {
       const text = await onReadWithAi(MARK_KINDS.find((k) => k.kind === kind)?.name ?? kind);
-      if (!text) return setReadNote("The AI helper found no text in this box.");
+      if (!text) return setReadNote("Deki-senpai found no text in this box.");
       const next = { ...fields, text };
       setFields(next);
       save(next, kind, false);
-      setReadNote("Read by your AI helper.");
+      setReadNote("Read by Deki-senpai.");
     } catch (e) {
       setReadNote(String(e).replace(/^Error: /, ""));
     } finally {
@@ -2936,7 +3005,7 @@ function MarkEditor({
               className="mark-read"
               onClick={readWithAi}
               disabled={reading}
-              title="Ask your AI helper to read this box from its picture: better on messy sound effects and handwriting"
+              title="Ask Deki-senpai to read this box from its picture: better on messy sound effects and handwriting"
               aria-label="Read with AI"
             >
               <Sparkles size={14} aria-hidden="true" /> AI
@@ -3033,51 +3102,10 @@ function MarkEditor({
           ))}
         </div>
       )}
-      {fields.text.trim() && !(explain && "context" in explain) && (
-        <button type="button" className="mark-explain" onClick={openExplain} title="Ask the AI helper what this says and how it works">
+      {fields.text.trim() && (
+        <button type="button" className="mark-explain" onClick={explainWithDeki} title="Ask Deki-senpai what this says and how it works">
           <Sparkles size={14} aria-hidden="true" /> Explain
         </button>
-      )}
-      {explain && "note" in explain && <p className="muted mark-read-note">{explain.note}</p>}
-      {explain && "context" in explain && (
-        <AiChat
-          title={`${MARK_KINDS.find((k) => k.kind === kind)?.name ?? "Text"}: ${fields.text.trim()}`}
-          system={explainBoxPrompt(
-            { kind: MARK_KINDS.find((k) => k.kind === kind)?.name ?? kind, text: fields.text.trim(), unsure: !!mark.unsure },
-            pageLines,
-            explain.context,
-          )}
-          opener={EXPLAIN_BOX_OPENER}
-          placeholder="Ask about it, e.g. why is it written in katakana?"
-          footnote="Sent: this box, the other boxes on this page, and the series info its options let through. AI explanations can be wrong."
-          extras={(reply) => {
-            const { kana, translation } = explainedParts(reply);
-            if (!kana && !translation) return null;
-            return (
-              <div className="row explain-use">
-                {kana && kana !== fields.reading && (
-                  <button type="button" className="seen-use" onClick={() => {
-                    const next = { ...fields, reading: kana };
-                    setFields(next);
-                    save(next, kind);
-                  }}>
-                    Use as reading
-                  </button>
-                )}
-                {translation && translation !== fields.meaning && (
-                  <button type="button" className="seen-use" onClick={() => {
-                    const next = { ...fields, meaning: translation };
-                    setFields(next);
-                    save(next, kind);
-                  }}>
-                    Use as meaning
-                  </button>
-                )}
-              </div>
-            );
-          }}
-          onClose={() => setExplain(undefined)}
-        />
       )}
       <label>
         Reading
@@ -3161,8 +3189,8 @@ function AboutBook({
       </label>
       <p className="muted about-hint">
         {book.series_id
-          ? "Notes on just this chapter. The AI helper reads them after the series' info (the series page), so its translations fit the story."
-          : "Your own notes. The AI helper reads them too, so its translations fit the story. (In a series, the series page holds what's true for every chapter.)"}
+          ? "Notes on just this chapter. Deki-senpai reads them after the series' info (the series page), so its translations fit the story."
+          : "Your own notes. Deki-senpai reads them too, so its translations fit the story. (In a series, the series page holds what's true for every chapter.)"}
       </p>
       <p className="muted about-hint">
         Files: <code>{book.path}</code>

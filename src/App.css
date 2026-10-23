@@ -2012,54 +2012,6 @@ textarea {
 
 /* Mnemonic workshop */
 
-.workshop {
-  margin-top: 10px;
-  border: 1px solid var(--border);
-  border-radius: 10px;
-  padding: 12px;
-  background: var(--surface-2);
-  display: grid;
-  gap: 10px;
-}
-
-.workshop-head {
-  display: flex;
-  justify-content: space-between;
-}
-
-.chat {
-  list-style: none;
-  padding: 0;
-  margin: 0;
-  display: grid;
-  gap: 8px;
-  max-height: 420px;
-  overflow-y: auto;
-}
-
-.chat li {
-  padding: 8px 12px;
-  border-radius: 10px;
-  max-width: 90%;
-}
-
-.chat li p {
-  margin: 0;
-  white-space: pre-wrap;
-}
-
-.chat .user {
-  justify-self: end;
-  background: var(--accent);
-  color: var(--accent-text);
-}
-
-.chat .assistant {
-  justify-self: start;
-  background: var(--surface);
-  border: 1px solid var(--border);
-}
-
 .option {
   display: flex;
   gap: 8px;
@@ -4167,7 +4119,7 @@ select {
   color: #fd93bb;
 }
 
-/* Settings → AI helper (AiSettingsCard.tsx). */
+/* Settings → Deki-senpai (AiSettingsCard.tsx). */
 .ai-providers {
   display: grid;
   gap: 6px;
@@ -6269,7 +6221,7 @@ button.aka-add {
   font-size: 0.8rem;
 }
 
-/* The series info's options (Reading.tsx, ContextOptions): what the AI helper is sent. */
+/* The series info's options (Reading.tsx, ContextOptions): what Deki-senpai is sent. */
 .context-options {
   position: absolute;
   top: 10px;
@@ -6849,19 +6801,6 @@ button.aka-add {
   gap: 6px;
 }
 
-.mark-editor .workshop {
-  margin-top: 0;
-}
-
-.mark-editor .chat p {
-  white-space: pre-wrap;
-}
-
-.explain-use {
-  gap: 6px;
-  margin-top: 6px;
-}
-
 /* Word help under a box's Japanese (WordHelp.tsx): words as chips, coloured by your progress. */
 .word-help {
   display: grid;
@@ -7308,4 +7247,244 @@ button.aka-add {
   min-height: 35px;
   padding: 4px 14px;
   border-radius: 9px;
+}
+
+/* Deki-senpai (src/deki/DekiPanel.tsx): a button in the corner, a chat that pops over the page or docks beside it. */
+.deki-fab {
+  position: fixed;
+  right: 18px;
+  bottom: calc(var(--statusbar-h) + 12px); /* above the status bar */
+  z-index: 60;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 9px 16px;
+  border: 2px solid var(--accent);
+  border-radius: 999px;
+  background: var(--surface);
+  color: var(--text);
+  font-weight: 700;
+  box-shadow: 0 6px 20px rgb(0 0 0 / 0.45);
+}
+
+.deki-fab svg {
+  color: var(--accent);
+}
+
+.deki {
+  --deki-w: 380px;
+  position: fixed;
+  right: 18px;
+  bottom: calc(var(--statusbar-h) + 12px);
+  z-index: 60;
+  width: var(--deki-w);
+  height: min(560px, calc(100vh - var(--titlebar-h) - var(--statusbar-h) - 36px));
+  display: grid;
+  grid-template-rows: auto auto minmax(0, 1fr) auto auto;
+  border: 2px solid var(--panel-border);
+  border-radius: 14px;
+  background: var(--surface-2);
+  box-shadow: 0 10px 34px rgb(0 0 0 / 0.55);
+  overflow: hidden;
+}
+
+.deki.docked {
+  --deki-w: 440px;
+  top: var(--titlebar-h);
+  right: 0;
+  bottom: var(--statusbar-h);
+  height: auto;
+  border-width: 0 0 0 2px;
+  border-radius: 0;
+  box-shadow: none;
+}
+
+/* Docked: the page makes room beside Deki. */
+body.deki-docked main.app {
+  margin-right: 440px;
+}
+
+.deki-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 8px 8px 12px;
+  background: var(--chrome);
+  border-bottom: 1px solid var(--panel-border);
+}
+
+.deki-avatar {
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: var(--accent);
+  color: var(--accent-text);
+  font-weight: 700;
+}
+
+.deki-name {
+  flex: 1;
+  white-space: nowrap;
+}
+
+.deki-connection {
+  max-width: 150px;
+  font-size: 0.8rem;
+}
+
+.deki-context {
+  display: grid;
+  gap: 6px;
+  padding: 8px 12px;
+  border-bottom: 1px solid rgb(255 255 255 / 0.08);
+  font-size: 0.8rem;
+}
+
+.deki-where {
+  color: var(--muted);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.deki-scope {
+  display: inline-flex;
+  justify-self: start;
+  border: 1px solid var(--panel-border);
+  border-radius: 999px;
+  overflow: hidden;
+}
+
+.deki-scope button {
+  padding: 2px 10px;
+  border: none;
+  border-radius: 0;
+  background: none;
+  color: var(--muted);
+  font-size: 0.78rem;
+}
+
+.deki-scope button.on {
+  background: var(--accent);
+  color: var(--accent-text);
+}
+
+.deki-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.deki-chip {
+  padding: 1px 9px;
+  border: 1px solid var(--panel-border);
+  border-radius: 999px;
+  background: rgb(255 255 255 / 0.08);
+  color: var(--text);
+  font-size: 0.75rem;
+}
+
+.deki-chip.off {
+  opacity: 0.5;
+  text-decoration: line-through;
+}
+
+.deki-chat {
+  list-style: none;
+  margin: 0;
+  padding: 12px;
+  display: grid;
+  align-content: start;
+  gap: 8px;
+  overflow-y: auto;
+}
+
+.deki-chat li {
+  max-width: 92%;
+  padding: 8px 12px;
+  border-radius: 10px;
+  font-size: 0.92rem;
+}
+
+.deki-chat li p {
+  margin: 0;
+  white-space: pre-wrap;
+}
+
+.deki-chat .user {
+  justify-self: end;
+  background: var(--accent);
+  color: var(--accent-text);
+}
+
+.deki-chat .assistant {
+  justify-self: start;
+  background: var(--surface);
+  border: 1px solid var(--border);
+}
+
+.deki-chat .note {
+  justify-self: stretch;
+  max-width: none;
+  border: 1px dashed var(--panel-border);
+  color: var(--muted);
+  font-size: 0.82rem;
+}
+
+.deki-error {
+  margin: 0;
+  padding: 0 12px 8px;
+  font-size: 0.82rem;
+}
+
+.deki-input {
+  position: relative;
+  display: flex;
+  gap: 6px;
+  padding: 8px;
+  border-top: 1px solid rgb(255 255 255 / 0.08);
+}
+
+.deki-input textarea {
+  flex: 1;
+  min-height: 36px;
+  max-height: 120px;
+  resize: none;
+  font-size: 0.95rem;
+}
+
+.deki-hints {
+  position: absolute;
+  left: 8px;
+  right: 8px;
+  bottom: 100%;
+  margin: 0 0 4px;
+  padding: 4px;
+  list-style: none;
+  border: 1px solid var(--panel-border);
+  border-radius: 8px;
+  background: var(--surface-2);
+  box-shadow: 0 6px 18px rgb(0 0 0 / 0.4);
+}
+
+.deki-hints button {
+  width: 100%;
+  padding: 4px 8px;
+  border: none;
+  background: none;
+  text-align: left;
+  font-size: 0.82rem;
+}
+
+.deki-hints button:hover {
+  background: rgb(255 255 255 / 0.08);
+}
+
+.deki-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 6px;
 }
