@@ -4,6 +4,8 @@ mod backup;
 mod baberu;
 mod books;
 mod db;
+mod downloads;
+mod local_ai;
 mod ocr;
 mod words;
 
@@ -28,6 +30,8 @@ pub fn run() {
             let conn = db::open(&data_dir.join("user.db"), &content)?;
             app.manage(db::Db(Mutex::new(conn)));
             app.manage(ocr::Ocr::default());
+            app.manage(local_ai::LocalAi::default());
+            local_ai::stop_when_idle(app.handle().clone());
             save_window_state_as_you_go(app);
             Ok(())
         })
@@ -61,10 +65,19 @@ pub fn run() {
             ocr::ocr_remove,
             ocr::ocr_read,
             ocr::ocr_find,
-            words::words_split
+            words::words_split,
+            local_ai::local_ai_status,
+            local_ai::local_ai_download,
+            local_ai::local_ai_remove
         ])
-        .run(tauri::generate_context!())
-        .expect("error while running tauri application");
+        .build(tauri::generate_context!())
+        .expect("error while building tauri application")
+        .run(|app, event| {
+            // Closing Koihongo stops the built-in AI (the job object would too, if it crashed).
+            if let tauri::RunEvent::Exit = event {
+                app.state::<local_ai::LocalAi>().stop();
+            }
+        });
 }
 
 /// The window-state plugin only writes to disk when the app exits cleanly, so

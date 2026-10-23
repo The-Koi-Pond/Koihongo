@@ -5,7 +5,8 @@
 import { useEffect, useSyncExternalStore } from "react";
 import type { Db } from "../db/db.ts";
 
-export type AiProvider = "off" | "claude-code" | "anthropic" | "openai-compatible";
+export type AiProvider = "off" | "local" | "claude-code" | "anthropic" | "openai-compatible";
+export type LocalModel = "12b" | "26b";
 export type ClaudeCodeModel = "haiku" | "sonnet" | "opus";
 export type CompatPreset = "openai" | "openrouter" | "gemini" | "ollama" | "lmstudio" | "custom";
 
@@ -17,6 +18,8 @@ export type AiSettings = {
   /** Only used by the "custom" preset; the others have a fixed address. */
   compatBaseUrl: string;
   compatModel: string;
+  /** The built-in AI's model (src-tauri/src/local_ai.rs). */
+  localModel: LocalModel;
 };
 
 export const DEFAULT_AI: AiSettings = {
@@ -26,10 +29,16 @@ export const DEFAULT_AI: AiSettings = {
   compatPreset: "openai",
   compatBaseUrl: "",
   compatModel: "",
+  localModel: "12b",
 };
 
 export const PROVIDERS: { id: AiProvider; name: string; blurb: string }[] = [
   { id: "off", name: "Off", blurb: "No AI. The Ask AI and Explain buttons are hidden." },
+  {
+    id: "local",
+    name: "Built-in (on this PC)",
+    blurb: "Gemma 4 running inside Koihongo: free, private and offline. A one-time download; needs a graphics card with 10 GB or more.",
+  },
   { id: "claude-code", name: "Claude Code", blurb: "Uses the Claude Code app on this PC and your own Claude login. No API key needed." },
   { id: "anthropic", name: "Anthropic API", blurb: "Claude models with an API key from console.anthropic.com (pay per use)." },
   {
@@ -43,6 +52,12 @@ export const CLAUDE_CODE_MODELS: { id: ClaudeCodeModel; name: string }[] = [
   { id: "sonnet", name: "Sonnet" },
   { id: "opus", name: "Opus" },
   { id: "haiku", name: "Haiku (fastest)" },
+];
+
+/** The built-in AI's models: download size, and the graphics memory each wants. */
+export const LOCAL_MODELS: { id: LocalModel; name: string; download: string; memory: string; blurb: string }[] = [
+  { id: "12b", name: "Gemma 4 12B", download: "7.4 GB", memory: "10 GB or more", blurb: "Good and fast. Fits most gaming graphics cards." },
+  { id: "26b", name: "Gemma 4 26B", download: "15.4 GB", memory: "18 GB or more", blurb: "Smarter, and as quick as the small one. For big cards (24 GB)." },
 ];
 
 export const ANTHROPIC_MODELS: { id: string; name: string }[] = [
@@ -89,6 +104,7 @@ export async function loadAiSettings(db: Db): Promise<AiSettings> {
   if (!PROVIDERS.some((p) => p.id === s.provider)) s.provider = "off";
   if (!(s.compatPreset in PRESETS)) s.compatPreset = DEFAULT_AI.compatPreset;
   if (!CLAUDE_CODE_MODELS.some((m) => m.id === s.claudeCodeModel)) s.claudeCodeModel = DEFAULT_AI.claudeCodeModel;
+  if (!LOCAL_MODELS.some((m) => m.id === s.localModel)) s.localModel = DEFAULT_AI.localModel;
   return s;
 }
 
@@ -100,6 +116,8 @@ export async function saveAiSettings(db: Db, s: AiSettings): Promise<void> {
 /** A short name for where requests go, for footnotes ("Runs through …"). */
 export function providerLabel(s: AiSettings): string {
   switch (s.provider) {
+    case "local":
+      return "the built-in AI on this PC";
     case "claude-code":
       return "your Claude Code login";
     case "anthropic":

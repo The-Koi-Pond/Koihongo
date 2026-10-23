@@ -35,6 +35,8 @@ export function formatConversation(messages: ChatMessage[]): string {
  */
 export function backendRequest(s: AiSettings, { system, messages, image }: AiRequest) {
   switch (s.provider) {
+    case "local":
+      return { provider: s.provider, model: s.localModel, system, messages, image };
     case "claude-code":
       return { provider: s.provider, model: s.claudeCodeModel, system, messages, prompt: formatConversation(messages), image };
     case "anthropic":

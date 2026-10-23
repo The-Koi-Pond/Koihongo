@@ -135,7 +135,8 @@ fn parse_output(stdout: &str, stderr: &str) -> Result<String, String> {
 
 /// One AI request from the app. `provider` picks the backend (Settings → AI helper):
 /// "claude-code" (your Claude login, via the CLI), "anthropic" (API key) or
-/// "openai-compatible" (any service with that API, `base_url` plus an optional key).
+/// "openai-compatible" (any service with that API, `base_url` plus an optional key), or
+/// "local" (the built-in AI, local_ai.rs; `model` is which one: "12b" or "26b").
 #[derive(Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct AiRequest {
@@ -170,6 +171,11 @@ pub async fn ai_complete(app: tauri::AppHandle, request: AiRequest) -> Result<St
         "anthropic" => {
             let key = get_key("anthropic")?.ok_or("No Anthropic API key is saved. Add one in Settings → AI helper.")?;
             anthropic(&key, &model, &system, &messages, image.as_deref()).await
+        }
+        "local" => {
+            // The built-in AI: started (or kept running) by local_ai.rs, then asked like any OpenAI-compatible service.
+            let (port, key) = crate::local_ai::ensure(&app, &model).await?;
+            openai_compatible(&format!("http://127.0.0.1:{port}/v1"), Some(&key), "koihongo", &system, &messages, image.as_deref()).await
         }
         "openai-compatible" => {
             let (url, key) = compat_target(preset.as_deref().unwrap_or(""), base_url)?;

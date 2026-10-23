@@ -13,8 +13,6 @@ use image::{imageops, DynamicImage};
 use ort::session::Session;
 use ort::value::Tensor;
 use serde::Serialize;
-use sha2::{Digest, Sha256};
-use std::io::Write;
 use std::path::{Path, PathBuf};
 use std::sync::atomic::{AtomicBool, Ordering as AtomicOrdering};
 use std::sync::{Arc, Mutex};
@@ -22,19 +20,9 @@ use tauri::ipc::{Channel, InvokeBody, Request};
 use tauri::{AppHandle, Manager, State};
 
 use crate::baberu::{self, Baberu};
+use crate::downloads::{download, present, ModelFile, Progress};
 
 // --- The model files ---
-
-struct ModelFile {
-    /// Where it comes from: a pinned commit or release, so the file never changes under us.
-    url: &'static str,
-    /// The name we keep it under.
-    name: &'static str,
-    size: u64,
-    sha256: &'static str,
-    /// A zip, unpacked once it's checked (then deleted): the file (and its size) that shows it's unpacked.
-    unzipped: Option<(&'static str, u64)>,
-}
 
 macro_rules! baberu {
     ($path:literal) => {
@@ -72,33 +60,9 @@ fn remove_old_models(app: &AppHandle) {
     }
 }
 
-fn present(dir: &Path, f: &ModelFile) -> bool {
-    let (path, size) = f.unzipped.unwrap_or((f.name, f.size));
-    std::fs::metadata(dir.join(path)).is_ok_and(|m| m.len() == size)
-}
-
 /// These model files (all of them, if None) are downloaded and complete.
 pub(crate) fn installed(dir: &Path, names: Option<&[&str]>) -> bool {
     FILES.iter().filter(|f| names.is_none_or(|n| n.contains(&f.name))).all(|f| present(dir, f))
-}
-
-/// Unpacks a downloaded zip into `dir` (entries that would land outside it are skipped).
-fn unzip(zip_path: &Path, dir: &Path) -> Result<(), String> {
-    let mut zip = zip::ZipArchive::new(std::fs::File::open(zip_path).map_err(|e| e.to_string())?).map_err(|e| e.to_string())?;
-    for i in 0..zip.len() {
-        let mut entry = zip.by_index(i).map_err(|e| e.to_string())?;
-        let Some(name) = entry.enclosed_name() else { continue };
-        let out = dir.join(name);
-        if entry.is_dir() {
-            std::fs::create_dir_all(&out).map_err(|e| e.to_string())?;
-        } else {
-            if let Some(parent) = out.parent() {
-                std::fs::create_dir_all(parent).map_err(|e| e.to_string())?;
-            }
-            std::io::copy(&mut entry, &mut std::fs::File::create(&out).map_err(|e| e.to_string())?).map_err(|e| e.to_string())?;
-        }
-    }
-    Ok(())
 }
 
 pub(crate) const NOT_SET_UP: &str = "Text reading isn't set up yet: download it in Settings → Reading text from manga.";
@@ -125,66 +89,17 @@ pub fn ocr_status(app: AppHandle) -> Result<OcrStatus, String> {
     Ok(OcrStatus { installed: installed(&model_dir(&app)?, None), size: FILES.iter().map(|f| f.size).sum() })
 }
 
-#[derive(Clone, Serialize)]
-pub struct Progress {
-    done: u64,
-    total: u64,
-}
-
-/// Downloads the model, reporting bytes done as it goes. Files already there
-/// are kept; each new one is written to a .part file, checked, then renamed.
+/// Downloads the models (see downloads.rs), reporting bytes done as it goes.
 #[tauri::command]
 pub async fn ocr_download(app: AppHandle, state: State<'_, Ocr>, on_progress: Channel<Progress>) -> Result<(), String> {
     if state.downloading.swap(true, AtomicOrdering::SeqCst) {
         return Err("The download is already running.".into());
     }
     remove_old_models(&app);
-    let result = download(&model_dir(&app)?, &on_progress).await;
+    let files: Vec<&ModelFile> = FILES.iter().collect();
+    let result = download(&[(model_dir(&app)?.as_path(), &files)], &on_progress).await;
     state.downloading.store(false, AtomicOrdering::SeqCst);
     result
-}
-
-async fn download(dir: &Path, on_progress: &Channel<Progress>) -> Result<(), String> {
-    std::fs::create_dir_all(dir).map_err(|e| e.to_string())?;
-    let total = FILES.iter().map(|f| f.size).sum();
-    let mut done = 0;
-    let client = reqwest::Client::builder().build().map_err(|e| e.to_string())?;
-    for file in &FILES {
-        let dest = dir.join(file.name);
-        if present(dir, file) {
-            done += file.size;
-            continue;
-        }
-        let part = dir.join(format!("{}.part", file.name));
-        let mut response = client
-            .get(file.url)
-            .send()
-            .await
-            .and_then(|r| r.error_for_status())
-            .map_err(|e| format!("Couldn't download {}: {e}", file.name))?;
-        let mut out = std::fs::File::create(&part).map_err(|e| e.to_string())?;
-        let mut hash = Sha256::new();
-        let mut got = 0;
-        while let Some(chunk) = response.chunk().await.map_err(|e| format!("The download of {} stopped: {e}", file.name))? {
-            out.write_all(&chunk).map_err(|e| e.to_string())?;
-            hash.update(&chunk);
-            got += chunk.len() as u64;
-            let _ = on_progress.send(Progress { done: done + got, total });
-        }
-        drop(out);
-        let sha = format!("{:x}", hash.finalize());
-        if got != file.size || sha != file.sha256 {
-            let _ = std::fs::remove_file(&part);
-            return Err(format!("{} didn't download correctly (it doesn't match the expected file). Try again.", file.name));
-        }
-        std::fs::rename(&part, &dest).map_err(|e| e.to_string())?;
-        if file.unzipped.is_some() {
-            unzip(&dest, dir)?;
-            let _ = std::fs::remove_file(&dest);
-        }
-        done += file.size;
-    }
-    Ok(())
 }
 
 /// Removes the downloaded model (and forgets the loaded one).

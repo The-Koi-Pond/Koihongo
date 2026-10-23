@@ -162,3 +162,16 @@ test("reading a box with AI: the picture goes to every helper, and the reply is 
   assert.equal(readImageReply("もう待ちません\n(It means: I won't wait)"), "もう待ちません");
   assert.equal(readImageReply("(none)"), "");
 });
+
+test("the built-in AI: its model goes with the request, and an unknown saved one falls back", async () => {
+  const { backendRequest } = await import("../src/ai/ai.ts");
+  const { loadAiSettings, saveAiSettings, DEFAULT_AI } = await import("../src/ai/settings.ts");
+  const req = backendRequest({ ...DEFAULT_AI, provider: "local", localModel: "26b" }, { system: "s", messages: [{ role: "user", text: "hi" }] });
+  assert.deepEqual([req.provider, req.model], ["local", "26b"]);
+  const db = openTestDb(() => {});
+  await migrate(db);
+  await saveAiSettings(db, { ...DEFAULT_AI, provider: "local", localModel: "26b" });
+  assert.equal((await loadAiSettings(db)).localModel, "26b");
+  await db.batch([{ sql: "UPDATE settings SET value = '70b' WHERE key = 'ai.localModel'" }]);
+  assert.equal((await loadAiSettings(db)).localModel, DEFAULT_AI.localModel);
+});

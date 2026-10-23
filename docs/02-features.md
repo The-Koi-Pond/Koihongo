@@ -99,7 +99,7 @@ Built in stages; stage 1 has shipped.
 
 ## G. AI helpers
 
-All optional and off until you pick an AI helper in Settings (Claude Code, the Anthropic API, or an OpenAI-compatible service including local models), all marked as AI-generated, none change content without approval.
+All optional and off until you pick an AI helper in Settings (built in: Gemma 4 running inside Koihongo, free and offline after a one-time download; or Claude Code, the Anthropic API, or an OpenAI-compatible service including local models), all marked as AI-generated, none change content without approval.
 
 - **[v1 stretch / first AI feature]** **Mnemonic workshop:** from any kanji or word, open a chat. The AI sees the item's meaning, readings, components and your current mnemonic. You talk through alternatives; one click saves the one you like (previous version kept).
 - **[later]** **Explain this:** select a sentence or grammar point and ask "why is it は and not が here?"
