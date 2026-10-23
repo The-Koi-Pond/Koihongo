@@ -240,6 +240,11 @@ const MIGRATIONS: string[][] = [
     // change the text or say it looks right.
     `ALTER TABLE book_marks ADD COLUMN unsure INTEGER NOT NULL DEFAULT 0`,
   ],
+  [
+    // A picture on a deck card (a JPEG data: URL): the panel a word came from
+    // in your manga (Reading: word help → Add to deck).
+    `ALTER TABLE deck_cards ADD COLUMN image TEXT`,
+  ],
 ];
 
 export const SCHEMA_VERSION = MIGRATIONS.length;

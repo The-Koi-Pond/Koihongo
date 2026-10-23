@@ -268,3 +268,18 @@ export const GRAMMAR_NOTES: Record<string, string> = {
   たら: "if / when",
   し: "and also (listing reasons)",
 };
+
+/** How many of the words in some text you know, are learning, or haven't met (every time they appear; names and grammar left out). */
+export type Coverage = { known: number; learning: number; new: number };
+
+export function coverage(words: Word[]): Coverage {
+  const c: Coverage = { known: 0, learning: 0, new: 0 };
+  for (const w of words) if (w.role === "word") c[w.status === "known" ? "known" : w.status === "learning" ? "learning" : "new"]++;
+  return c;
+}
+
+/** Several texts' words at once (one split and one lookup): for a whole chapter. */
+export async function wordsInAll(db: Db, texts: string[]): Promise<Word[]> {
+  // A line break between texts keeps words from joining across them.
+  return texts.length ? wordsIn(db, texts.join("\n")) : [];
+}

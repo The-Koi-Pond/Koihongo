@@ -290,6 +290,7 @@ function CardRow({ card, onChange }: { card: DeckCard; onChange: () => void }) {
       <span lang="ja" className="deck-card-back">
         {card.back}
       </span>
+      {card.image && <img className="deck-card-image" src={card.image} alt="" />}
       <span className="deck-card-tools">
         <button type="button" className="icon-action" aria-label="Edit card" title="Edit" onClick={() => setEditing(true)}>
           <Pencil size={15} strokeWidth={1.75} />

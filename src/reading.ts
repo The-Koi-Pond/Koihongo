@@ -533,6 +533,24 @@ export async function setMarkBox(db: Db, mark: Mark, part: number, box: Box): Pr
   return { ...mark, more_boxes: JSON.stringify(more) };
 }
 
+/**
+ * The area around a mark's boxes for a card's picture: all of them, with
+ * `pad` of their size added on every side (kept on the page), so the
+ * picture shows the bubble with the panel around it.
+ */
+export function aroundBoxes(boxes: Box[], pad = 0.6): Box {
+  const [x1, y1] = [Math.min(...boxes.map((b) => b.x)), Math.min(...boxes.map((b) => b.y))];
+  const [x2, y2] = [Math.max(...boxes.map((b) => b.x + b.w)), Math.max(...boxes.map((b) => b.y + b.h))];
+  const [dx, dy] = [(x2 - x1) * pad, (y2 - y1) * pad];
+  const [left, top] = [Math.max(0, x1 - dx), Math.max(0, y1 - dy)];
+  return { x: left, y: top, w: Math.min(1, x2 + dx) - left, h: Math.min(1, y2 + dy) - top };
+}
+
+/** Every marked text in a book, for how much of it you can read. */
+export async function bookTexts(db: Db, bookId: number): Promise<string[]> {
+  return (await db.all<{ text: string }>("SELECT text FROM book_marks WHERE book_id = ? AND text != ''", [bookId])).map((r) => r.text);
+}
+
 /** Saves a mark's parts past its first box. */
 export async function setMoreBoxes(db: Db, id: number, boxes: Box[]): Promise<void> {
   await db.batch([{ sql: "UPDATE book_marks SET more_boxes = ? WHERE id = ?", params: [JSON.stringify(boxes), id] }]);

@@ -41,11 +41,13 @@ import {
   addBooks,
   addImages,
   addMark,
+  aroundBoxes,
   adjustBox,
   addSeriesBox,
   addSeriesTitle,
   arrangeChapter,
   bookPages,
+  bookTexts,
   byChapter,
   clearBookmark,
   chapterNumber,
@@ -117,7 +119,8 @@ import {
   type SfxMeaning,
   type SeriesExtras,
 } from "../reading.ts";
-import { findText, readBoxes, type OcrText } from "../ocr.ts";
+import { findText, pictureOf, readBoxes, type OcrText } from "../ocr.ts";
+import { coverage, wordsIn, wordsInAll, type Coverage, type Word } from "../words.ts";
 import { EXPLAIN_BOX_OPENER, explainBoxPrompt, explainedParts } from "../ai/prompts.ts";
 import { useAiSettings } from "../ai/settings.ts";
 import { AiChat } from "../ui/AiChat.tsx";
@@ -1611,6 +1614,36 @@ function Reader({ id, startPage, onBack, onEditPages }: { id: number; startPage?
   const [selected, setSelected] = useState<number>();
   const [fresh, setFresh] = useState<number>();
   const [kind, setKind] = useState<MarkKind>("speech");
+  /** Each box's words on this page (for "you can read" and the hover colours), and the chapter's. */
+  const [pageWords, setPageWords] = useState<Map<number, Word[]>>(new Map());
+  const [chapterCoverage, setChapterCoverage] = useState<Coverage>();
+  const textsKey = marks.map((m) => `${m.id}:${m.text}`).join("\n");
+  useEffect(() => {
+    let live = true;
+    const timer = window.setTimeout(async () => {
+      try {
+        const withText = marks.filter((m) => m.text.trim());
+        const found = new Map<number, Word[]>();
+        for (const m of withText) found.set(m.id, await wordsIn(tauriDb, m.text.trim()));
+        if (live) setPageWords(found);
+        if (book) {
+          const all = await wordsInAll(tauriDb, await bookTexts(tauriDb, book.id));
+          if (live) setChapterCoverage(coverage(all));
+        }
+      } catch {
+        // Word help isn't set up: no counts, no colours.
+        if (live) setPageWords(new Map());
+      }
+    }, 500);
+    return () => {
+      live = false;
+      window.clearTimeout(timer);
+    };
+    // The marks' texts are what matter (textsKey); the book only for its id.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [textsKey, book?.id]);
+  const pageCoverage = pageWords.size ? coverage([...pageWords.values()].flat()) : undefined;
+
   /** "Read all boxes": how far along, and what it found. */
   const [readingAll, setReadingAll] = useState<{ done: number; total: number }>();
   const [readAllNote, setReadAllNote] = useState<string>();
@@ -1987,6 +2020,7 @@ function Reader({ id, startPage, onBack, onEditPages }: { id: number; startPage?
               url={url}
               alt={`Page ${index + 1}`}
               marks={showMarks ? marks : []}
+              words={pageWords}
               selected={selected}
               kind={(extending && marks.find((m) => m.id === selected)?.kind) || kind}
               onDraw={(box) => draw(box).catch((e) => setError(String(e)))}
@@ -2046,6 +2080,8 @@ function Reader({ id, startPage, onBack, onEditPages }: { id: number; startPage?
         <p className="mark-help muted">
           {showMarks ? "Drag a box on the page to mark it. Click a box to open it. Scroll to zoom; drag with the scroll wheel held (or hold Space and drag) to move around." : "Boxes are hidden. Show them to mark the page."}
         </p>
+        {pageCoverage && <ReadableBar label="This page" c={pageCoverage} />}
+        {chapterCoverage && chapterCoverage.known + chapterCoverage.learning + chapterCoverage.new > 0 && <ReadableBar label="This chapter" c={chapterCoverage} />}
         {showMarks && (
           <button type="button" className="read-all" onClick={findOnPage} disabled={finding || !!readingAll || !url} title="Add a box for every text area on this page you haven't marked">
             <ScanSearch size={15} aria-hidden="true" /> {finding ? "Finding text…" : "Find text on this page"}
@@ -2100,6 +2136,7 @@ function Reader({ id, startPage, onBack, onEditPages }: { id: number; startPage?
                     extending={extending}
                     onExtend={() => setExtending(!extending)}
                     onReadText={() => (url ? readBoxes(url, markBoxes(m)) : Promise.reject(new Error("The page is still loading.")))}
+                    picture={() => (url ? pictureOf(url, aroundBoxes(markBoxes(m))) : Promise.resolve(undefined))}
                     pageLines={markSections(marks).flatMap((s) => s.marks.flatMap((x, j) => (x.text.trim() && x.id !== m.id ? [`${s.name} ${j + 1}: ${x.text.trim()}`] : [])))}
                     onSaved={(saved) => setMarks((all) => all.map((x) => (x.id === saved.id ? saved : x)))}
                     onDelete={async () => {
@@ -2179,6 +2216,7 @@ function PageView({
   url,
   alt,
   marks,
+  words,
   selected,
   kind,
   onDraw,
@@ -2193,6 +2231,8 @@ function PageView({
   url: string;
   alt: string;
   marks: Mark[];
+  /** Each box's words (word help), to colour the hover card's text. */
+  words: Map<number, Word[]>;
   selected?: number;
   kind: MarkKind;
   onDraw: (box: Box) => void;
@@ -2344,7 +2384,11 @@ function PageView({
               <div className={`mark-peek kind-${peek.mark.kind}`} style={{ left: `${peek.box.x * 100}%`, top: `${(peek.box.y + peek.box.h) * 100}%` }}>
                 {peek.mark.text && (
                   <span lang="ja" className="mark-peek-text">
-                    {peek.mark.text}
+                    {words.get(peek.mark.id)?.map((w, i) => (
+                      <span key={i} className={`peek-word status-${w.status}`}>
+                        {w.surface}
+                      </span>
+                    )) ?? peek.mark.text}
                   </span>
                 )}
                 {peek.mark.meaning && <strong>{peek.mark.meaning}</strong>}
@@ -2354,6 +2398,24 @@ function PageView({
         </div>
       </TransformComponent>
     </TransformWrapper>
+  );
+}
+
+/** "This page: you know 8 of 14 words": a bar of known, learning and new. */
+function ReadableBar({ label, c }: { label: string; c: Coverage }) {
+  const total = c.known + c.learning + c.new;
+  if (total === 0) return null;
+  const pct = (n: number) => `${(n / total) * 100}%`;
+  return (
+    <div className="readable" title={`${c.known} known, ${c.learning} learning, ${c.new} new (in the text you've marked; names and grammar not counted)`}>
+      <span className="readable-text">
+        {label}: you know <strong>{c.known}</strong> of {total} words ({Math.round((c.known / total) * 100)}%)
+      </span>
+      <span className="readable-bar" aria-hidden="true">
+        <span className="status-known" style={{ width: pct(c.known) }} />
+        <span className="status-learning" style={{ width: pct(c.learning) }} />
+      </span>
+    </div>
   );
 }
 
@@ -2375,6 +2437,7 @@ function MarkEditor({
   extending,
   onExtend,
   onReadText,
+  picture,
   pageLines,
   onSaved,
   onDelete,
@@ -2390,6 +2453,8 @@ function MarkEditor({
   onReadText: () => Promise<OcrText>;
   /** The page's other boxes with text, in reading order ("Speech 2: …"), for "Explain". */
   pageLines: string[];
+  /** The box with the panel around it, as a picture for cards. */
+  picture: () => Promise<string | undefined>;
   onSaved: (m: Mark) => void;
   onDelete: () => Promise<void>;
   onClose: () => void;
@@ -2534,6 +2599,7 @@ function MarkEditor({
       {readNote && <p className="muted mark-read-note">{readNote}</p>}
       <WordHelp
         text={fields.text}
+        picture={picture}
         onReading={(reading, unsure) => {
           // Only into an empty Reading (or one it filled in itself), for text with kanji (kana text is its own reading).
           const mine = !fields.reading.trim() || fields.reading === autoReading.current;
