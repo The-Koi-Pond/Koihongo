@@ -204,6 +204,13 @@ pub async fn book_pick(window: tauri::Window, kind: String) -> Result<Option<Vec
     Ok(Some(picked.iter().flat_map(|p| scan(p)).collect()))
 }
 
+/// The books in files and folders dragged in from Explorer: the same as picking them
+/// (a folder of images is a book, a folder of chapter folders a series, .cbz files books).
+#[tauri::command]
+pub async fn book_scan(paths: Vec<String>) -> Result<Vec<FoundBook>, String> {
+    tauri::async_runtime::spawn_blocking(move || paths.iter().flat_map(|p| scan(Path::new(p))).collect()).await.map_err(|e| e.to_string())
+}
+
 #[tauri::command]
 pub async fn book_pages(path: String) -> Result<Vec<String>, String> {
     tauri::async_runtime::spawn_blocking(move || pages(Path::new(&path))).await.map_err(|e| e.to_string())?
@@ -362,6 +369,15 @@ pub async fn book_add_images(window: tauri::Window, path: String) -> Result<Opti
     })
     .await
     .map_err(|e| e.to_string())?
+}
+
+/// Copies images dragged in from Explorer into a chapter you made, after its last page
+/// (other files are skipped): the new pages' names.
+#[tauri::command]
+pub async fn book_drop_images(app: tauri::AppHandle, path: String, files: Vec<String>) -> Result<Vec<String>, String> {
+    let dir = made_chapter(&books_root(&app)?, Path::new(&path))?;
+    let images: Vec<PathBuf> = files.into_iter().map(PathBuf::from).filter(|p| p.is_file() && is_page(&p.to_string_lossy())).collect();
+    tauri::async_runtime::spawn_blocking(move || add_images(&dir, &images)).await.map_err(|e| e.to_string())?
 }
 
 /// Reorders a chapter you made, and deletes the pages you removed.
