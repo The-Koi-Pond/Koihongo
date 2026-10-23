@@ -1,17 +1,22 @@
 mod ai;
 mod ai_api;
 mod backup;
+mod books;
 mod db;
 
-use std::sync::Mutex;
-use tauri::Manager;
+use std::sync::atomic::{AtomicBool, Ordering};
+use std::sync::{Arc, Mutex};
+use std::time::Duration;
 use tauri::path::BaseDirectory;
+use tauri::{Manager, WindowEvent};
+use tauri_plugin_window_state::{AppHandleExt, StateFlags};
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
         .plugin(tauri_plugin_opener::init())
-        // Saves the window's size, position and maximised state on close, and restores them on start.
+        .plugin(tauri_plugin_dialog::init())
+        // Restores the window's size, position and maximised state on start (saved as you go, below).
         .plugin(tauri_plugin_window_state::Builder::default().build())
         .setup(|app| {
             let data_dir = app.path().app_data_dir()?;
@@ -19,6 +24,7 @@ pub fn run() {
             let content = app.path().resolve("resources/content.db", BaseDirectory::Resource)?;
             let conn = db::open(&data_dir.join("user.db"), &content)?;
             app.manage(db::Db(Mutex::new(conn)));
+            save_window_state_as_you_go(app);
             Ok(())
         })
         .invoke_handler(tauri::generate_handler![
@@ -33,8 +39,39 @@ pub fn run() {
             backup::backup_list,
             backup::backup_prune,
             backup::backup_restore,
-            backup::backup_open_folder
+            backup::backup_open_folder,
+            books::book_pick,
+            books::book_pages,
+            books::book_page,
+            books::book_new,
+            books::book_add_images,
+            books::book_arrange,
+            books::book_rename_page,
+            books::series_cover_pick,
+            books::series_cover,
+            books::series_cover_remove
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
+}
+
+/// The window-state plugin only writes to disk when the app exits cleanly, so
+/// a crash, a force-close or a dev restart forgets where you put the window.
+/// This also saves it (at most once a second) after you move or resize it.
+fn save_window_state_as_you_go(app: &tauri::App) {
+    let Some(window) = app.get_webview_window("main") else { return };
+    let moved = Arc::new(AtomicBool::new(false));
+    let flag = moved.clone();
+    window.on_window_event(move |e| {
+        if matches!(e, WindowEvent::Moved(_) | WindowEvent::Resized(_)) {
+            flag.store(true, Ordering::Relaxed);
+        }
+    });
+    let app = app.handle().clone();
+    std::thread::spawn(move || loop {
+        std::thread::sleep(Duration::from_secs(1));
+        if moved.swap(false, Ordering::Relaxed) {
+            let _ = app.save_window_state(StateFlags::all());
+        }
+    });
 }

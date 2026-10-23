@@ -120,6 +120,12 @@ review_log   every answer: rating, what you typed, when   (for tuning the schedu
 notes        item_key, kind (mnemonic_meaning|mnemonic_reading|note), text,
              author (you|ai|ai_edited), created_at        (every version kept; newest = current)
 synonyms     item_key, text                               (extra meanings you accept)
+books        your manga: title, path on disk, kind (folder|cbz|made), page you're on, about (notes for AI), series_id
+series       a group of chapters on the shelf: title, japanese_title, synopsis, cover (a copy in Documents\Koihongo\Covers, read by series_cover); removing one puts its chapters back on the shelf
+series_titles  its other titles ("also known as")
+series_boxes   your boxes on its page: label, text (Cast, Genre…)
+book_marks   a box on a page (x, y, w, h as fractions; page = file name), kind, text,
+             text_key (normalised, for "seen before"), reading, meaning, notes
 ```
 
 Unlock state isn't stored; it's worked out from `srs_cards` + `content.path_requirements`.
@@ -133,6 +139,7 @@ React screen → src/srs/progress.ts (all logic) → Db interface → Rust db_qu
 - Rust ([`src-tauri/src/db.rs`](../src-tauri/src/db.rs)) holds **one connection**: `user.db`, with `content.db` attached **read-only** as `content`. So one query can join your progress with content (`FROM srs_cards JOIN content.path …`), and content can't be changed by accident.
 - Rust offers only two generic commands: `db_query` (read rows) and `db_batch` (several writes in one all-or-nothing transaction). All study logic stays in TypeScript.
 - Tests run the same TypeScript logic against in-process SQLite ([`tests/nodeDb.ts`](../tests/nodeDb.ts)) using the real content schema, so no app window is needed.
+- Reading's files go through three more commands in [`src-tauri/src/books.rs`](../src-tauri/src/books.rs): `book_pick` (the folder / .cbz picker, run from Rust), `book_pages` (a book's page names in natural order: 2 before 10) and `book_page` (one page's bytes, sent raw, shown as a `blob:` URL). A page is only fetched by a name from the book's own page list, and only image files count as pages, so the UI can't read other files through them. Chapters you make from separate images use `book_new`, `book_add_images` (picker run from Rust, copies the images in) `book_arrange` (reorder; pages left out are deleted) and `book_rename_page` (the file type stays; the UI moves the page's marks). Those three only work on folders directly inside `Documents\Koihongo\Books`, so Koihongo never writes into your own folders.
 - Trade-off: the UI can run any SQL. That's fine for a local single-user app, but **AI output must never be rendered as raw HTML**, since that could let injected script reach the database.
 
 ### Scheduling and unlocking
