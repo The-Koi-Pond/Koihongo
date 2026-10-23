@@ -6,6 +6,8 @@ import {
   CircleAlert,
   CircleCheck,
   LoaderCircle,
+  Minimize,
+  Maximize,
   Bookmark as BookmarkIcon,
   BookmarkCheck,
   ChevronLeft,
@@ -55,6 +57,7 @@ import {
   bookTexts,
   byChapter,
   clearBookmark,
+  chapterLabel,
   chapterNumber,
   chapterSubtitle,
   clearSeriesCover,
@@ -128,6 +131,7 @@ import {
   type SfxMeaning,
   type SeriesExtras,
 } from "../reading.ts";
+import { getCurrentWindow } from "@tauri-apps/api/window";
 import { findText, pictureOf, readBoxes, readBoxesWithAi, type OcrText } from "../ocr.ts";
 import { coverage, wordsIn, wordsInAll, type Coverage, type Word } from "../words.ts";
 import { EXPLAIN_BOX_OPENER, explainBoxPrompt, explainedParts } from "../ai/prompts.ts";
@@ -1784,6 +1788,18 @@ function Reader({
 
   const rtl = book?.right_to_left !== 0;
   const count = pages?.length ?? 0;
+  /** Fullscreen: the reader fills the screen, its toolbar shown when the mouse is at the top. */
+  const [fullscreen, setFullscreen] = useState(false);
+  const fullscreenRef = useRef(false);
+  fullscreenRef.current = fullscreen;
+  const toggleFullscreen = useCallback((on: boolean) => {
+    setFullscreen(on);
+    getCurrentWindow()
+      .setFullscreen(on)
+      .catch(() => {}); // browser mode: just the in-app fullscreen
+  }, []);
+  // Leaving the reader leaves fullscreen.
+  useEffect(() => () => void getCurrentWindow().setFullscreen(false).catch(() => {}), []);
   /** Scroll mode: the pages stacked top to bottom (manhwa, webtoons), for reading; marking stays in page mode. */
   const scrolling = !!book?.scrolling;
   /** The chapter after this one, for the end of scroll mode. */
@@ -1825,6 +1841,15 @@ function Reader({
   useEffect(() => {
     function onKey(e: KeyboardEvent) {
       // Esc closes a mark's editor even mid-typing (leaving the field saves it).
+      // F toggles fullscreen; Esc leaves it first.
+      if (!typing(e) && (e.key === "f" || e.key === "F") && !e.ctrlKey && !e.altKey && !e.metaKey) {
+        e.preventDefault();
+        return toggleFullscreen(!fullscreenRef.current);
+      }
+      if (e.key === "Escape" && fullscreenRef.current) {
+        e.preventDefault();
+        return toggleFullscreen(false);
+      }
       if (e.key === "Escape" && typing(e) && (e.target as HTMLElement).closest(".mark-editor")) {
         (e.target as HTMLElement).blur();
         setSelected(undefined);
@@ -2029,7 +2054,7 @@ function Reader({
   );
 
   return (
-    <div className={`reader ${scrolling ? "scrolling" : ""}`}>
+    <div className={`reader ${scrolling ? "scrolling" : ""} ${fullscreen ? "fullscreen" : ""}`}>
       <div className="reader-main">
         <div className="reader-toolbar">
           {back}
@@ -2104,6 +2129,16 @@ function Reader({
           )}
           <button
             type="button"
+            className={`icon-action ${fullscreen ? "on" : ""}`}
+            onClick={() => toggleFullscreen(!fullscreen)}
+            title={fullscreen ? "Leave fullscreen (Esc or F)" : "Fullscreen (F)"}
+            aria-pressed={fullscreen}
+            aria-label="Fullscreen"
+          >
+            {fullscreen ? <Minimize size={18} /> : <Maximize size={18} />}
+          </button>
+          <button
+            type="button"
             className={`icon-action ${aboutOpen ? "on" : ""}`}
             onClick={() => setAboutOpen(!aboutOpen)}
             title="About this book"
@@ -2121,7 +2156,8 @@ function Reader({
             start={index}
             jump={jump}
             onIndex={setIndex}
-            next={nextBook}
+            current={chapterLabel(book.title, book.series_title ?? "")}
+            next={nextBook && chapterLabel(nextBook.title, book.series_title ?? "")}
             onNext={() => nextBook && onOpen(nextBook.id)}
             onBack={onBack}
             backLabel={book.series_title ?? "Bookshelf"}
@@ -2574,6 +2610,7 @@ function ScrollPages({
   start,
   jump,
   onIndex,
+  current,
   next,
   onNext,
   onBack,
@@ -2585,7 +2622,9 @@ function ScrollPages({
   /** A page to scroll to (the toolbar's arrows). */
   jump?: { page: number; n: number };
   onIndex: (i: number) => void;
-  next?: Book;
+  /** This chapter's and the next one's names (CH.2 · …), for the end of the chapter. */
+  current: string;
+  next?: string;
   onNext: () => void;
   onBack: () => void;
   backLabel: string;
@@ -2653,15 +2692,19 @@ function ScrollPages({
         </div>
       ))}
       <div className="scroll-end">
+        <p className="scroll-end-title">End of {current}</p>
         {next ? (
-          <button type="button" className="primary" onClick={onNext}>
-            Next: {next.title} <ArrowRight size={16} aria-hidden="true" />
+          <button type="button" className="primary scroll-end-next" onClick={onNext}>
+            <span className="scroll-end-kind">Next chapter</span>
+            <span className="scroll-end-name">
+              {next} <ArrowRight size={16} aria-hidden="true" />
+            </span>
           </button>
         ) : (
-          <p className="muted">The end of this chapter.</p>
+          <p className="muted">That's the last chapter here.</p>
         )}
-        <button type="button" onClick={onBack}>
-          <ArrowLeft size={16} aria-hidden="true" /> {backLabel}
+        <button type="button" className="link scroll-end-back" onClick={onBack}>
+          <ArrowLeft size={14} aria-hidden="true" /> Back to {backLabel}
         </button>
       </div>
     </div>

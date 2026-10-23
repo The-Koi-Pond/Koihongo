@@ -7146,17 +7146,47 @@ button.aka-add {
 }
 
 .scroll-end {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: center;
-  gap: 10px;
-  padding: 28px 12px 40px;
+  display: grid;
+  justify-items: center;
+  gap: 12px;
+  padding: 36px 12px 56px;
 }
 
-.scroll-end button {
+.scroll-end-title {
+  margin: 0;
+  color: var(--muted);
+  font-family: var(--font-title);
+  font-size: 0.85rem;
+  letter-spacing: 0.04em;
+}
+
+.scroll-end-next {
+  display: grid;
+  justify-items: center;
+  gap: 2px;
+  min-width: min(100%, 360px);
+  padding: 12px 22px;
+}
+
+.scroll-end-kind {
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  opacity: 0.8;
+}
+
+.scroll-end-name {
   display: inline-flex;
   align-items: center;
   gap: 6px;
+  font-size: 1.05rem;
+}
+
+.scroll-end-back {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
 }
 
 /* Dragging files in from Explorer (Reading.tsx: the shelf and the page editor). */
@@ -7219,4 +7249,53 @@ button.aka-add {
   to {
     transform: rotate(360deg);
   }
+}
+
+/* Fullscreen reading (Reading.tsx, Reader): the reader over everything, the
+   toolbar a strip at the top that shows when the mouse is there. */
+.reader.fullscreen {
+  --reader-h: 100vh;
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  height: 100vh;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 0;
+  background: #000;
+}
+
+.reader.fullscreen .reader-side {
+  display: none;
+}
+
+.reader.fullscreen .reader-main {
+  position: relative;
+  grid-template-rows: minmax(0, 1fr);
+}
+
+.reader.fullscreen .reader-toolbar {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 3;
+  padding: 8px 14px;
+  background: linear-gradient(rgb(0 0 0 / 0.85), rgb(0 0 0 / 0.55));
+  opacity: 0;
+  transition: opacity 0.2s;
+}
+
+.reader.fullscreen .reader-toolbar:hover,
+.reader.fullscreen .reader-toolbar:focus-within {
+  opacity: 1;
+}
+
+.reader.fullscreen .reader-stage,
+.reader.fullscreen .scroll-pages {
+  border-radius: 0;
+  background: #000;
+}
+
+.reader.fullscreen .reader-page img {
+  max-height: 100vh;
 }

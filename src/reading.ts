@@ -795,6 +795,13 @@ export function chapterSubtitle(title: string, seriesTitle: string): string {
   return t.replace(/^[\s·:\-–—|]+|[\s·:\-–—|]+$/g, "");
 }
 
+/** A chapter as people would name it: "CH.2 · If You Die in the Game…", "CH.12", or its tidied title when it has no number. */
+export function chapterLabel(title: string, seriesTitle: string): string {
+  const n = chapterNumber(title);
+  const sub = chapterSubtitle(title, seriesTitle);
+  return n ? (sub ? `CH.${n} · ${sub}` : `CH.${n}`) : sub || title;
+}
+
 /** Chapters in reading order: by number when both have one, else by title (2 before 10). */
 export function byChapter(a: Pick<Book, "title">, b: Pick<Book, "title">): number {
   const x = chapterNumber(a.title);

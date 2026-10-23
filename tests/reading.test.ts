@@ -577,3 +577,10 @@ test("scroll mode: on by default in the Manhwa category, until you turn it off",
   await setScrolling(db, (await book(koi))!, true);
   assert.equal((await book(koi))?.scrolling, 1);
 });
+
+test("chapters: a label for people (CH.2 · title), from a downloaded file's name too", async () => {
+  const { chapterLabel } = await import("../src/reading.ts");
+  assert.equal(chapterLabel("2. If You Die in the Game…_622c64", "Concubine Walkthrough"), "CH.2 · If You Die in the Game...");
+  assert.equal(chapterLabel("Koi Story Chapter 12", "Koi Story"), "CH.12");
+  assert.equal(chapterLabel("Extra_ The First Day_3a244a", "X"), "Extra: The First Day");
+});
