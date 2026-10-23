@@ -309,6 +309,23 @@ async function main() {
     });
   }
 
+  // Every JMdict entry, for word help in Reading (forms → entries; a few senses each).
+  const insertEntry = db.prepare("INSERT INTO dict_entries (id, written, reading, senses, common, priority) VALUES (?, ?, ?, ?, ?, ?)");
+  const insertForm = db.prepare("INSERT OR IGNORE INTO dict_forms (form, entry_id) VALUES (?, ?)");
+  let entries = 0;
+  for (const w of jmdict.words) {
+    if (w.kana.length === 0) continue;
+    const kanjiForm = w.kanji.find((k) => !k.tags.some((t) => RARE_FORM_TAGS.has(t))) ?? w.kanji[0];
+    const usuallyKana = w.sense[0]?.misc.includes("uk") ?? false;
+    const written = (!usuallyKana && kanjiForm?.text) || w.kana[0].text;
+    // Enough for a lookup card: the first 3 senses, 3 glosses each; parts of speech on the first.
+    const senses = w.sense.slice(0, 3).map((s, i) => ({ pos: i === 0 ? s.partOfSpeech : [], glosses: s.gloss.slice(0, 3).map((g) => g.text) }));
+    const common = w.kanji.some((k) => k.common) || w.kana.some((k) => k.common);
+    insertEntry.run(w.id, written, w.kana[0].text, JSON.stringify(senses), common ? 1 : 0, priorities.get(w.id) ?? NO_PRIORITY);
+    for (const f of [...w.kanji, ...w.kana]) insertForm.run(f.text, w.id);
+    entries++;
+  }
+
   // The SFX dictionary: every JMdict sound/mimetic word (common or not) and our extras.
   const insertSfxWord = db.prepare("INSERT INTO sfx_words (id, forms, meanings, source, rank) VALUES (?, ?, ?, ?, ?)");
   const insertSfxKey = db.prepare("INSERT OR IGNORE INTO sfx_keys (key, word_id, loose) VALUES (?, ?, ?)");
@@ -393,6 +410,7 @@ async function main() {
   const pathWordsWithout = path.filter((p) => p.kind === "word" && !wordsWithSentences.has(p.key.slice(5))).length;
   console.log(`  example sentences: ${sentences.length}, for ${wordsWithSentences.size} words (${pathWordsWithout} path words have none)`);
   console.log(`  dictionary search: ${searchRows} terms`);
+  console.log(`  word lookups: ${entries} JMdict entries`);
   console.log(`  SFX dictionary: ${sfx.length} entries (${sfx.filter((w) => w.source === "koihongo").length} written for Koihongo)`);
   console.log(`  default mnemonics: ${Object.keys(mnemonics).length} items`);
   const regionLevels = [...new Set(levels.map((l) => l.region))].map((r) => `${r} ${levels.filter((l) => l.region === r).length}`);

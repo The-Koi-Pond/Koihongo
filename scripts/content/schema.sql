@@ -137,6 +137,24 @@ CREATE TABLE path_requirements (
 -- Dictionary search index (terms from src/searchTerms.ts) over every word and
 -- kanji, on the path or not. rank: how common the item is, lower = more common
 -- (words.priority for words, kanji.freq_rank for kanji, 9999 if unranked).
+-- Every JMdict entry, for looking up the words in manga text (Reading: word
+-- help). `words` holds only the common ones, for the learning path.
+CREATE TABLE dict_entries (
+  id       TEXT PRIMARY KEY,  -- JMdict id (the same as words.id for common words)
+  written  TEXT NOT NULL,     -- main form (kanji form, or kana for kana-only words)
+  reading  TEXT NOT NULL,     -- kana reading of the main form
+  senses   TEXT NOT NULL,     -- JSON {pos: string[], glosses: string[]}[]: at most 3 senses of 3 glosses (pos on the first only)
+  common   INTEGER NOT NULL,
+  priority INTEGER NOT NULL   -- lower = more frequent (see priority.ts)
+) WITHOUT ROWID;
+
+-- Every written and kana form of every entry, to find entries by what's on the page.
+CREATE TABLE dict_forms (
+  form     TEXT NOT NULL,
+  entry_id TEXT NOT NULL,
+  PRIMARY KEY (form, entry_id)
+) WITHOUT ROWID;
+
 -- The SFX dictionary (Reading: suggestions for boxes marked SFX). See scripts/content/sfx.ts.
 CREATE TABLE sfx_words (
   id       INTEGER PRIMARY KEY,

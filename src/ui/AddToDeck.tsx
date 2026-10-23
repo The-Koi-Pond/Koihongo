@@ -4,12 +4,15 @@ import { tauriDb } from "../db/tauriDb.ts";
 import { addDeckCard, cardFromItem, createDeck, listDecks, type Deck } from "../decks.ts";
 import type { ItemDetails } from "../items.ts";
 
+/** A card made elsewhere (e.g. a word from a manga bubble); `id` tells cards apart, `itemKey` links it to the learning path. */
+export type ReadyCard = { id: string; front: string; back: string; itemKey: string | null };
+
 /**
- * "Add to deck" on an item page: pick one of your decks (or name a new one)
- * and the item becomes a flashcard there, its front and back filled in from
- * the item (a copy you can edit in the deck).
+ * "Add to deck" on an item page (or with a ready-made `card`): pick one of
+ * your decks (or name a new one) and it becomes a flashcard there, its front
+ * and back filled in (a copy you can edit in the deck). `label`: text beside the icon.
  */
-export function AddToDeck({ item }: { item: ItemDetails }) {
+export function AddToDeck({ item, card, label }: { item?: ItemDetails; card?: ReadyCard; label?: string }) {
   const [open, setOpen] = useState(false);
   const [decks, setDecks] = useState<Deck[]>();
   const [name, setName] = useState("");
@@ -31,12 +34,13 @@ export function AddToDeck({ item }: { item: ItemDetails }) {
     };
   }, [open]);
 
-  // A new item page starts fresh.
-  useEffect(() => setAdded(undefined), [item.item_key]);
+  // A new item page (or card) starts fresh.
+  const key = card?.id ?? item?.item_key;
+  useEffect(() => setAdded(undefined), [key]);
 
   async function addTo(deckId: number, deckName: string) {
-    const { front, back } = cardFromItem(item);
-    await addDeckCard(tauriDb, deckId, front, back, item.item_key, Date.now());
+    const { front, back } = card ?? cardFromItem(item!);
+    await addDeckCard(tauriDb, deckId, front, back, card ? card.itemKey : item!.item_key, Date.now());
     setAdded(deckName);
     setOpen(false);
   }
@@ -53,12 +57,13 @@ export function AddToDeck({ item }: { item: ItemDetails }) {
     <div className="add-to-deck" ref={box}>
       <button
         type="button"
-        className="speak-btn banner-speak add-to-deck-btn"
+        className={label ? "add-to-deck-btn labelled" : "speak-btn banner-speak add-to-deck-btn"}
         aria-expanded={open}
         title={added ? `Added to ${added}` : "Add to one of your decks"}
         onClick={() => setOpen(!open)}
       >
         {added ? <Check size={18} strokeWidth={2.5} aria-hidden="true" /> : <Layers size={18} strokeWidth={2} aria-hidden="true" />}
+        {label && <span>{added ? `Added to ${added}` : label}</span>}
       </button>
       {open && (
         <div className="add-to-deck-menu" role="menu">

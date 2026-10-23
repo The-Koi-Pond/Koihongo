@@ -6,6 +6,11 @@ Other projects worth studying before building a feature: how they solved the sam
 
 ## Reading, stage 2: word help
 
+### lindera + IPADIC (in use)
+
+- [github.com/lindera/lindera](https://github.com/lindera/lindera) (MIT), pinned at 6.2.0 (its API changes often). We load its IPADIC build (NAIST/ICOT licence, notice shown in Sources & licences) from the download at run time. Splits a bubble in microseconds; loads in about 60 ms.
+- Alternatives checked (2026-10-23): vibrato (MIT, quieter), sudachi.rs (Apache-2.0 but not on crates.io), kuromoji.js (stale). UniDic (BSD option) is a possible later upgrade for accuracy, at 199 MB unpacked.
+
 ### Yomitan (suggested by Deci)
 
 - **What:** the widely used pop-up dictionary browser extension for Japanese learners: hover over a word and its definition pops up. Successor to Yomichan.

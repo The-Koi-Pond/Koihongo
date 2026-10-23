@@ -121,6 +121,7 @@ import { findText, readBoxes, type OcrText } from "../ocr.ts";
 import { EXPLAIN_BOX_OPENER, explainBoxPrompt, explainedParts } from "../ai/prompts.ts";
 import { useAiSettings } from "../ai/settings.ts";
 import { AiChat } from "../ui/AiChat.tsx";
+import { WordHelp } from "../ui/WordHelp.tsx";
 
 type View = { mode: "shelf"; series?: number } | { mode: "book"; id: number; page?: string } | { mode: "pages"; id: number } | { mode: "glossary" };
 
@@ -2398,6 +2399,10 @@ function MarkEditor({
   const [seen, setSeen] = useState<SeenBefore[]>([]);
   const [dictionary, setDictionary] = useState<SfxMeaning[]>([]);
   const [reading, setReading] = useState(false);
+  /** The Reading was filled in from the words and has a name or an unknown word in it. */
+  const [readingGuess, setReadingGuess] = useState(false);
+  /** The reading word help last filled in: it's replaced as the text changes, until you edit it. */
+  const autoReading = useRef<string>(undefined);
   const ai = useAiSettings(tauriDb);
   /** "Explain": its chat is open (with the series' context, loaded first), or why it can't be. */
   const [explain, setExplain] = useState<{ context: string } | { note: string }>();
@@ -2527,6 +2532,19 @@ function MarkEditor({
         </button>
       </div>
       {readNote && <p className="muted mark-read-note">{readNote}</p>}
+      <WordHelp
+        text={fields.text}
+        onReading={(reading, unsure) => {
+          // Only into an empty Reading (or one it filled in itself), for text with kanji (kana text is its own reading).
+          const mine = !fields.reading.trim() || fields.reading === autoReading.current;
+          if (!mine || !/\p{Script=Han}/u.test(fields.text) || reading === fields.reading) return;
+          autoReading.current = reading;
+          const next = { ...fields, reading };
+          setFields(next);
+          save(next, kind);
+          setReadingGuess(unsure);
+        }}
+      />
       {!!mark.unsure && (
         <p className="mark-unsure">
           <span>The text reader wasn't sure about this one: check it against the page.</span>
@@ -2646,6 +2664,7 @@ function MarkEditor({
         Reading
         <input lang="ja" placeholder="In kana, if it has kanji" {...field("reading")} />
       </label>
+      {readingGuess && <p className="muted mark-read-note">Filled in from the words. Names and unknown words are guesses: check them.</p>}
       <label>
         Meaning
         <input placeholder="What it means, or a translation" {...field("meaning")} />

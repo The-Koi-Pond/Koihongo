@@ -61,6 +61,18 @@ export function Sources({ onExit }: { onExit: () => void }) {
           </p>
         </li>
         <li className="card">
+          <h2>lindera and IPADIC</h2>
+          <p>
+            Word help splits Japanese into words with lindera (MIT) and its build of mecab-ipadic-2.7.0-20070801, the IPA dictionary by the Nara
+            Institute of Science and Technology (NAIST), based on the IPA Japanese dictionary. Used under the NAIST/ICOT licence, whose notice
+            comes with the download (NOTICE.txt). The dictionary is provided as is, without warranty.
+            <br />
+            Licence: MIT (lindera); NAIST/ICOT (IPADIC)
+            <br />
+            <span className="muted">https://github.com/lindera/lindera</span>
+          </p>
+        </li>
+        <li className="card">
           <h2>ONNX Runtime</h2>
           <p>
             Runs both models, by Microsoft.
