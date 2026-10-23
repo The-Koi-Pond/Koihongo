@@ -26,7 +26,7 @@ export type Book = {
   /** Its category, when it's on the shelf by itself (in a series, the series' counts). */
   category_id: number | null;
   /** Its series' bookmark (getBook only): which chapter and page. */
-  /** Read in scroll mode (getBook only): its series' setting, or its own when it's in none. */
+  /** Read in scroll mode (getBook only): as set for its series (or itself, in none), else on in a Manhwa category. */
   scrolling?: number;
   bookmark_book?: number | null;
   bookmark_page?: string | null;
@@ -219,9 +219,13 @@ export async function listBooks(db: Db): Promise<Book[]> {
 
 export async function getBook(db: Db, id: number): Promise<Book | undefined> {
   const [book] = await db.all<Book>(
-    `SELECT b.*, s.title AS series_title, s.bookmark_book, s.bookmark_page, coalesce(s.scroll, b.scroll) AS scrolling
-     FROM books b LEFT JOIN series s ON s.id = b.series_id WHERE b.id = ?`,
-    [id],
+    `SELECT b.*, s.title AS series_title, s.bookmark_book, s.bookmark_page,
+       CASE coalesce(s.scroll, b.scroll) WHEN 1 THEN 1 WHEN 2 THEN 0
+         ELSE coalesce(lower(c.name) IN (${SCROLL_CATEGORIES.map(() => "?").join(", ")}), 0) END AS scrolling
+     FROM books b LEFT JOIN series s ON s.id = b.series_id
+     LEFT JOIN categories c ON c.id = CASE WHEN b.series_id IS NULL THEN b.category_id ELSE s.category_id END
+     WHERE b.id = ?`,
+    [...SCROLL_CATEGORIES, id],
   );
   return book;
 }
@@ -470,11 +474,20 @@ export async function updateBook(db: Db, id: number, fields: Partial<Pick<Book, 
 }
 
 /** Scroll mode on or off: for the book's whole series, or for the book when it's in none. */
+/** Categories whose books read in scroll mode unless you say otherwise (comics drawn as tall strips). */
+export const SCROLL_CATEGORIES = ["manhwa", "manhua", "webtoon", "webtoons"];
+
+/**
+ * Scroll mode on or off, as you chose it: for the book's whole series, or for
+ * the book when it's in none. Stored as 1 (on) or 2 (off); 0, the default,
+ * follows the category (on for Manhwa: SCROLL_CATEGORIES).
+ */
 export async function setScrolling(db: Db, book: Pick<Book, "id" | "series_id">, on: boolean): Promise<void> {
+  const value = on ? 1 : 2;
   await db.batch([
     book.series_id !== null
-      ? { sql: "UPDATE series SET scroll = ? WHERE id = ?", params: [Number(on), book.series_id] }
-      : { sql: "UPDATE books SET scroll = ? WHERE id = ?", params: [Number(on), book.id] },
+      ? { sql: "UPDATE series SET scroll = ? WHERE id = ?", params: [value, book.series_id] }
+      : { sql: "UPDATE books SET scroll = ? WHERE id = ?", params: [value, book.id] },
   ]);
 }
 

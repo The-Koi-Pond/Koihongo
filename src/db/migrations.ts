@@ -247,8 +247,9 @@ const MIGRATIONS: string[][] = [
   ],
   [
     // Scroll mode (pages stacked top to bottom, for manhwa and webtoons): set
-    // for a whole series, or for a book on the shelf by itself. And a Manhwa
-    // category, unless you've made one already.
+    // for a whole series, or for a book on the shelf by itself: 0 follows the
+    // category (on for Manhwa), 1 on, 2 off. And a Manhwa category, unless
+    // you've made one already.
     `ALTER TABLE series ADD COLUMN scroll INTEGER NOT NULL DEFAULT 0`,
     `ALTER TABLE books ADD COLUMN scroll INTEGER NOT NULL DEFAULT 0`,
     `INSERT INTO categories (name, position)
