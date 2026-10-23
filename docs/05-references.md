@@ -36,7 +36,22 @@ Other projects worth studying before building a feature: how they solved the sam
 
 ### manga-ocr
 
-- An offline OCR model trained on manga text (vertical text, furigana, odd fonts). Planned as an optional download for stage 3 (see `02-features.md` F). It's around 400 MB and needs Python, so it would be a separate, opt-in install.
+- An offline OCR model trained on manga text (vertical text, furigana, odd fonts): [github.com/kha-white/manga-ocr](https://github.com/kha-white/manga-ocr), Apache-2.0. **Tried first, then replaced by Baberu OCR** (below):
+  - The model comes as ONNX from [mayocream/manga-ocr-onnx](https://huggingface.co/mayocream/manga-ocr-onnx) (Apache-2.0), pinned to one commit and checked by size and SHA-256 when downloaded.
+  - The reading code in `src-tauri/src/ocr.rs` is adapted from [manga-ocr-rs](https://github.com/CodeMonkeyNinja/manga-ocr-rs) 1.0.0 (MIT). We don't depend on that crate: its build script downloads the 441 MB model on every fresh build.
+  - [Koharu](https://github.com/mayocream/koharu) (a Rust manga translator) runs the same model and is worth a look for automatic bubble detection (stage 4).
+  - Checked on a real page (2026-10-23): clean speech bubbles read perfectly at 95–100% confidence; stylised SFX came back wrong and unsure (13–48%).
+
+### Baberu OCR (in use)
+
+- [huggingface.co/genshiai-daichi/baberu-ocr](https://huggingface.co/genshiai-daichi/baberu-ocr), Apache-2.0: a 115M-parameter manga OCR (DINOv2 vision + a small decoder) trained partly from manga-ocr, with official ONNX files. We use the smallest tier (vision int4 + decoder int8, 122 MB), pinned to one commit. Ported from its `onnx_infer.py` into `src-tauri/src/baberu.rs`.
+- On the same test page (2026-10-23): identical to manga-ocr on speech, and read all four stylised コツ footsteps that manga-ocr got wrong; 70–110 ms a box on CPU. Its own benchmark: SFX exact match 78% against manga-ocr's 36%.
+- Caveat: very new (v1.2, October 2026). If it disappoints, Hayai OCR (Apache-2.0, community ONNX) is the next candidate; PaddleOCR-VL is too heavy (1–2 GB, over a minute a page on CPU).
+
+### comic-text-and-bubble-detector (in use)
+
+- [huggingface.co/ogkalu/comic-text-and-bubble-detector](https://huggingface.co/ogkalu/comic-text-and-bubble-detector), Apache-2.0, an RT-DETR-v2 model behind "Find text on this page": bubbles, text in bubbles and text elsewhere. We use the 11 MB int8 version, called the way [comic-translate](https://github.com/ogkalu2/comic-translate) does (640×640 input, scores from 0.3). On a test page it found both speech bubbles in about a second, tightly boxed; small sound effects can be missed.
+- Rejected: Koharu's own layout model (trained on Manga109, academic-use terms), comic-text-detector (GPL-3.0) and the YOLO bubble detectors (Ultralytics, AGPL).
 
 ## The reader: zoom and pan
 

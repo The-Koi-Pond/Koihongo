@@ -168,7 +168,13 @@ export function browserMode(): Plugin {
       case "backup_prune":
       case "backup_restore":
       case "backup_open_folder":
+      case "ocr_download":
+      case "ocr_remove":
+      case "ocr_read":
+      case "ocr_find":
         throw new Error("Only available in the desktop app (this is browser mode).");
+      case "ocr_status":
+        return { installed: false, size: 461_000_000 };
       default:
         // Window controls and other plugin calls: nothing to do in a browser.
         if (cmd.startsWith("plugin:")) return null;

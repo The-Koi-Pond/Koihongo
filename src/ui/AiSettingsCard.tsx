@@ -145,7 +145,7 @@ export function AiSettingsCard() {
       {draft.provider !== "off" && (
         <p className="muted small ai-privacy">
           {local
-            ? "Requests stay on this PC: they go to the model running on your own computer."
+            ? "Requests stay on this PC: they go to the model running on your own computer. For Japanese, pick a model that's strong in Asian languages, such as a recent Qwen or Gemma (what Koharu, a manga translator, offers too). Bigger models translate better but need more memory: around 8B parameters suits most PCs with 16 GB of RAM."
             : `When you use Ask AI or Explain, the item you're on (its character, meanings, readings and mnemonic) and your chat messages are sent to ${providerLabel(draft)}. Nothing else from the app is sent.`}
         </p>
       )}

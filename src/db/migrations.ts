@@ -235,6 +235,11 @@ const MIGRATIONS: string[][] = [
     // Box[] beyond its first box (x, y, w, h).
     `ALTER TABLE book_marks ADD COLUMN more_boxes TEXT NOT NULL DEFAULT '[]'`,
   ],
+  [
+    // 1: its text was read by the text reader, which wasn't sure; cleared once you
+    // change the text or say it looks right.
+    `ALTER TABLE book_marks ADD COLUMN unsure INTEGER NOT NULL DEFAULT 0`,
+  ],
 ];
 
 export const SCHEMA_VERSION = MIGRATIONS.length;

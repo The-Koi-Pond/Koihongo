@@ -105,6 +105,8 @@ export type Mark = Box & {
   position: number;
   /** JSON Box[]: its other parts, past the first box (see markBoxes). */
   more_boxes: string;
+  /** 1: text the text reader (Baberu OCR) wasn't sure of (check it). */
+  unsure: number;
   created_at: number;
   updated_at: number;
 };
@@ -569,12 +571,12 @@ export async function addMark(db: Db, bookId: number, page: string, kind: MarkKi
   return id;
 }
 
-/** Saves a mark's text and kind (its text_key follows from both). */
-export async function updateMark(db: Db, id: number, kind: MarkKind, fields: MarkText, now: number): Promise<void> {
+/** Saves a mark's text and kind (its text_key follows from both), and whether its text needs checking if given. */
+export async function updateMark(db: Db, id: number, kind: MarkKind, fields: MarkText, now: number, unsure?: boolean): Promise<void> {
   await db.batch([
     {
-      sql: `UPDATE book_marks SET kind = ?, text = ?, text_key = ?, reading = ?, meaning = ?, notes = ?, updated_at = ? WHERE id = ?`,
-      params: [kind, fields.text, textKey(fields.text, kind), fields.reading, fields.meaning, fields.notes, now, id],
+      sql: `UPDATE book_marks SET kind = ?, text = ?, text_key = ?, reading = ?, meaning = ?, notes = ?, updated_at = ?, unsure = coalesce(?, unsure) WHERE id = ?`,
+      params: [kind, fields.text, textKey(fields.text, kind), fields.reading, fields.meaning, fields.notes, now, unsure === undefined ? null : Number(unsure), id],
     },
   ]);
 }
@@ -749,3 +751,29 @@ export function splitTags(text: string): string[] {
 export function joinTags(tags: string[]): string {
   return tags.map((t) => t.trim()).filter(Boolean).join(", ");
 }
+
+// --- Text read and found on a page ("Read text", "Find text": src/ocr.ts) ---
+
+/** Text as read from a box, tidied: a run of dots (.. ．．． ・・・) is an ellipsis, written …. */
+export function tidyRead(text: string): string {
+  return text.replace(/[.．・]{2,}/g, "…");
+}
+
+/** A text area "Find text" found, as fractions of the page. */
+export type FoundText = Box & { in_bubble: boolean; score: number };
+
+/**
+ * Found text areas you haven't marked yet (one mostly covered by a box you
+ * have is left out), in rough reading order for manga: on a two-page spread
+ * the right page first, then rows from the top, and within a row right to left.
+ */
+export function unmarked(found: FoundText[], marked: Box[], spread = false): FoundText[] {
+  const overlap = (a: Box, b: Box) => Math.max(0, Math.min(a.x + a.w, b.x + b.w) - Math.max(a.x, b.x)) * Math.max(0, Math.min(a.y + a.h, b.y + b.h) - Math.max(a.y, b.y));
+  const covered = (f: Box) => marked.some((m) => overlap(f, m) > 0.5 * Math.min(f.w * f.h, m.w * m.h));
+  const row = (f: Box) => Math.floor((f.y + f.h / 2) / ROW);
+  const half = (f: Box) => (spread && f.x + f.w / 2 < 0.5 ? 1 : 0);
+  return found.filter((f) => !covered(f)).sort((a, b) => half(a) - half(b) || row(a) - row(b) || b.x + b.w - (a.x + a.w));
+}
+
+/** How tall a "row" of text is, for reading order (a fraction of the page). */
+const ROW = 0.2;

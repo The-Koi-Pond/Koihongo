@@ -1,7 +1,8 @@
-import { ArchiveRestore, FolderOpen, Gauge, HardDriveDownload, ScrollText } from "lucide-react";
+import { ArchiveRestore, FolderOpen, Gauge, HardDriveDownload, ScanText, ScrollText, Trash2 } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { backupKind, createBackup, listBackups, openBackupsFolder, restoreBackup, AUTO_KEEP, type BackupInfo, type BackupKind } from "../backup.ts";
 import { migrate } from "../db/migrations.ts";
+import { downloadOcr, ocrStatus, removeOcr, type OcrStatus } from "../ocr.ts";
 import { tauriDb } from "../db/tauriDb.ts";
 import { DEFAULT_PACING, loadPacing, PACING_LIMITS, savePacing, type Pacing } from "../srs/settings.ts";
 import { AiSettingsCard } from "../ui/AiSettingsCard.tsx";
@@ -17,6 +18,7 @@ export function Settings({ onOpenSources }: { onOpenSources: () => void }) {
       </h1>
       <PacingCard />
       <AiSettingsCard />
+      <TextReadingCard />
       <BackupsCard />
       <section className="card row space-between">
         <div>
@@ -150,6 +152,91 @@ function PacingCard() {
 }
 
 const asText = (p: Pacing) => Object.fromEntries(Object.entries(p).map(([k, v]) => [k, String(v)])) as Record<keyof Pacing, string>;
+
+const MB = (bytes: number) => Math.round(bytes / 1_000_000);
+
+/**
+ * Settings → Reading text from manga: downloading (or removing) the models
+ * behind "Read text" and "Find text" in the reader. Optional: the installer
+ * doesn't carry them.
+ */
+function TextReadingCard() {
+  const [status, setStatus] = useState<OcrStatus>();
+  const [progress, setProgress] = useState<{ done: number; total: number }>();
+  const [confirmRemove, setConfirmRemove] = useState(false);
+  const [error, setError] = useState<string>();
+
+  const refresh = () =>
+    ocrStatus()
+      .then(setStatus)
+      .catch((e) => setError(String(e)));
+  useEffect(() => {
+    refresh();
+  }, []);
+
+  async function download() {
+    setError(undefined);
+    setProgress({ done: 0, total: status?.size ?? 0 });
+    try {
+      await downloadOcr((done, total) => setProgress({ done, total }));
+    } catch (e) {
+      setError(String(e));
+    } finally {
+      setProgress(undefined);
+      refresh();
+    }
+  }
+
+  async function remove() {
+    if (!confirmRemove) return setConfirmRemove(true);
+    setConfirmRemove(false);
+    setError(undefined);
+    await removeOcr().catch((e) => setError(String(e)));
+    refresh();
+  }
+
+  return (
+    <section className="card">
+      <h2>
+        <ScanText size={16} aria-hidden="true" /> Reading text from manga
+      </h2>
+      <p className="muted">
+        "Read text" in a mark's editor fills in the Japanese for you, sound effects included, and "Find text on this page" puts boxes around the text
+        for you. Both run on your PC, with no internet needed once they're downloaded.
+      </p>
+      {progress ? (
+        <div className="ocr-progress" role="progressbar" aria-valuemin={0} aria-valuemax={progress.total} aria-valuenow={progress.done}>
+          <span className="ocr-progress-track">
+            <span style={{ width: `${progress.total ? (progress.done / progress.total) * 100 : 0}%` }} />
+          </span>
+          <span className="muted small">
+            Downloading… {MB(progress.done)} / {MB(progress.total)} MB
+          </span>
+        </div>
+      ) : status?.installed ? (
+        <div className="row">
+          <span className="ocr-ready">✓ Ready ({MB(status.size)} MB)</span>
+          <button className={`icon-text ${confirmRemove ? "danger" : ""}`} onClick={remove} onBlur={() => setConfirmRemove(false)}>
+            <Trash2 size={15} aria-hidden="true" /> {confirmRemove ? "Click again to remove" : "Remove"}
+          </button>
+        </div>
+      ) : (
+        status && (
+          <div className="row">
+            <button className="primary" onClick={download}>
+              <HardDriveDownload size={16} aria-hidden="true" /> Download ({MB(status.size)} MB)
+            </button>
+          </div>
+        )
+      )}
+      {error && <p className="error">{error}</p>}
+      <p className="muted small">
+        Baberu OCR by genshiai-daichi and comic-text-and-bubble-detector by ogkalu (both Apache-2.0), saved in Koihongo's data folder.
+        Downloaded from Hugging Face and checked before use.
+      </p>
+    </section>
+  );
+}
 
 const KIND_LABEL: Record<BackupKind, string> = { auto: "Automatic", manual: "Manual", "before-restore": "Before a restore" };
 
