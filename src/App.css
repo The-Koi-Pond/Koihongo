@@ -1143,6 +1143,7 @@ textarea {
 .banner.kana { --kind: var(--kana); }
 .banner.component { --kind: var(--component); }
 .banner.word { --kind: var(--word); }
+.banner.grammar { --kind: var(--word); }
 
 
 /* The moon's frame: the whole banner, padding included, so cqw/cqh measure
@@ -1296,6 +1297,22 @@ textarea {
   z-index: 1;
 }
 
+/* Outside Today, the scenery sits behind a soft indigo veil (darker and a little
+   less colourful), so it stays pretty without pulling focus from what you study.
+   Above the cherry branches, below the text and buttons. */
+.banner-tint {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+  background: rgb(22 18 72 / 0.4);
+  backdrop-filter: saturate(0.65);
+}
+
+.today-banner .banner-tint {
+  display: none;
+}
+
 .banner p {
   margin: 0;
 }
@@ -1307,7 +1324,32 @@ textarea {
   align-items: flex-start;
 }
 
+/* The item type, top-left of the banner: a pill in the type's colour (the same
+   colours as Library tiles), in the chunky title font, so you always know
+   whether you're looking at a component, kanji, word or kana. */
 .banner-kind {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 0;
+}
+
+.kind-chip {
+  padding: 4px 10px 5px;
+  border-radius: 6px;
+  background: var(--kind);
+  color: var(--on-kind);
+  font-family: var(--font-title);
+  font-size: 16px;
+  font-weight: 700;
+  line-height: 1;
+  text-transform: uppercase;
+  text-shadow: none;
+  box-shadow: inset 0 2px 0 rgb(255 255 255 / 0.35), 0 2px 0 rgb(20 14 60 / 0.55);
+  cursor: help;
+}
+
+.banner-kind-detail {
   font-size: 0.72rem;
   font-weight: 700;
   letter-spacing: 0.12em;
@@ -2728,7 +2770,8 @@ select {
   font-size: 1.9rem;
   font-weight: 700;
   line-height: 1.1;
-  text-shadow: 0 2px 10px rgb(0 0 0 / 0.3);
+  /* A thin lavender drop shadow, then the soft dark glow. */
+  text-shadow: 0 2px 0 #9f85eb, 0 2px 10px rgb(0 0 0 / 0.3);
 }
 
 /* A tinted pixel halftone behind the greeting, for readability over the

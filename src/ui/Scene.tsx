@@ -27,6 +27,8 @@ export function BannerScene() {
       <div className="banner-deco banner-bushes left" style={{ backgroundImage: `url(${bushesLeft})` }} aria-hidden="true" />
       <div className="banner-deco banner-bushes right" style={{ backgroundImage: `url(${bushesRight})` }} aria-hidden="true" />
       <BlossomBranches />
+      {/* A calming veil over the whole scene, everywhere except Today (CSS). */}
+      <div className="banner-deco banner-tint" aria-hidden="true" />
     </>
   );
 }

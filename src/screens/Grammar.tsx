@@ -2,6 +2,7 @@ import { Link2, ListOrdered, NotebookPen, Quote } from "lucide-react";
 import { useEffect, useState } from "react";
 import { GRAMMAR, grammarPoint, markedParts, patternParts, type GrammarPoint } from "../grammar/points.ts";
 import { JapaneseText } from "../ui/Popover.tsx";
+import { KindLabel } from "../ui/ItemView.tsx";
 import { BannerScene } from "../ui/Scene.tsx";
 
 /** The Grammar section: the list of grammar points, or one point's page. */
@@ -56,14 +57,14 @@ function GrammarPage({ point, onOpen, onBack }: { point: GrammarPoint; onOpen: (
   return (
     <div className="item-body">
       <div className="item-view grammar">
-        <header className="banner bleed">
+        <header className="banner bleed grammar">
           <BannerScene />
           <div className="banner-top">
             <div className="banner-top-start">
               <button className="banner-back" onClick={onBack}>
                 ← Grammar
               </button>
-              <p className="banner-kind">grammar · {number}</p>
+              <KindLabel kind="grammar" detail={`#${number}`} help="A grammar point: a pattern for building sentences." />
             </div>
             <div className="banner-top-end" />
           </div>
