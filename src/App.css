@@ -5092,15 +5092,28 @@ button.danger {
 
 .reader-stage {
   min-height: 0;
-  overflow: auto;
-  display: grid;
-  justify-items: center;
-  align-items: start;
+  overflow: hidden;
   border-radius: 10px;
   background: rgb(0 0 0 / 0.28);
 }
 
+/* The zoomable area (react-zoom-pan-pinch) fills the stage; the page sits
+   centred at the top of it, and zooms with everything on it. */
+/* (.reader-stage in front: outranks the library's own fit-content sizing) */
+.reader-stage .reader-zoom,
+.reader-stage .reader-zoom-content {
+  width: 100%;
+  height: 100%;
+}
+
+.reader-stage .reader-zoom-content {
+  display: grid;
+  justify-items: center;
+  align-items: start;
+}
+
 .reader-page {
+  --zoom: 1;
   position: relative;
   user-select: none;
 }
@@ -5111,13 +5124,37 @@ button.danger {
   max-height: calc(var(--reader-h) - 52px);
 }
 
-.reader-stage.fit-width .reader-page {
-  width: 100%;
+/* Space held: drag to move the page around (the boxes don't take the drag). */
+.reader-stage.panning .mark-layer {
+  pointer-events: none;
 }
 
-.reader-stage.fit-width .reader-page img {
-  width: 100%;
-  max-height: none;
+.reader-stage.panning {
+  cursor: grab;
+}
+
+.reader-stage.panning:active {
+  cursor: grabbing;
+}
+
+.reader-zoom-tools {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+}
+
+.reader-zoom-level {
+  min-width: 3.6em;
+  padding: 4px 6px;
+  border: none;
+  background: none;
+  color: var(--muted);
+  font-size: 0.85rem;
+}
+
+.reader-zoom-level .num {
+  font-family: var(--font-num);
+  color: var(--text);
 }
 
 .mark-layer {
@@ -5129,15 +5166,15 @@ button.danger {
 
 .mark-box {
   position: absolute;
-  border: 2px solid var(--mark);
-  border-radius: 6px;
+  border: calc(2px / var(--zoom)) solid var(--mark);
+  border-radius: calc(6px / var(--zoom));
   background: color-mix(in srgb, var(--mark) 12%, transparent);
   pointer-events: none;
 }
 
 .mark-box.selected {
   background: color-mix(in srgb, var(--mark) 22%, transparent);
-  box-shadow: 0 0 0 2px #fff, 0 0 0 4px var(--mark);
+  box-shadow: 0 0 0 calc(2px / var(--zoom)) #fff, 0 0 0 calc(4px / var(--zoom)) var(--mark);
 }
 
 .mark-box.draft {
@@ -5158,9 +5195,11 @@ button.danger {
 
 .mark-box .mark-num {
   position: absolute;
-  top: -10px;
-  left: -10px;
+  top: calc(-10px / var(--zoom));
+  left: calc(-10px / var(--zoom));
   box-shadow: 0 1px 3px rgb(0 0 0 / 0.5);
+  transform: scale(calc(1 / var(--zoom)));
+  transform-origin: top left;
 }
 
 .reader-side {
@@ -5720,9 +5759,36 @@ button.danger {
   overflow-wrap: anywhere;
 }
 
+/* "Chapters", a heading with a count and a line running out to the right. */
 .series-chapters {
-  margin: 0 0 10px;
-  font-size: 1.1rem;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 6px 0 14px;
+  font-size: 1.45rem;
+  color: var(--text);
+}
+
+.series-chapters::after {
+  content: "";
+  flex: 1;
+  height: 2px;
+  border-radius: 1px;
+  background: linear-gradient(90deg, var(--panel-border), transparent);
+}
+
+.series-chapters-count {
+  padding: 0 9px;
+  border-radius: 999px;
+  background: var(--accent);
+  color: var(--accent-text);
+  font: 400 0.95rem/1.6 var(--font-num);
+}
+
+.shelf-hint-below {
+  margin: 14px 0 0;
+  text-align: center;
+  font-size: 0.8rem;
 }
 
 @media (max-width: 640px) {
@@ -5768,11 +5834,6 @@ button.danger {
   opacity: 1;
 }
 
-.series-cover-reset {
-  margin-top: 6px;
-  font-size: 0.8rem;
-}
-
 /* Series page: tools (remove, add, edit) show when you point at their section or tab into it. */
 .reveal-tools .tool {
   opacity: 0;
@@ -5812,4 +5873,351 @@ button.danger {
   overflow: hidden;
   resize: none;
   line-height: 1.65;
+}
+
+/* "Also known as" names as tags (Reading.tsx, SeriesInfo). */
+.aka-tags {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  padding-top: 4px;
+  min-height: 30px;
+}
+
+.aka-tag {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  border: 1px solid var(--panel-border);
+  border-radius: 999px;
+  background: var(--surface);
+}
+
+.aka-text {
+  padding: 3px 12px;
+  border: none;
+  border-radius: 999px;
+  background: none;
+  color: var(--text);
+  font-size: 0.9rem;
+}
+
+/* The × floats on the tag's corner, showing when you point at that tag (or tab to it). */
+.aka-remove {
+  position: absolute;
+  top: -7px;
+  right: -7px;
+  display: grid;
+  place-items: center;
+  width: 18px;
+  height: 18px;
+  padding: 0;
+  border: 1px solid var(--panel-border);
+  border-radius: 50%;
+  background: var(--surface-2);
+  color: var(--text);
+}
+
+.aka-tag .aka-remove.tool {
+  opacity: 0;
+}
+
+.aka-tag:hover .aka-remove.tool,
+.aka-tag .aka-remove.tool:focus-visible {
+  opacity: 1;
+}
+
+.aka-remove:hover {
+  border-color: #d84d6e;
+  background: #d84d6e;
+  color: #fff;
+}
+
+.aka-tag:hover {
+  border-color: var(--accent);
+}
+
+button.aka-add {
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  border-style: dashed;
+  color: var(--muted);
+}
+
+.series-fields input.aka-input {
+  width: auto;
+  padding: 3px 12px;
+  border-radius: 999px;
+  font-size: 0.9rem;
+}
+
+/* A component's Japanese name in the banner, with what it means behind an ⓘ (ItemView.tsx). */
+.banner-secondary:has(.banner-note-btn) {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.banner-note-btn {
+  display: inline-grid;
+  place-items: center;
+  width: 22px;
+  height: 22px;
+  padding: 0;
+  border: none;
+  border-radius: 50%;
+  background: rgb(255 255 255 / 0.14);
+  color: var(--text);
+}
+
+.banner-note-btn:hover {
+  background: rgb(255 255 255 / 0.28);
+}
+
+.banner-note {
+  display: block;
+  max-width: 280px;
+  font-size: 0.9rem;
+  line-height: 1.45;
+}
+
+/* The + tile after a series' chapters, opening a menu of ways to add more
+   (Reading.tsx, AddChapters; the menu looks like the "Add to deck" one). */
+.shelf-add {
+  position: relative;
+  height: 100%;
+}
+
+/* A dashed bar like the chapters beside it. */
+.shelf-add-btn {
+  width: 100%;
+  height: 100%;
+  min-height: 56px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  font-weight: 700;
+  border: 2px dashed var(--panel-border);
+  border-radius: 10px;
+  background: transparent;
+  color: var(--muted);
+}
+
+.shelf-add-btn:hover,
+.shelf-add-btn[aria-expanded="true"] {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+/* Centred over the tile, so it stays on screen at the end of a row. */
+.shelf-add-menu {
+  top: 50%;
+  left: 50%;
+  right: auto;
+  min-width: 180px;
+  transform: translate(-50%, -50%);
+}
+
+.shelf-add-menu span {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* A series page's top row: back on the left, removing the series on the right. */
+.series-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 6px;
+}
+
+.series-top .deck-back {
+  margin-bottom: 0;
+}
+
+.series-remove {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.85rem;
+  padding: 6px 12px;
+}
+
+/* The pencil on a made chapter's tile, opening its page editor; shows on hover. */
+.shelf > li,
+.chapter-list > li {
+  position: relative;
+}
+
+.shelf-edit {
+  position: absolute;
+  top: 14px;
+  right: 14px;
+  background: var(--surface);
+  color: var(--text);
+  box-shadow: 0 2px 6px rgb(0 0 0 / 0.4);
+  opacity: 0;
+  transition: opacity 0.15s;
+}
+
+.shelf > li:hover .shelf-edit,
+.chapter-list > li:hover .shelf-edit,
+.shelf-edit:focus-visible {
+  opacity: 1;
+}
+
+/* A series' chapters as compact bars (Reading.tsx, ChapterBar): CH.12, a
+   subtitle if the title has one, then pages, marks and when you last read it. */
+.chapter-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 8px; /* one chapter per row */
+  user-select: none;
+}
+
+.chapter-list.dragging,
+.chapter-list.dragging * {
+  cursor: grabbing;
+}
+
+/* One line: CH.12 and its subtitle on the left, the facts on the right (they wrap below on a narrow window). */
+.chapter-bar {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 16px;
+  padding: 10px 52px 12px 16px; /* right: room for the pencil */
+  overflow: hidden;
+  text-align: left;
+  border: 2px solid var(--panel-border);
+  border-radius: 12px;
+  background: var(--surface-2);
+  color: var(--text);
+}
+
+.chapter-bar:hover {
+  border-color: #fd93bb;
+}
+
+.chapter-bar.drag-source {
+  opacity: 0.45;
+}
+
+.chapter-head {
+  flex: 1 1 auto;
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  min-width: 0;
+}
+
+.chapter-num {
+  flex: none;
+  font-family: var(--font-title); /* Silkscreen: in Pixelify a bold C reads as O */
+  font-size: 1.25rem;
+  font-weight: 700;
+  line-height: 1.1;
+  overflow-wrap: anywhere;
+}
+
+.chapter-sub {
+  min-width: 0;
+  color: var(--muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.chapter-meta {
+  margin-left: auto;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 8px;
+  font-size: 0.82rem;
+  color: var(--muted);
+}
+
+.chapter-meta > span + span::before {
+  content: "·";
+  margin-right: 8px;
+  color: var(--panel-border);
+}
+
+.chapter-new {
+  color: var(--accent);
+  font-weight: 700;
+}
+
+.chapter-progress {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 3px;
+  background: rgb(0 0 0 / 0.25);
+}
+
+.chapter-progress span {
+  display: block;
+  height: 100%;
+  background: var(--accent);
+}
+
+.chapter-list .shelf-edit {
+  top: 50%;
+  right: 10px;
+  transform: translateY(-50%);
+}
+
+/* Dragging pages into order (Reading.tsx, PageEditor with useReorderDrag):
+   a pink line shows where the page will land. */
+.page-grid {
+  user-select: none;
+}
+
+.page-tile {
+  position: relative;
+  cursor: grab;
+}
+
+.page-grid.dragging,
+.page-grid.dragging * {
+  cursor: grabbing;
+}
+
+.page-tile.drag-source {
+  opacity: 0.4;
+}
+
+.page-tile.drop-before::before,
+.page-tile.drop-after::after {
+  content: "";
+  position: absolute;
+  top: 4px;
+  bottom: 4px;
+  width: 4px;
+  border-radius: 2px;
+  background: var(--accent);
+  box-shadow: 0 0 8px var(--accent);
+}
+
+.page-tile.drop-before::before {
+  left: -8px;
+}
+
+.page-tile.drop-after::after {
+  right: -8px;
 }

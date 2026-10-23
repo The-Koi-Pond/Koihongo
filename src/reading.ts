@@ -35,6 +35,7 @@ export type Series = {
   id: number;
   /** Its name on your shelf. */
   title: string;
+  /** Unused since migration 10 (it became one of its "also known as" names). */
   japanese_title: string;
   synopsis: string;
   /** A cover you picked (a file in Documents\Koihongo\Covers); null: the first chapter's first page. */
@@ -266,7 +267,7 @@ export async function seriesExtras(db: Db, seriesId: number): Promise<SeriesExtr
   return { titles, boxes };
 }
 
-export async function updateSeriesInfo(db: Db, id: number, fields: Partial<Pick<Series, "japanese_title" | "synopsis">>): Promise<void> {
+export async function updateSeriesInfo(db: Db, id: number, fields: Partial<Pick<Series, "synopsis">>): Promise<void> {
   const entries = Object.entries(fields);
   if (entries.length === 0) return;
   await db.batch([{ sql: `UPDATE series SET ${entries.map(([k]) => `${k} = ?`).join(", ")} WHERE id = ?`, params: [...entries.map(([, v]) => v), id] }]);
@@ -305,7 +306,7 @@ export async function deleteSeriesBox(db: Db, id: number): Promise<void> {
 
 /** What context there is for a chapter: its series' info (if it's in one) and its own notes. */
 export type ContextParts = {
-  series?: Pick<Series, "title" | "japanese_title" | "synopsis"> & SeriesExtras;
+  series?: Pick<Series, "title" | "synopsis"> & SeriesExtras;
   chapter?: { title: string; about: string };
 };
 
@@ -319,7 +320,6 @@ export function contextText({ series, chapter }: ContextParts): string {
   const block = (label: string, text: string | undefined) => text?.trim() && parts.push(`${label}:\n${text.trim()}`);
   if (series) {
     add("Series", series.title);
-    add("Japanese title", series.japanese_title);
     add("Also known as", series.titles.map((t) => t.title.trim()).filter(Boolean).join("; "));
     block("Synopsis", series.synopsis);
     for (const box of series.boxes) block(box.label.trim() || "Notes", box.text);
@@ -337,7 +337,7 @@ export async function readingContext(db: Db, bookId: number): Promise<string> {
   if (!book) return "";
   let series: ContextParts["series"];
   if (book.series_id !== null) {
-    const [row] = await db.all<Pick<Series, "title" | "japanese_title" | "synopsis">>("SELECT title, japanese_title, synopsis FROM series WHERE id = ?", [
+    const [row] = await db.all<Pick<Series, "title" | "synopsis">>("SELECT title, synopsis FROM series WHERE id = ?", [
       book.series_id,
     ]);
     if (row) series = { ...row, ...(await seriesExtras(db, book.series_id)) };
@@ -515,4 +515,50 @@ export async function setSeriesCover(db: Db, seriesId: number, name: string | nu
 /** A series cover as an object URL for <img>; call URL.revokeObjectURL when done with it. */
 export async function coverUrl(name: string): Promise<string> {
   return imageUrl(name, await invoke<ArrayBuffer>("series_cover", { name }));
+}
+
+// --- Chapters in a series ---
+
+/**
+ * The chapter number in a title: "Chapter 12", "Ch.12", "ch 12.5", "第12話",
+ * "12話", else the last number in it. Full-width digits count. null if none.
+ */
+export function chapterNumber(title: string): string | null {
+  const t = title.normalize("NFKC");
+  const m = t.match(/(?:chapter|chap\.?|ch\.?|#|第)\s*(\d+(?:\.\d+)?)/i) ?? t.match(/(\d+(?:\.\d+)?)\s*(?:話|章)/) ?? t.match(/(\d+(?:\.\d+)?)(?!.*\d)/);
+  return m ? String(Number(m[1])) : null;
+}
+
+/**
+ * What a chapter's title says beyond its series and number, e.g. "Koi Story ·
+ * Chapter 3: The Pond" → "The Pond"; "" when that's all it says.
+ */
+export function chapterSubtitle(title: string, seriesTitle: string): string {
+  let t = title.normalize("NFKC").trim();
+  const series = seriesTitle.normalize("NFKC").trim();
+  if (series && t.toLowerCase().startsWith(series.toLowerCase())) t = t.slice(series.length);
+  t = t.replace(/(?:chapter|chap\.?|ch\.?|#|第)\s*\d+(?:\.\d+)?\s*(?:話|章)?/i, "").replace(/^\s*\d+(?:\.\d+)?\s*(?:話|章)?(?=\s|$|[:·\-–—])/, "");
+  return t.replace(/^[\s·:\-–—|]+|[\s·:\-–—|]+$/g, "");
+}
+
+/** Chapters in reading order: by number when both have one, else by title (2 before 10). */
+export function byChapter(a: Pick<Book, "title">, b: Pick<Book, "title">): number {
+  const x = chapterNumber(a.title);
+  const y = chapterNumber(b.title);
+  if (x !== null && y !== null && Number(x) !== Number(y)) return Number(x) - Number(y);
+  return a.title.localeCompare(b.title, undefined, { numeric: true, sensitivity: "base" });
+}
+
+/** "just now", "5m ago", "3h ago", "2d ago", "1w ago", "4mo ago", "2y ago". */
+export function timeAgo(then: number, now: number): string {
+  const minutes = Math.floor((now - then) / 60_000);
+  if (minutes < 1) return "just now";
+  if (minutes < 60) return `${minutes}m ago`;
+  const hours = Math.floor(minutes / 60);
+  if (hours < 24) return `${hours}h ago`;
+  const days = Math.floor(hours / 24);
+  if (days < 7) return `${days}d ago`;
+  if (days < 30) return `${Math.floor(days / 7)}w ago`;
+  if (days < 365) return `${Math.floor(days / 30)}mo ago`;
+  return `${Math.floor(days / 365)}y ago`;
 }

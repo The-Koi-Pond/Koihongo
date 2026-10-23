@@ -20,9 +20,12 @@ import {
   Search,
   Trash2,
   UnfoldHorizontal,
+  ZoomIn,
+  ZoomOut,
   X,
 } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
+import { TransformComponent, TransformWrapper, type ReactZoomPanPinchRef } from "react-zoom-pan-pinch";
 import { tauriDb } from "../db/tauriDb.ts";
 import {
   addBooks,
@@ -32,6 +35,9 @@ import {
   addSeriesTitle,
   arrangeChapter,
   bookPages,
+  byChapter,
+  chapterNumber,
+  chapterSubtitle,
   clearSeriesCover,
   BOX_IDEAS,
   contextText,
@@ -62,6 +68,7 @@ import {
   setSeriesBox,
   setSeriesTitle,
   textKey,
+  timeAgo,
   updateBook,
   updateMark,
   updateSeriesInfo,
@@ -143,6 +150,7 @@ function Shelf({
   seriesId?: number;
   onSeries: (id?: number) => void;
   onOpen: (id: number) => void;
+  /** Opens a chapter you made in the page editor (just made, or its pencil clicked). */
   onMade: (id: number) => void;
   onGlossary: () => void;
 }) {
@@ -226,7 +234,7 @@ function Shelf({
   const tiles: Tile[] = [];
   if (books && series) {
     if (current) {
-      for (const b of books.filter((b) => b.series_id === current.id).sort((x, y) => naturally(x.title, y.title))) tiles.push({ book: b });
+      for (const b of books.filter((b) => b.series_id === current.id).sort(byChapter)) tiles.push({ book: b });
     } else {
       const recent = (t: Tile) => ("book" in t ? (t.book.opened_at ?? t.book.added_at) : t.series.active);
       for (const s of series) tiles.push({ series: s, chapters: books.filter((b) => b.series_id === s.id).sort((x, y) => naturally(x.title, y.title)) });
@@ -265,15 +273,31 @@ function Shelf({
     <>
       {current ? (
         <>
-          <button
-            type="button"
-            className={`deck-back ${dropClass("shelf")}`}
-            onClick={() => onSeries()}
-            data-drop="shelf"
-            title="Back to the bookshelf. Drop a chapter here to take it out of this series."
-          >
-            <ArrowLeft size={16} aria-hidden="true" /> Bookshelf
-          </button>
+          {/* Back on the left, removing the series on the right. */}
+          <div className="series-top">
+            <button
+              type="button"
+              className={`deck-back ${dropClass("shelf")}`}
+              onClick={() => onSeries()}
+              data-drop="shelf"
+              title="Back to the bookshelf. Drop a chapter here to take it out of this series."
+            >
+              <ArrowLeft size={16} aria-hidden="true" /> Bookshelf
+            </button>
+            <button
+              type="button"
+              className={`series-remove ${confirmRemove ? "danger" : ""}`}
+              onClick={async () => {
+                if (!confirmRemove) return setConfirmRemove(true);
+                if (current.cover) await clearSeriesCover(tauriDb, current.id);
+                await removeSeries(tauriDb, current.id);
+                onSeries();
+              }}
+              onBlur={() => setConfirmRemove(false)}
+            >
+              <Trash2 size={16} strokeWidth={2.25} aria-hidden="true" /> {confirmRemove ? "Click again: chapters go back on the shelf" : "Remove series"}
+            </button>
+          </div>
           <h1 className="series-title">
             <FolderClosed size={26} strokeWidth={2} aria-hidden="true" /> {current.title}
             <button type="button" className="icon-action" onClick={() => toggle("rename", current.title)} title="Rename this series" aria-label="Rename series">
@@ -287,7 +311,9 @@ function Shelf({
             first={tiles.flatMap((t) => ("book" in t && t.book.pages > 0 ? [t.book] : []))[0]}
             onCoverChanged={load}
           />
-          <h2 className="series-chapters">Chapters</h2>
+          <h2 className="series-chapters">
+            Chapters <span className="series-chapters-count">{current.chapters}</span>
+          </h2>
         </>
       ) : (
         <>
@@ -300,106 +326,223 @@ function Shelf({
           </p>
         </>
       )}
-      <div className="reading-actions">
-        <button type="button" className="primary" onClick={() => add("folder")}>
-          <FolderOpen size={16} strokeWidth={2.25} aria-hidden="true" /> Add a folder
-        </button>
-        <button type="button" onClick={() => add("files")}>
-          <FileArchive size={16} strokeWidth={2.25} aria-hidden="true" /> Add .cbz files
-        </button>
-        <button type="button" onClick={() => toggle("chapter")} aria-expanded={naming?.what === "chapter"}>
-          <ImagePlus size={16} strokeWidth={2.25} aria-hidden="true" /> Make a chapter
-        </button>
-        {current ? (
-          <button
-            type="button"
-            className={confirmRemove ? "danger" : ""}
-            onClick={async () => {
-              if (!confirmRemove) return setConfirmRemove(true);
-              if (current.cover) await clearSeriesCover(tauriDb, current.id);
-              await removeSeries(tauriDb, current.id);
-              onSeries();
-            }}
-            onBlur={() => setConfirmRemove(false)}
-          >
-            <Trash2 size={16} strokeWidth={2.25} aria-hidden="true" /> {confirmRemove ? "Click again: chapters go back on the shelf" : "Remove series"}
+      {!current && (
+        <div className="reading-actions">
+          <button type="button" className="primary" onClick={() => add("folder")}>
+            <FolderOpen size={16} strokeWidth={2.25} aria-hidden="true" /> Add a folder
           </button>
-        ) : (
-          <>
-            <button type="button" onClick={() => toggle("series")} aria-expanded={naming?.what === "series"}>
-              <FolderPlus size={16} strokeWidth={2.25} aria-hidden="true" /> New series
-            </button>
-            <button type="button" onClick={onGlossary}>
-              <NotebookText size={16} strokeWidth={2.25} aria-hidden="true" /> Glossary
-            </button>
-          </>
-        )}
-      </div>
+          <button type="button" onClick={() => add("files")}>
+            <FileArchive size={16} strokeWidth={2.25} aria-hidden="true" /> Add .cbz files
+          </button>
+          <button type="button" onClick={() => toggle("chapter")} aria-expanded={naming?.what === "chapter"}>
+            <ImagePlus size={16} strokeWidth={2.25} aria-hidden="true" /> Make a chapter
+          </button>
+          <button type="button" onClick={() => toggle("series")} aria-expanded={naming?.what === "series"}>
+            <FolderPlus size={16} strokeWidth={2.25} aria-hidden="true" /> New series
+          </button>
+          <button type="button" onClick={onGlossary}>
+            <NotebookText size={16} strokeWidth={2.25} aria-hidden="true" /> Glossary
+          </button>
+        </div>
+      )}
       {naming?.what !== "rename" && naming_form}
       {message && <p className="reading-message">{message}</p>}
       {error && <p className="error">{error}</p>}
       {books && series && tiles.length === 0 && (
         <p className="muted">
           {current
-            ? "No chapters yet. Add folders or .cbz files, or make a chapter from separate images: they go straight into this series. Or move a book in from its ⓘ panel."
+            ? "No chapters yet. Use the + below to add folders or .cbz files, or make a chapter from separate images: they go straight into this series. Or move a book in from its ⓘ panel."
             : "No books yet. Add a folder of page images (a folder of chapter folders works too: it becomes a series) or .cbz files, or make a chapter from separate images."}
         </p>
       )}
       {!current && !!series?.length && tiles.some((t) => "book" in t) && (
         <p className="muted shelf-hint">Drag a book onto a series to put it in.</p>
       )}
-      {current && tiles.length > 0 && <p className="muted shelf-hint">Drag a chapter onto "Bookshelf" to take it out of this series.</p>}
       {drag && (
         <div className="drag-ghost" style={{ left: drag.x, top: drag.y }} aria-hidden="true">
           {drag.book.title}
         </div>
       )}
-      <ul className={`shelf ${drag ? "dragging" : ""}`}>
-        {tiles.map((t) =>
-          "series" in t ? (
-            <li key={`s${t.series.id}`}>
-              <button
-                type="button"
-                className={`shelf-book shelf-series ${dropClass(String(t.series.id))}`}
-                onClick={() => onSeries(t.series.id)}
-                data-drop={t.series.id}
-              >
-                <SeriesCover series={t.series} first={t.chapters.find((b) => b.pages > 0)} />
-                <span className="shelf-title">
-                  <FolderClosed size={15} strokeWidth={2.25} aria-hidden="true" /> {t.series.title}
-                </span>
-                <span className="shelf-meta">
-                  {t.series.chapters} {t.series.chapters === 1 ? "chapter" : "chapters"}
-                </span>
-              </button>
+      {current && (
+        <ul className={`chapter-list ${drag ? "dragging" : ""}`}>
+          {tiles.flatMap((t) => ("book" in t ? [t.book] : [])).map((b) => (
+            <li key={b.id}>
+              <ChapterBar
+                book={b}
+                seriesTitle={current.title}
+                dragging={drag?.book.id === b.id}
+                onOpen={() => onOpen(b.id)}
+                dragHandlers={dragHandlers(b)}
+              />
+              {b.kind === "made" && (
+                <button
+                  type="button"
+                  className="icon-action shelf-edit"
+                  onClick={() => onMade(b.id)}
+                  title="Edit pages: add, reorder, rename or remove"
+                  aria-label={`Edit the pages of ${b.title}`}
+                >
+                  <Pencil size={15} strokeWidth={2} />
+                </button>
+              )}
             </li>
-          ) : (
-            <li key={t.book.id}>
-              <button
-                type="button"
-                className={`shelf-book ${drag?.book.id === t.book.id ? "drag-source" : ""}`}
-                onClick={() => onOpen(t.book.id)}
-                {...dragHandlers(t.book)}
-              >
-                <Cover book={t.book} />
-                <span className="shelf-title">{t.book.title}</span>
-                <span className="shelf-meta">
-                  {t.book.pages === 0
-                    ? "No pages yet"
-                    : t.book.opened_at
-                      ? `Page ${t.book.page + 1} of ${t.book.pages}`
-                      : `${t.book.pages} ${t.book.pages === 1 ? "page" : "pages"}`}
-                  {!!t.book.marks && ` · ${t.book.marks} ${t.book.marks === 1 ? "mark" : "marks"}`}
-                </span>
-                <span className="shelf-progress" aria-hidden="true">
-                  <span style={{ width: `${t.book.opened_at && t.book.pages ? ((t.book.page + 1) / t.book.pages) * 100 : 0}%` }} />
-                </span>
-              </button>
+          ))}
+          {books && (
+            <li>
+              <AddChapters onFolder={() => add("folder")} onFiles={() => add("files")} onMake={() => setNaming({ what: "chapter", text: "" })} />
             </li>
-          ),
-        )}
-      </ul>
+          )}
+        </ul>
+      )}
+      {!current && (
+        <ul className={`shelf ${drag ? "dragging" : ""}`}>
+          {tiles.map((t) =>
+            "series" in t ? (
+              <li key={`s${t.series.id}`}>
+                <button
+                  type="button"
+                  className={`shelf-book shelf-series ${dropClass(String(t.series.id))}`}
+                  onClick={() => onSeries(t.series.id)}
+                  data-drop={t.series.id}
+                >
+                  <SeriesCover series={t.series} first={t.chapters.find((b) => b.pages > 0)} />
+                  <span className="shelf-title">
+                    <FolderClosed size={15} strokeWidth={2.25} aria-hidden="true" /> {t.series.title}
+                  </span>
+                  <span className="shelf-meta">
+                    {t.series.chapters} {t.series.chapters === 1 ? "chapter" : "chapters"}
+                  </span>
+                </button>
+              </li>
+            ) : (
+              <li key={t.book.id}>
+                <button
+                  type="button"
+                  className={`shelf-book ${drag?.book.id === t.book.id ? "drag-source" : ""}`}
+                  onClick={() => onOpen(t.book.id)}
+                  {...dragHandlers(t.book)}
+                >
+                  <Cover book={t.book} />
+                  <span className="shelf-title">{t.book.title}</span>
+                  <span className="shelf-meta">
+                    {t.book.pages === 0
+                      ? "No pages yet"
+                      : t.book.opened_at
+                        ? `Page ${t.book.page + 1} of ${t.book.pages}`
+                        : `${t.book.pages} ${t.book.pages === 1 ? "page" : "pages"}`}
+                    {!!t.book.marks && ` · ${t.book.marks} ${t.book.marks === 1 ? "mark" : "marks"}`}
+                  </span>
+                  <span className="shelf-progress" aria-hidden="true">
+                    <span style={{ width: `${t.book.opened_at && t.book.pages ? ((t.book.page + 1) / t.book.pages) * 100 : 0}%` }} />
+                  </span>
+                </button>
+                {/* Chapters you made can have their pages edited (your own folders and .cbz files are never changed). */}
+                {t.book.kind === "made" && (
+                  <button
+                    type="button"
+                    className="icon-action shelf-edit"
+                    onClick={() => onMade(t.book.id)}
+                    title="Edit pages: add, reorder, rename or remove"
+                    aria-label={`Edit the pages of ${t.book.title}`}
+                  >
+                    <Pencil size={15} strokeWidth={2} />
+                  </button>
+                )}
+              </li>
+            ),
+          )}
+        </ul>
+      )}
+      {current && tiles.length > 0 && <p className="muted shelf-hint shelf-hint-below">Tip: drag a chapter onto “Bookshelf” to take it out of this series.</p>}
     </>
+  );
+}
+
+/** A chapter in a series, as a compact bar: CH.12, anything more its title says, and how far you've read. */
+function ChapterBar({
+  book,
+  seriesTitle,
+  dragging,
+  onOpen,
+  dragHandlers,
+}: {
+  book: Book;
+  seriesTitle: string;
+  dragging: boolean;
+  onOpen: () => void;
+  dragHandlers: React.HTMLAttributes<HTMLButtonElement>;
+}) {
+  const number = chapterNumber(book.title);
+  const subtitle = number ? chapterSubtitle(book.title, seriesTitle) : book.title;
+  const read = book.opened_at && book.pages ? (book.page + 1) / book.pages : 0;
+  const facts = [
+    book.pages === 0 ? "No pages yet" : `${book.pages} ${book.pages === 1 ? "page" : "pages"}`,
+    book.opened_at && book.pages > 0 && `page ${book.page + 1}`,
+    !!book.marks && `${book.marks} ${book.marks === 1 ? "mark" : "marks"}`,
+  ].filter(Boolean);
+  return (
+    <button type="button" className={`chapter-bar ${dragging ? "drag-source" : ""}`} onClick={onOpen} title={book.title} {...dragHandlers}>
+      <span className="chapter-head">
+        <span className="chapter-num">{number ? `CH.${number}` : subtitle}</span>
+        {number && subtitle && <span className="chapter-sub">{subtitle}</span>}
+      </span>
+      <span className="chapter-meta">
+        {facts.map((f, i) => (
+          <span key={i}>{f}</span>
+        ))}
+        {book.opened_at ? <span>read {timeAgo(book.opened_at, Date.now())}</span> : <span className="chapter-new">New</span>}
+      </span>
+      <span className="chapter-progress" aria-hidden="true">
+        <span style={{ width: `${read * 100}%` }} />
+      </span>
+    </button>
+  );
+}
+
+/** The + bar after a series' chapters: a menu of ways to add more. */
+function AddChapters({ onFolder, onFiles, onMake }: { onFolder: () => void; onFiles: () => void; onMake: () => void }) {
+  const [open, setOpen] = useState(false);
+  const box = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (!open) return;
+    const close = (e: MouseEvent) => box.current && !box.current.contains(e.target as Node) && setOpen(false);
+    const esc = (e: KeyboardEvent) => e.key === "Escape" && setOpen(false);
+    window.addEventListener("mousedown", close);
+    window.addEventListener("keydown", esc);
+    return () => {
+      window.removeEventListener("mousedown", close);
+      window.removeEventListener("keydown", esc);
+    };
+  }, [open]);
+  const choose = (action: () => void) => () => {
+    setOpen(false);
+    action();
+  };
+  return (
+    <div className="shelf-add" ref={box}>
+      <button type="button" className="shelf-add-btn" aria-haspopup="menu" aria-expanded={open} title="Add chapters" onClick={() => setOpen(!open)}>
+        <Plus size={18} strokeWidth={2} aria-hidden="true" /> Add chapters
+      </button>
+      {open && (
+        <div className="add-to-deck-menu shelf-add-menu" role="menu">
+          <button type="button" role="menuitem" onClick={choose(onFolder)}>
+            <span>
+              <FolderOpen size={15} aria-hidden="true" /> Add a folder
+            </span>
+          </button>
+          <button type="button" role="menuitem" onClick={choose(onFiles)}>
+            <span>
+              <FileArchive size={15} aria-hidden="true" /> Add .cbz files
+            </span>
+          </button>
+          <button type="button" role="menuitem" onClick={choose(onMake)}>
+            <span>
+              <ImagePlus size={15} aria-hidden="true" /> Make a chapter
+            </span>
+          </button>
+        </div>
+      )}
+    </div>
   );
 }
 
@@ -471,7 +614,7 @@ function useBookDrag(onDrop: (book: Book, seriesId: number | null) => void) {
  * the AI helper will see. Saves as you leave each field.
  */
 function SeriesInfo({ series, first, onCoverChanged }: { series: Series; first?: Book; onCoverChanged: () => void }) {
-  const [info, setInfo] = useState({ japanese_title: series.japanese_title, synopsis: series.synopsis });
+  const [info, setInfo] = useState({ synopsis: series.synopsis });
   /** What's saved, so leaving a field unchanged writes nothing. */
   const saved = useRef(info);
   const [extras, setExtras] = useState<SeriesExtras>();
@@ -479,8 +622,10 @@ function SeriesInfo({ series, first, onCoverChanged }: { series: Series; first?:
   const [editingSynopsis, setEditingSynopsis] = useState(false);
   /** Esc pressed: leaving the box shouldn't save. */
   const cancelSynopsis = useRef(false);
-  /** The title ("t3") or box ("b3") just added, to put the cursor in. */
+  /** The box ("b3") just added, to put the cursor in. */
   const [added, setAdded] = useState<string>();
+  /** The name (its id, or "new") being typed in "Also known as". */
+  const [editingTitle, setEditingTitle] = useState<number | "new">();
   /** Adding one: the Add buttons wait, so a double click can't add two. */
   const [adding, setAdding] = useState(false);
   /** A box with writing in it, waiting for a second click to delete. */
@@ -514,7 +659,21 @@ function SeriesInfo({ series, first, onCoverChanged }: { series: Series; first?:
     saved.current = { ...saved.current, [field]: info[field] };
     updateSeriesInfo(tauriDb, series.id, { [field]: info[field] }).catch(fail);
   };
-  const setTitle = (id: number, title: string) => setExtras({ ...extras, titles: extras.titles.map((t) => (t.id === id ? { ...t, title } : t)) });
+  /** Saves a name ("new": adds it); an empty one is removed. */
+  const saveTitle = async (id: number | "new", text: string) => {
+    setEditingTitle(undefined);
+    const title = text.trim();
+    try {
+      if (id === "new") {
+        if (title) setExtras({ ...extras, titles: [...extras.titles, { id: await addSeriesTitle(tauriDb, series.id, title), title }] });
+        return;
+      }
+      await setSeriesTitle(tauriDb, id, title);
+      setExtras({ ...extras, titles: title ? extras.titles.map((t) => (t.id === id ? { ...t, title } : t)) : extras.titles.filter((t) => t.id !== id) });
+    } catch (e) {
+      fail(e);
+    }
+  };
   const setBox = (id: number, change: Partial<SeriesExtras["boxes"][number]>) =>
     setExtras({ ...extras, boxes: extras.boxes.map((b) => (b.id === id ? { ...b, ...change } : b)) });
   const used = new Set(extras.boxes.map((b) => b.label.trim().toLowerCase()));
@@ -538,77 +697,40 @@ function SeriesInfo({ series, first, onCoverChanged }: { series: Series; first?:
             <ImageUp size={16} aria-hidden="true" /> Change cover
           </span>
         </button>
-        {series.cover && (
-          <button
-            type="button"
-            className="link series-cover-reset"
-            onClick={() =>
-              clearSeriesCover(tauriDb, series.id)
-                .then(onCoverChanged)
-                .catch(fail)
-            }
-          >
-            Use the first page instead
-          </button>
-        )}
       </div>
       <div className="series-fields">
-        <label>
-          Japanese title
-          <input
-            lang="ja"
-            value={info.japanese_title}
-            placeholder="As printed on the cover, e.g. 悪役令嬢の恋"
-            onChange={(e) => setInfo({ ...info, japanese_title: e.target.value })}
-            onBlur={() => saveInfo("japanese_title")}
-          />
-        </label>
         <div className="series-field reveal-tools">
           <span className="series-label">Also known as</span>
-          {extras.titles.length === 0 && <span className="muted series-none">No other titles yet.</span>}
-          {extras.titles.map((t) => (
-            <div key={t.id} className="series-row">
-              <input
-                value={t.title}
-                autoFocus={added === `t${t.id}`}
-                aria-label="Also known as"
-                placeholder="Another title: in English, a fan translation, a short name…"
-                onChange={(e) => setTitle(t.id, e.target.value)}
-                onBlur={() => {
-                  setSeriesTitle(tauriDb, t.id, t.title).catch(fail);
-                  if (!t.title.trim()) setExtras({ ...extras, titles: extras.titles.filter((x) => x.id !== t.id) });
-                }}
-              />
+          <div className="aka-tags">
+            {extras.titles.length === 0 && editingTitle === undefined && <span className="muted series-none">No other names yet.</span>}
+            {extras.titles.map((t) =>
+              editingTitle === t.id ? (
+                <TagInput key={t.id} initial={t.title} label="Also known as" onDone={(text) => saveTitle(t.id, text)} onCancel={() => setEditingTitle(undefined)} />
+              ) : (
+                <span key={t.id} className="aka-tag">
+                  <button type="button" className="aka-text" onClick={() => setEditingTitle(t.id)} title="Click to edit">
+                    {t.title}
+                  </button>
+                  <button type="button" className="aka-remove tool" onClick={() => saveTitle(t.id, "")} title="Remove this name" aria-label={`Remove ${t.title}`}>
+                    <X size={11} strokeWidth={3} />
+                  </button>
+                </span>
+              ),
+            )}
+            {editingTitle === "new" ? (
+              <TagInput initial="" label="New name" onDone={(text) => saveTitle("new", text)} onCancel={() => setEditingTitle(undefined)} />
+            ) : (
               <button
                 type="button"
-                className="icon-action tool"
-                title="Remove this title"
-                aria-label="Remove this title"
-                onClick={() => {
-                  setSeriesTitle(tauriDb, t.id, "").catch(fail);
-                  setExtras({ ...extras, titles: extras.titles.filter((x) => x.id !== t.id) });
-                }}
+                className="aka-tag aka-add tool"
+                onClick={() => setEditingTitle("new")}
+                title="Add a name: the Japanese title, an English or fan translation, a short name…"
+                aria-label="Add a name"
               >
-                <X size={15} />
+                <Plus size={13} strokeWidth={2.5} aria-hidden="true" />
               </button>
-            </div>
-          ))}
-          <button
-            type="button"
-            className="series-add tool"
-            disabled={adding}
-            onClick={() =>
-              addRow(
-                () => addSeriesTitle(tauriDb, series.id, ""),
-                (id) => {
-                  setExtras({ ...extras, titles: [...extras.titles, { id, title: "" }] });
-                  setAdded(`t${id}`);
-                },
-              )
-            }
-          >
-            <Plus size={14} aria-hidden="true" /> Add a title
-          </button>
+            )}
+          </div>
         </div>
         <div className="series-field reveal-tools">
           <span className="series-label" id={`synopsis-${series.id}`}>
@@ -722,6 +844,124 @@ function SeriesInfo({ series, first, onCoverChanged }: { series: Series; first?:
   );
 }
 
+/** A small text box standing in for a tag while you type: Enter or clicking away saves, Esc cancels. */
+function TagInput({ initial, label, onDone, onCancel }: { initial: string; label: string; onDone: (text: string) => void; onCancel: () => void }) {
+  const cancelled = useRef(false);
+  return (
+    <input
+      className="aka-input"
+      autoFocus
+      defaultValue={initial}
+      aria-label={label}
+      placeholder="A name"
+      size={Math.max(initial.length, 12)}
+      onFocus={(e) => e.currentTarget.select()}
+      onKeyDown={(e) => {
+        if (e.key === "Enter") e.currentTarget.blur();
+        if (e.key === "Escape") {
+          cancelled.current = true;
+          onCancel();
+        }
+      }}
+      onBlur={(e) => !cancelled.current && onDone(e.currentTarget.value)}
+    />
+  );
+}
+
+/**
+ * Dragging items of a list into a new order, with pointer events (like
+ * useBookDrag). Items carry data-reorder={index}; the drop goes before or
+ * after the item under the pointer, by which half of it the pointer is over.
+ * Near the window's top or bottom edge the page scrolls, for long lists. A
+ * press that barely moves is still a click; Esc cancels. Presses on buttons
+ * and text boxes inside an item are left alone.
+ */
+function useReorderDrag(onMove: (from: number, to: number) => void, enabled: boolean) {
+  const [drag, setDrag] = useState<{ from: number; x: number; y: number; over?: number; side?: "before" | "after" }>();
+  const pressed = useRef<{ from: number; x: number; y: number }>(undefined);
+  const dragged = useRef(false);
+  const pointer = useRef({ x: 0, y: 0 });
+  const move = useRef(onMove);
+  move.current = onMove;
+
+  useEffect(() => {
+    const targetAt = (x: number, y: number) => {
+      const el = (document.elementFromPoint(x, y) as HTMLElement | null)?.closest<HTMLElement>("[data-reorder]");
+      if (!el) return {};
+      const r = el.getBoundingClientRect();
+      return { over: Number(el.dataset.reorder), side: x < r.left + r.width / 2 ? ("before" as const) : ("after" as const) };
+    };
+    function onMove(e: PointerEvent) {
+      const p = pressed.current;
+      if (!p) return;
+      pointer.current = { x: e.clientX, y: e.clientY };
+      if (!dragged.current && Math.hypot(e.clientX - p.x, e.clientY - p.y) < 6) return;
+      dragged.current = true;
+      setDrag({ from: p.from, x: e.clientX, y: e.clientY, ...targetAt(e.clientX, e.clientY) });
+    }
+    function onUp(e: PointerEvent) {
+      const p = pressed.current;
+      pressed.current = undefined;
+      if (!p || !dragged.current) return;
+      setDrag(undefined);
+      // The click that may follow this drop is swallowed; one that never comes (dropped elsewhere) mustn't eat the next.
+      window.setTimeout(() => (dragged.current = false));
+      const { over, side } = targetAt(e.clientX, e.clientY);
+      if (over === undefined) return;
+      let to = side === "before" ? over : over + 1;
+      if (to > p.from) to -= 1; // the item leaves its old place first
+      if (to !== p.from) move.current(p.from, to);
+    }
+    function onKey(e: KeyboardEvent) {
+      if (e.key !== "Escape" || !pressed.current) return;
+      pressed.current = undefined;
+      setDrag(undefined);
+    }
+    window.addEventListener("pointermove", onMove);
+    window.addEventListener("pointerup", onUp);
+    window.addEventListener("keydown", onKey);
+    return () => {
+      window.removeEventListener("pointermove", onMove);
+      window.removeEventListener("pointerup", onUp);
+      window.removeEventListener("keydown", onKey);
+    };
+  }, []);
+
+  // While dragging, scroll when the pointer rests near the top or bottom edge.
+  const dragging = drag !== undefined;
+  useEffect(() => {
+    if (!dragging) return;
+    const timer = window.setInterval(() => {
+      const { x, y } = pointer.current;
+      const edge = 70;
+      const by = y < edge ? -14 : y > window.innerHeight - edge ? 14 : 0;
+      if (!by) return;
+      window.scrollBy(0, by);
+      const el = (document.elementFromPoint(x, y) as HTMLElement | null)?.closest<HTMLElement>("[data-reorder]");
+      if (!el) return;
+      const r = el.getBoundingClientRect();
+      setDrag((d) => d && { ...d, over: Number(el.dataset.reorder), side: x < r.left + r.width / 2 ? "before" : "after" });
+    }, 16);
+    return () => window.clearInterval(timer);
+  }, [dragging]);
+
+  const handlers = (index: number) => ({
+    "data-reorder": index,
+    onPointerDown: (e: React.PointerEvent) => {
+      dragged.current = false; // a new press: any click after it is a real one
+      if (!enabled || e.button !== 0 || (e.target as HTMLElement).closest("button, input, textarea, select")) return;
+      pressed.current = { from: index, x: e.clientX, y: e.clientY };
+    },
+    onClickCapture: (e: React.MouseEvent) => {
+      if (!dragged.current) return;
+      dragged.current = false;
+      e.preventDefault();
+      e.stopPropagation();
+    },
+  });
+  return { drag, handlers };
+}
+
 function EmptyCover() {
   return (
     <span className="shelf-cover">
@@ -825,7 +1065,11 @@ function Reader({ id, startPage, onBack, onEditPages }: { id: number; startPage?
   const [selected, setSelected] = useState<number>();
   const [fresh, setFresh] = useState<number>();
   const [kind, setKind] = useState<MarkKind>("speech");
-  const [fitWidth, setFitWidth] = useState(false);
+  /** The page's zoom (react-zoom-pan-pinch), for the toolbar's buttons. */
+  const zoom = useRef<ReactZoomPanPinchRef>(null);
+  const [scale, setScale] = useState(1);
+  /** Space held: dragging pans the page instead of drawing a box. */
+  const [spaceHeld, setSpaceHeld] = useState(false);
   const [showMarks, setShowMarks] = useState(true);
   const [aboutOpen, setAboutOpen] = useState(false);
   const [error, setError] = useState<string>();
@@ -866,7 +1110,30 @@ function Reader({ id, startPage, onBack, onEditPages }: { id: number; startPage?
   const go = useCallback((delta: number) => setIndex((i) => Math.min(Math.max(i + delta, 0), Math.max(count - 1, 0))), [count]);
 
   useEffect(() => {
+    function space(e: KeyboardEvent) {
+      if (e.key !== " " || typing(e)) return;
+      e.preventDefault(); // not a click on whatever button has focus, nor a scroll
+      setSpaceHeld(e.type === "keydown");
+    }
+    const release = () => setSpaceHeld(false);
+    window.addEventListener("keydown", space);
+    window.addEventListener("keyup", space);
+    window.addEventListener("blur", release);
+    return () => {
+      window.removeEventListener("keydown", space);
+      window.removeEventListener("keyup", space);
+      window.removeEventListener("blur", release);
+    };
+  }, []);
+
+  useEffect(() => {
     function onKey(e: KeyboardEvent) {
+      // Esc closes a mark's editor even mid-typing (leaving the field saves it).
+      if (e.key === "Escape" && typing(e) && (e.target as HTMLElement).closest(".mark-editor")) {
+        (e.target as HTMLElement).blur();
+        setSelected(undefined);
+        return;
+      }
       if (typing(e)) return;
       if (e.key === "ArrowLeft") go(rtl ? 1 : -1);
       else if (e.key === "ArrowRight") go(rtl ? -1 : 1);
@@ -978,16 +1245,20 @@ function Reader({ id, startPage, onBack, onEditPages }: { id: number; startPage?
             </span>
             {rtl ? prev : next}
           </div>
-          <button
-            type="button"
-            className={`icon-action ${fitWidth ? "on" : ""}`}
-            onClick={() => setFitWidth(!fitWidth)}
-            title={fitWidth ? "Fit the whole page" : "Fit the width (zoom in)"}
-            aria-pressed={fitWidth}
-            aria-label="Fit width"
-          >
-            <UnfoldHorizontal size={18} />
-          </button>
+          <div className="reader-zoom-tools" role="group" aria-label="Zoom">
+            <button type="button" className="icon-action" onClick={() => zoomBy(zoom.current, 1 / ZOOM_STEP)} disabled={scale <= 1.001} title="Zoom out (Ctrl + scroll)" aria-label="Zoom out">
+              <ZoomOut size={18} />
+            </button>
+            <button type="button" className="reader-zoom-level" onClick={() => zoom.current?.setTransform(0, 0, 1, 0)} title="Back to the whole page" aria-label="Back to the whole page">
+              <span className="num">{Math.round(scale * 100)}</span>%
+            </button>
+            <button type="button" className="icon-action" onClick={() => zoomBy(zoom.current, ZOOM_STEP)} disabled={scale >= MAX_ZOOM - 0.001} title="Zoom in (Ctrl + scroll)" aria-label="Zoom in">
+              <ZoomIn size={18} />
+            </button>
+            <button type="button" className="icon-action" onClick={() => fitWidth(zoom.current)} title="Fit the width" aria-label="Fit the width">
+              <UnfoldHorizontal size={18} />
+            </button>
+          </div>
           <button
             type="button"
             className={`icon-action ${showMarks ? "" : "on"}`}
@@ -1014,11 +1285,15 @@ function Reader({ id, startPage, onBack, onEditPages }: { id: number; startPage?
             <Info size={18} />
           </button>
         </div>
-        <div className={`reader-stage ${fitWidth ? "fit-width" : ""}`}>
+        <div className={`reader-stage ${spaceHeld ? "panning" : ""}`}>
           {pageError ? (
             <p className="error">{pageError}</p>
           ) : url && page ? (
             <PageView
+              key={url}
+              zoom={zoom}
+              scale={scale}
+              onScale={setScale}
               url={url}
               alt={`Page ${index + 1}`}
               marks={showMarks ? marks : []}
@@ -1065,7 +1340,7 @@ function Reader({ id, startPage, onBack, onEditPages }: { id: number; startPage?
           ))}
         </div>
         <p className="mark-help muted">
-          {showMarks ? "Drag a box on the page to mark it. Click a box to open it." : "Boxes are hidden. Show them to mark the page."}
+          {showMarks ? "Drag a box on the page to mark it. Click a box to open it. Zoom with Ctrl + scroll; move around by scrolling, or hold Space and drag." : "Boxes are hidden. Show them to mark the page."}
         </p>
         {marks.length === 0 ? (
           <p className="muted mark-empty">Nothing marked on this page yet.</p>
@@ -1105,7 +1380,40 @@ function Reader({ id, startPage, onBack, onEditPages }: { id: number; startPage?
 }
 
 /** A page with its boxes: drag to draw a new box, click a box to select it. */
+const MAX_ZOOM = 8;
+/** Each press of the + or − button. */
+const ZOOM_STEP = 1.5;
+
+/** Zooms by `factor`, keeping what's in the middle of the stage in the middle. */
+function zoomBy(zoom: ReactZoomPanPinchRef | null, factor: number) {
+  const stage = zoom?.instance.wrapperComponent;
+  if (!zoom || !stage) return;
+  const { scale, positionX, positionY } = zoom.instance.state;
+  const next = Math.min(Math.max(scale * factor, 1), MAX_ZOOM);
+  if (next === 1) return zoom.setTransform(0, 0, 1, 0);
+  const cx = (stage.clientWidth / 2 - positionX) / scale;
+  const cy = (stage.clientHeight / 2 - positionY) / scale;
+  zoom.setTransform(stage.clientWidth / 2 - cx * next, stage.clientHeight / 2 - cy * next, next, 0);
+}
+
+/** Zooms so the page fills the stage's width, from its top. */
+function fitWidth(zoom: ReactZoomPanPinchRef | null) {
+  const page = zoom?.instance.contentComponent?.querySelector<HTMLElement>(".reader-page");
+  const stage = zoom?.instance.wrapperComponent;
+  if (!zoom || !page || !stage) return;
+  const s = Math.min(stage.clientWidth / page.offsetWidth, MAX_ZOOM);
+  zoom.setTransform(-page.offsetLeft * s, -page.offsetTop * s, s, 0);
+}
+
+/**
+ * A page with its boxes: drag to draw a new box, click a box to select it.
+ * Zoom with Ctrl + scroll or a pinch; scroll, or drag with Space held, to pan.
+ * The boxes sit inside the zoomed page, so they zoom along with it.
+ */
 function PageView({
+  zoom,
+  scale,
+  onScale,
   url,
   alt,
   marks,
@@ -1114,6 +1422,9 @@ function PageView({
   onDraw,
   onSelect,
 }: {
+  zoom: React.Ref<ReactZoomPanPinchRef>;
+  scale: number;
+  onScale: (scale: number) => void;
   url: string;
   alt: string;
   marks: Mark[];
@@ -1137,44 +1448,60 @@ function PageView({
     h: Math.abs(a.y - b.y),
   });
 
+  useEffect(() => () => onScale(1), [onScale]); // a new page starts unzoomed
+
   return (
-    <div className="reader-page">
-      <img src={url} alt={alt} draggable={false} />
-      <div
-        ref={layer}
-        className="mark-layer"
-        onPointerDown={(e) => {
-          if (e.button !== 0) return;
-          e.currentTarget.setPointerCapture(e.pointerId);
-          start.current = point(e);
-        }}
-        onPointerMove={(e) => {
-          if (start.current) setDraft(boxFrom(start.current, point(e)));
-        }}
-        onPointerUp={(e) => {
-          if (!start.current) return;
-          const box = boxFrom(start.current, point(e));
-          start.current = undefined;
-          setDraft(undefined);
-          if (box.w > 0.01 && box.h > 0.01) return onDraw(box);
-          // A click, not a drag: select the box under it (the newest, if they overlap).
-          const p = point(e);
-          const hit = [...marks].reverse().find((m) => p.x >= m.x && p.x <= m.x + m.w && p.y >= m.y && p.y <= m.y + m.h);
-          onSelect(hit?.id);
-        }}
-        onPointerCancel={() => {
-          start.current = undefined;
-          setDraft(undefined);
-        }}
-      >
-        {marks.map((m, i) => (
-          <div key={m.id} className={`mark-box kind-${m.kind} ${selected === m.id ? "selected" : ""}`} style={boxStyle(m)}>
-            <span className="mark-num">{i + 1}</span>
+    <TransformWrapper
+      ref={zoom}
+      minScale={1}
+      maxScale={MAX_ZOOM}
+      limitToBounds
+      wheel={{ activationKeys: ["Control"], step: 0.002 }}
+      panning={{ excluded: ["mark-layer"], velocityDisabled: true }}
+      trackPadPanning={{ disabled: false, velocityDisabled: true }}
+      doubleClick={{ disabled: true }}
+      onTransform={(_, state) => onScale(state.scale)}
+    >
+      <TransformComponent wrapperClass="reader-zoom" contentClass="reader-zoom-content">
+        <div className="reader-page" style={{ "--zoom": scale } as React.CSSProperties}>
+          <img src={url} alt={alt} draggable={false} />
+          <div
+            ref={layer}
+            className="mark-layer"
+            onPointerDown={(e) => {
+              if (e.button !== 0) return;
+              e.currentTarget.setPointerCapture(e.pointerId);
+              start.current = point(e);
+            }}
+            onPointerMove={(e) => {
+              if (start.current) setDraft(boxFrom(start.current, point(e)));
+            }}
+            onPointerUp={(e) => {
+              if (!start.current) return;
+              const box = boxFrom(start.current, point(e));
+              start.current = undefined;
+              setDraft(undefined);
+              if (box.w > 0.01 && box.h > 0.01) return onDraw(box);
+              // A click, not a drag: select the box under it (the newest, if they overlap).
+              const p = point(e);
+              const hit = [...marks].reverse().find((m) => p.x >= m.x && p.x <= m.x + m.w && p.y >= m.y && p.y <= m.y + m.h);
+              onSelect(hit?.id);
+            }}
+            onPointerCancel={() => {
+              start.current = undefined;
+              setDraft(undefined);
+            }}
+          >
+            {marks.map((m, i) => (
+              <div key={m.id} className={`mark-box kind-${m.kind} ${selected === m.id ? "selected" : ""}`} style={boxStyle(m)}>
+                <span className="mark-num">{i + 1}</span>
+              </div>
+            ))}
+            {draft && <div className={`mark-box draft kind-${kind}`} style={boxStyle(draft)} />}
           </div>
-        ))}
-        {draft && <div className={`mark-box draft kind-${kind}`} style={boxStyle(draft)} />}
-      </div>
-    </div>
+        </div>
+      </TransformComponent>
+    </TransformWrapper>
   );
 }
 
@@ -1417,6 +1744,9 @@ function PageEditor({ id, onBack, onRead }: { id: number; onBack: () => void; on
   const cancelRename = useRef(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string>();
+  /** Moves a page from one place to another (set below, once the pages are loaded). */
+  const moveTo = useRef<(from: number, to: number) => void>(() => {});
+  const { drag, handlers: reorder } = useReorderDrag((from, to) => moveTo.current(from, to), !busy && renaming === undefined);
 
   const load = useCallback(async () => {
     const b = await getBook(tauriDb, id);
@@ -1462,6 +1792,7 @@ function PageEditor({ id, onBack, onRead }: { id: number; onBack: () => void; on
     next.splice(i + by, 0, ...next.splice(i, 1));
     arrange(next);
   };
+  moveTo.current = (from, to) => move(from, to - from);
   const remove = (name: string) => (marks[name] && confirm !== name ? setConfirm(name) : arrange(pages.filter((p) => p !== name)));
   const rename = (page: string, text: string) => {
     setRenaming(undefined);
@@ -1482,7 +1813,7 @@ function PageEditor({ id, onBack, onRead }: { id: number; onBack: () => void; on
       </button>
       <h1>{book.title}</h1>
       <p className="muted reading-intro">
-        Add page images, one or a few at a time, and put them in reading order. Removing a page deletes Koihongo's copy, never your original.
+        Add page images, one or a few at a time, and drag them into reading order. Removing a page deletes Koihongo's copy, never your original.
       </p>
       <div className="reading-actions">
         <button type="button" className="primary" onClick={add} disabled={busy}>
@@ -1494,9 +1825,18 @@ function PageEditor({ id, onBack, onRead }: { id: number; onBack: () => void; on
       </div>
       {error && <p className="error">{error}</p>}
       {pages.length === 0 && <p className="muted">No pages yet.</p>}
-      <ol className="page-grid">
+      {drag && (
+        <div className="drag-ghost" style={{ left: drag.x, top: drag.y }} aria-hidden="true">
+          Page {drag.from + 1}
+        </div>
+      )}
+      <ol className={`page-grid ${drag ? "dragging" : ""}`}>
         {pages.map((name, i) => (
-          <li key={name} className="page-tile">
+          <li
+            key={name}
+            className={`page-tile ${drag?.from === i ? "drag-source" : ""} ${drag && drag.over === i && drag.from !== i ? `drop-${drag.side}` : ""}`}
+            {...reorder(i)}
+          >
             <PageThumb path={book.path} name={name} />
             <span className="page-tile-label">
               <span className="mark-num">{i + 1}</span>

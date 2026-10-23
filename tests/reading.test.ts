@@ -201,7 +201,8 @@ test("series info becomes the context sent with translation requests", async () 
   await addBooks(db, [{ path: "C:/m/Ch 2", title: "Ch 2", kind: "folder", pages: 3, series: "Villainess" }], T0);
   const [book] = await listBooks(db);
   const seriesId = book.series_id!;
-  await updateSeriesInfo(db, seriesId, { japanese_title: "悪役令嬢", synopsis: "  A noble girl remembers her past life.  " });
+  await updateSeriesInfo(db, seriesId, { synopsis: "  A noble girl remembers her past life.  " });
+  await addSeriesTitle(db, seriesId, "悪役令嬢");
   await addSeriesTitle(db, seriesId, "The Villainess");
   const blank = await addSeriesTitle(db, seriesId, "");
   await setSeriesTitle(db, await addSeriesTitle(db, seriesId, "x"), "Villainess Route");
@@ -215,8 +216,7 @@ test("series info becomes the context sent with translation requests", async () 
     await readingContext(db, book.id),
     [
       "Series: Villainess",
-      "Japanese title: 悪役令嬢",
-      "Also known as: The Villainess; Villainess Route",
+      "Also known as: 悪役令嬢; The Villainess; Villainess Route",
       "Synopsis:\nA noble girl remembers her past life.",
       "Cast:\nClaire: the villainess",
       "This chapter: Ch 2",
@@ -227,4 +227,56 @@ test("series info becomes the context sent with translation requests", async () 
   // A book in no series: just its own notes.
   await setBookSeries(db, book.id, null);
   assert.equal(await readingContext(db, book.id), "Book: Ch 2\n\nNotes:\nThe ball scene.");
+});
+
+test("upgrading: a Japanese title typed in separately becomes an 'also known as' name", async () => {
+  const db = openTestDb(() => {});
+  await migrate(db, 9);
+  await db.batch([
+    { sql: "INSERT INTO series (title, japanese_title, created_at) VALUES ('Villainess', ' 悪役令嬢 ', 1), ('Other', '', 1)" },
+    { sql: "INSERT INTO series_titles (series_id, title) VALUES (1, 'The Villainess')" },
+  ]);
+  await migrate(db);
+  const titles = await db.all<{ series_id: number; title: string }>("SELECT series_id, title FROM series_titles ORDER BY id");
+  assert.deepEqual(titles.map((r) => [r.series_id, r.title]), [[1, "The Villainess"], [1, "悪役令嬢"]]);
+});
+
+test("chapters: the number in a title, however it's written", async () => {
+  const { chapterNumber } = await import("../src/reading.ts");
+  const cases: [string, string | null][] = [
+    ["Chapter 12", "12"],
+    ["Koi Story · Ch.3", "3"],
+    ["ch 12.5 - Extra", "12.5"],
+    ["第１２話", "12"],
+    ["悪役令嬢 5話", "5"],
+    ["クズな元婚約者を差し置いて、まさかあなたがヤンデレなんですか！？ Chapter 1", "1"],
+    ["Vol 2 page 7", "7"],
+    ["Chapter 007", "7"],
+    ["Prologue", null],
+  ];
+  for (const [title, n] of cases) assert.equal(chapterNumber(title), n, title);
+});
+
+test("chapters: a subtitle only when the title says more than series and number", async () => {
+  const { chapterSubtitle } = await import("../src/reading.ts");
+  assert.equal(chapterSubtitle("Koi Story · Chapter 3: The Pond", "Koi Story"), "The Pond");
+  assert.equal(chapterSubtitle("クズな元婚約者を差し置いて、まさかあなたがヤンデレなんですか！？ Chapter 1", "クズな元婚約者を差し置いて、まさかあなたがヤンデレなんですか！？"), "");
+  assert.equal(chapterSubtitle("Chapter 2", "Koi Story"), "");
+  assert.equal(chapterSubtitle("第3話 はじまり", "X"), "はじまり");
+  assert.equal(chapterSubtitle("Prologue", "Koi Story"), "Prologue");
+});
+
+test("chapters: reading order by number (2 before 10), else by title", async () => {
+  const { byChapter } = await import("../src/reading.ts");
+  const titles = ["Chapter 10", "Extra", "Chapter 2", "Chapter 1.5", "Chapter 1"];
+  assert.deepEqual([...titles].map((title) => ({ title })).sort(byChapter).map((b) => b.title), ["Chapter 1", "Chapter 1.5", "Chapter 2", "Chapter 10", "Extra"]);
+});
+
+test("time ago, in short steps", async () => {
+  const { timeAgo } = await import("../src/reading.ts");
+  const MIN = 60_000;
+  assert.deepEqual(
+    [0, 5 * MIN, 3 * 60 * MIN, 2 * 1440 * MIN, 8 * 1440 * MIN, 40 * 1440 * MIN, 400 * 1440 * MIN].map((ago) => timeAgo(T0 - ago, T0)),
+    ["just now", "5m ago", "3h ago", "2d ago", "1w ago", "1mo ago", "1y ago"],
+  );
 });

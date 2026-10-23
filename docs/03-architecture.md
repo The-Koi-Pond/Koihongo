@@ -52,7 +52,7 @@ Verified 2026-10-20. How we actually get the data:
 **Gaps we fill ourselves:**
 
 - **Mnemonics:** none of the open sources have them. Plan: AI drafts them, you approve or rewrite them (see 02-features G).
-- **Component names:** WaniKani's names are its own. We name components ourselves, starting from KANJIDIC/KRADFILE meanings.
+- **Component names:** WaniKani's names are its own. We name components ourselves, starting from KANJIDIC/KRADFILE meanings. Their **Japanese names** (くにがまえ, さんずい, ひ) come from KANJIDIC2's radical names for the shape we show, checked by hand, else the kanji's everyday reading; [`scripts/content/componentNames.ts`](../scripts/content/componentNames.ts) holds the corrections and what each name means. Parts with no common Japanese name get none.
 - **Grammar explanations:** no good open grammar database exists. Grammar point *names* (e.g. 〜ている) aren't owned by anyone; explanations get written by us with AI help and reviewed.
 
 Because CC BY-SA is "share-alike", the app needs an **About/credits screen** listing these sources. Keeping the app private and personal is fine either way.
@@ -78,7 +78,7 @@ The two files connect through **item keys**, text IDs that stay stable across da
 
 ```
 meta, sources       build date, dataset versions, licences/credits (feeds the About screen)
-components          glyph, display, name, stroke_count          (245)
+components          glyph, display, name, stroke_count, ja_name, ja_note   (245; Japanese names: scripts/content/componentNames.ts)
 kanji               character, meanings, readings, grade, JLPT, frequency, stroke-order SVG
                     (2,974: jōyō + jinmeiyō)
 kanji_components    kanji → component

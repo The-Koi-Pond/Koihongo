@@ -22,7 +22,9 @@ CREATE TABLE components (
   display      TEXT NOT NULL,
   name         TEXT NOT NULL,
   stroke_count INTEGER NOT NULL,
-  stroke_svg   TEXT             -- KanjiVG SVG of the displayed shape, NULL if missing
+  stroke_svg   TEXT,            -- KanjiVG SVG of the displayed shape, NULL if missing
+  ja_name      TEXT,            -- its Japanese name (くにがまえ, さんずい, ひ), NULL if none (componentNames.ts)
+  ja_note      TEXT             -- what that name means, or what it's called where it sits
 );
 
 CREATE TABLE kanji (

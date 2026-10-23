@@ -34,6 +34,9 @@ export type ComponentDetails = Common & {
   kind: "component";
   display: string;
   name: string;
+  /** Its Japanese name (くにがまえ, さんずい, ひ), and what that means or where it's called that. */
+  jaName: string | null;
+  jaNote: string | null;
   strokeSvg: string | null;
   usedIn: { character: string; meaning: string }[];
 };
@@ -136,12 +139,12 @@ export async function getItemDetails(db: Db, itemKey: string): Promise<ItemDetai
   }
 
   if (kind === "component") {
-    const [row] = await db.all<{ display: string; name: string; stroke_svg: string | null }>(
-      "SELECT display, name, stroke_svg FROM content.components WHERE glyph = ?",
+    const [row] = await db.all<{ display: string; name: string; stroke_svg: string | null; ja_name: string | null; ja_note: string | null }>(
+      "SELECT display, name, stroke_svg, ja_name, ja_note FROM content.components WHERE glyph = ?",
       [id],
     );
     if (!row) throw new Error(`Unknown component ${id}`);
-    const c = { display: row.display, name: row.name, strokeSvg: row.stroke_svg };
+    const c = { display: row.display, name: row.name, strokeSvg: row.stroke_svg, jaName: row.ja_name, jaNote: row.ja_note };
     // The first few kanji on the path that use it. A component that's also a
     // kanji by itself (王, 糸) lists that kanji first, so you can check its
     // reading, even when it comes late on the path.

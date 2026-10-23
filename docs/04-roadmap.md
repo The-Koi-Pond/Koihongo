@@ -68,8 +68,8 @@ Each phase ends with something you can **use daily**. Don't start the next phase
 Your own manga, in stages (details: `02-features.md` F):
 
 - ✅ Stage 1: bookshelf (folders and .cbz), reader, boxes with text and meaning, "seen before" across books, glossary, "About this book".
-- Stage 2: split marked text into words, known-word colours, words to deck cards with sentence and panel cut-out.
-- Stage 3: OCR (Windows built-in, optional manga-ocr) and AI reading of a box, with the context sent along (`readingContext` in `src/reading.ts`: the series page's info plus the chapter's notes) and the reply explaining how the context changes the meaning.
+- Stage 2: split marked text into words, known-word colours, words to deck cards with sentence and panel cut-out. Study Yomitan first (`05-references.md`).
+- Stage 3 (study LunaTranslator and manga-ocr first, `05-references.md`): OCR (Windows built-in, optional manga-ocr) and AI reading of a box, with the context sent along (`readingContext` in `src/reading.ts`: the series page's info plus the chapter's notes) and the reply explaining how the context changes the meaning.
 - Paste text → split into words → hover definitions, known words marked.
 
 ## After that (unordered)
