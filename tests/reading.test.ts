@@ -560,3 +560,20 @@ test("scroll mode is set for a whole series (or a book by itself), and the next 
   assert.equal(await nextChapter(db, ch("Ch 10")), undefined);
   assert.equal(await nextChapter(db, ch("Oneshot")), undefined);
 });
+
+test("scroll mode: on by default in the Manhwa category, until you turn it off", async () => {
+  const { setScrolling, getBook, listCategories } = await import("../src/reading.ts");
+  const db = openTestDb(() => {});
+  await migrate(db);
+  const manhwa = (await listCategories(db)).find((c) => c.name === "Manhwa")!.id;
+  await addBooks(db, [{ path: "C:/w/Solo/Ch 1", title: "Ch 1", kind: "folder", pages: 3, series: "Solo" }], T0, undefined, manhwa);
+  await addBooks(db, [{ path: "C:/m/Koi/Ch 1", title: "Koi 1", kind: "folder", pages: 3, series: "Koi" }], T0, undefined, 1);
+  const [solo, koi] = ["Ch 1", "Koi 1"].map((t) => t);
+  const book = async (title: string) => getBook(db, (await listBooks(db)).find((b) => b.title === title)!.id);
+  assert.equal((await book(solo))?.scrolling, 1, "manhwa scrolls");
+  assert.equal((await book(koi))?.scrolling, 0, "manga doesn't");
+  await setScrolling(db, (await book(solo))!, false);
+  assert.equal((await book(solo))?.scrolling, 0, "your choice wins");
+  await setScrolling(db, (await book(koi))!, true);
+  assert.equal((await book(koi))?.scrolling, 1);
+});
