@@ -26,6 +26,8 @@ export type Book = {
   /** Its category, when it's on the shelf by itself (in a series, the series' counts). */
   category_id: number | null;
   /** Its series' bookmark (getBook only): which chapter and page. */
+  /** Read in scroll mode (getBook only): its series' setting, or its own when it's in none. */
+  scrolling?: number;
   bookmark_book?: number | null;
   bookmark_page?: string | null;
   /** How many marks it has (listBooks only). */
@@ -217,7 +219,7 @@ export async function listBooks(db: Db): Promise<Book[]> {
 
 export async function getBook(db: Db, id: number): Promise<Book | undefined> {
   const [book] = await db.all<Book>(
-    `SELECT b.*, s.title AS series_title, s.bookmark_book, s.bookmark_page
+    `SELECT b.*, s.title AS series_title, s.bookmark_book, s.bookmark_page, coalesce(s.scroll, b.scroll) AS scrolling
      FROM books b LEFT JOIN series s ON s.id = b.series_id WHERE b.id = ?`,
     [id],
   );
@@ -465,6 +467,23 @@ export async function updateBook(db: Db, id: number, fields: Partial<Pick<Book, 
   await db.batch([
     { sql: `UPDATE books SET ${entries.map(([k]) => `${k} = ?`).join(", ")} WHERE id = ?`, params: [...entries.map(([, v]) => v as string | number), id] },
   ]);
+}
+
+/** Scroll mode on or off: for the book's whole series, or for the book when it's in none. */
+export async function setScrolling(db: Db, book: Pick<Book, "id" | "series_id">, on: boolean): Promise<void> {
+  await db.batch([
+    book.series_id !== null
+      ? { sql: "UPDATE series SET scroll = ? WHERE id = ?", params: [Number(on), book.series_id] }
+      : { sql: "UPDATE books SET scroll = ? WHERE id = ?", params: [Number(on), book.id] },
+  ]);
+}
+
+/** The chapter after this one in its series (chapter order), if any. */
+export async function nextChapter(db: Db, book: Pick<Book, "id" | "series_id">): Promise<Book | undefined> {
+  if (book.series_id === null) return undefined;
+  const chapters = (await listBooks(db)).filter((b) => b.series_id === book.series_id).sort(byChapter);
+  const at = chapters.findIndex((b) => b.id === book.id);
+  return at >= 0 ? chapters[at + 1] : undefined;
 }
 
 /** Remembers where you are in a book (and how many pages it has now). */

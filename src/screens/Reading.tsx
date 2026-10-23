@@ -12,6 +12,7 @@ import {
   FileArchive,
   FolderClosed,
   FolderOpen,
+  GalleryVertical,
   FolderPlus,
   ImagePlus,
   ImageUp,
@@ -75,6 +76,7 @@ import {
   markNumbers,
   markSections,
   marksPerPage,
+  nextChapter,
   pageMarks,
   pageUrl,
   pickBooks,
@@ -94,6 +96,7 @@ import {
   setBookmark,
   setCategory,
   setMarkBox,
+  setScrolling,
   setMoreBoxes,
   sfxDictionary,
   setBookSeries,
@@ -149,7 +152,16 @@ export function Reading() {
   };
   if (view.mode === "book") {
     const id = view.id;
-    return <Reader key={`${id}:${view.page}`} id={id} startPage={view.page} onBack={() => shelf(from)} onEditPages={() => setView({ mode: "pages", id })} />;
+    return (
+      <Reader
+        key={`${id}:${view.page}`}
+        id={id}
+        startPage={view.page}
+        onBack={() => shelf(from)}
+        onEditPages={() => setView({ mode: "pages", id })}
+        onOpen={(next) => setView({ mode: "book", id: next })}
+      />
+    );
   }
   if (view.mode === "pages") return <PageEditor id={view.id} onBack={() => shelf(from)} onRead={() => setView({ mode: "book", id: view.id })} />;
   if (view.mode === "glossary") return <Glossary onBack={() => shelf()} onOpen={(id, page) => setView({ mode: "book", id, page })} />;
@@ -1617,7 +1629,20 @@ function usePageImage(path: string | undefined, pages: string[] | undefined, ind
 }
 
 /** `onEditPages` opens the page editor (shown for chapters you made). */
-function Reader({ id, startPage, onBack, onEditPages }: { id: number; startPage?: string; onBack: () => void; onEditPages?: () => void }) {
+/** `onEditPages` opens the page editor (shown for chapters you made); `onOpen` another book (the next chapter). */
+function Reader({
+  id,
+  startPage,
+  onBack,
+  onEditPages,
+  onOpen,
+}: {
+  id: number;
+  startPage?: string;
+  onBack: () => void;
+  onEditPages?: () => void;
+  onOpen: (id: number) => void;
+}) {
   const [book, setBook] = useState<Book>();
   const [pages, setPages] = useState<string[]>();
   const [missing, setMissing] = useState<string>();
@@ -1715,6 +1740,9 @@ function Reader({ id, startPage, onBack, onEditPages }: { id: number; startPage?
     open().catch((e) => setError(String(e)));
   }, [open]);
 
+  const scrollingRef = useRef(false);
+  scrollingRef.current = !!book?.scrolling;
+
   // Remember where you are, and load this page's marks.
   const bookId = book?.id;
   useEffect(() => {
@@ -1728,11 +1756,30 @@ function Reader({ id, startPage, onBack, onEditPages }: { id: number; startPage?
 
   const rtl = book?.right_to_left !== 0;
   const count = pages?.length ?? 0;
+  /** Scroll mode: the pages stacked top to bottom (manhwa, webtoons), for reading; marking stays in page mode. */
+  const scrolling = !!book?.scrolling;
+  /** The chapter after this one, for the end of scroll mode. */
+  const [nextBook, setNextBook] = useState<Book>();
+  useEffect(() => {
+    if (book) nextChapter(tauriDb, book).then(setNextBook, () => setNextBook(undefined));
+    // Only when the book changes.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [book?.id]);
+  async function toggleScrolling() {
+    if (!book) return;
+    await setScrolling(tauriDb, book, !scrolling);
+    setBook({ ...book, scrolling: Number(!scrolling) });
+  }
   const go = useCallback((delta: number) => setIndex((i) => Math.min(Math.max(i + delta, 0), Math.max(count - 1, 0))), [count]);
+  /** Scroll mode: a page to scroll to (the toolbar's arrows); `n` makes each jump new. */
+  const [jump, setJump] = useState<{ page: number; n: number }>();
+  const turn = (delta: number) =>
+    scrollingRef.current ? setJump({ page: Math.min(Math.max(index + delta, 0), Math.max(count - 1, 0)), n: (jump?.n ?? 0) + 1 }) : go(delta);
 
   useEffect(() => {
     function space(e: KeyboardEvent) {
-      if (e.key !== " " || typing(e)) return;
+      // In scroll mode Space scrolls, as usual.
+      if (e.key !== " " || typing(e) || scrollingRef.current) return;
       e.preventDefault(); // not a click on whatever button has focus, nor a scroll
       setSpaceHeld(e.type === "keydown");
     }
@@ -1755,7 +1802,7 @@ function Reader({ id, startPage, onBack, onEditPages }: { id: number; startPage?
         setSelected(undefined);
         return;
       }
-      if (typing(e)) return;
+      if (typing(e) || scrollingRef.current) return;
       if (e.key === "ArrowLeft") go(rtl ? 1 : -1);
       else if (e.key === "ArrowRight") go(rtl ? -1 : 1);
       else if (e.key === "Escape") {
@@ -1943,18 +1990,18 @@ function Reader({ id, startPage, onBack, onEditPages }: { id: number; startPage?
   }
 
   const prev = (
-    <button type="button" className="icon-action" onClick={() => go(-1)} disabled={index === 0} title="Previous page" aria-label="Previous page">
+    <button type="button" className="icon-action" onClick={() => turn(-1)} disabled={index === 0} title="Previous page" aria-label="Previous page">
       {rtl ? <ChevronRight size={20} /> : <ChevronLeft size={20} />}
     </button>
   );
   const next = (
-    <button type="button" className="icon-action" onClick={() => go(1)} disabled={index >= count - 1} title="Next page" aria-label="Next page">
+    <button type="button" className="icon-action" onClick={() => turn(1)} disabled={index >= count - 1} title="Next page" aria-label="Next page">
       {rtl ? <ChevronLeft size={20} /> : <ChevronRight size={20} />}
     </button>
   );
 
   return (
-    <div className="reader">
+    <div className={`reader ${scrolling ? "scrolling" : ""}`}>
       <div className="reader-main">
         <div className="reader-toolbar">
           {back}
@@ -1968,6 +2015,21 @@ function Reader({ id, startPage, onBack, onEditPages }: { id: number; startPage?
             </span>
             {rtl ? prev : next}
           </div>
+          <button
+            type="button"
+            className={`icon-action ${scrolling ? "on" : ""}`}
+            onClick={() => toggleScrolling().catch((e) => setError(String(e)))}
+            title={
+              scrolling
+                ? "Back to page by page (for marking boxes)"
+                : `Scroll mode: pages top to bottom, for manhwa and webtoons${book.series_id !== null ? " (the whole series)" : ""}`
+            }
+            aria-pressed={scrolling}
+            aria-label="Scroll mode"
+          >
+            <GalleryVertical size={18} />
+          </button>
+          {!scrolling && (
           <div className="reader-zoom-tools" role="group" aria-label="Zoom">
             <button type="button" className="icon-action" onClick={() => zoomBy(zoom.current, 1 / ZOOM_STEP)} disabled={scale <= 1.001} title="Zoom out (scroll down)" aria-label="Zoom out">
               <ZoomOut size={18} />
@@ -1982,6 +2044,8 @@ function Reader({ id, startPage, onBack, onEditPages }: { id: number; startPage?
               <UnfoldHorizontal size={18} />
             </button>
           </div>
+          )}
+          {!scrolling && (
           <button
             type="button"
             className={`icon-action ${showMarks ? "" : "on"}`}
@@ -1992,6 +2056,7 @@ function Reader({ id, startPage, onBack, onEditPages }: { id: number; startPage?
           >
             {showMarks ? <Eye size={18} /> : <EyeOff size={18} />}
           </button>
+          )}
           {book.series_id !== null && page && (
             <button
               type="button"
@@ -2020,6 +2085,20 @@ function Reader({ id, startPage, onBack, onEditPages }: { id: number; startPage?
             <Info size={18} />
           </button>
         </div>
+        {scrolling && pages && book ? (
+          <ScrollPages
+            key={book.id}
+            path={book.path}
+            pages={pages}
+            start={index}
+            jump={jump}
+            onIndex={setIndex}
+            next={nextBook}
+            onNext={() => nextBook && onOpen(nextBook.id)}
+            onBack={onBack}
+            backLabel={book.series_title ?? "Bookshelf"}
+          />
+        ) : (
         <div className={`reader-stage ${spaceHeld ? "panning" : ""}`}>
           {pageError ? (
             <p className="error">{pageError}</p>
@@ -2056,6 +2135,7 @@ function Reader({ id, startPage, onBack, onEditPages }: { id: number; startPage?
             <p className="muted">Loading page…</p>
           )}
         </div>
+        )}
       </div>
 
       <aside className="reader-side">
@@ -2411,6 +2491,115 @@ function PageView({
         </div>
       </TransformComponent>
     </TransformWrapper>
+  );
+}
+
+/** Pages loaded ahead of (and behind) the screen in scroll mode, in pixels. */
+const SCROLL_AHEAD = 2500;
+
+/**
+ * Scroll mode: a chapter's pages stacked top to bottom at a readable width,
+ * as manhwa and webtoons are drawn. Pages load as they come near the screen;
+ * the one in the middle of the screen is "where you are" (`onIndex`), which
+ * is remembered. The chapter ends with the next one.
+ */
+function ScrollPages({
+  path,
+  pages,
+  start,
+  jump,
+  onIndex,
+  next,
+  onNext,
+  onBack,
+  backLabel,
+}: {
+  path: string;
+  pages: string[];
+  start: number;
+  /** A page to scroll to (the toolbar's arrows). */
+  jump?: { page: number; n: number };
+  onIndex: (i: number) => void;
+  next?: Book;
+  onNext: () => void;
+  onBack: () => void;
+  backLabel: string;
+}) {
+  const box = useRef<HTMLDivElement>(null);
+  const [urls, setUrls] = useState<Record<number, string>>({});
+  const loading = useRef(new Set<number>());
+  const index = useRef(onIndex);
+  index.current = onIndex;
+
+  useEffect(() => {
+    const root = box.current!;
+    const items = [...root.querySelectorAll<HTMLElement>("[data-page]")];
+    let live = true;
+    const created: string[] = [];
+    // Load pages near the screen.
+    const near = new IntersectionObserver(
+      (entries) => {
+        for (const e of entries) {
+          const i = Number((e.target as HTMLElement).dataset.page);
+          if (!e.isIntersecting || loading.current.has(i)) continue;
+          loading.current.add(i);
+          pageUrl(path, pages[i]).then((u) => {
+            created.push(u);
+            if (live) setUrls((all) => ({ ...all, [i]: u }));
+            else URL.revokeObjectURL(u);
+          }, () => loading.current.delete(i));
+        }
+      },
+      { root, rootMargin: `${SCROLL_AHEAD}px 0px` },
+    );
+    // The page across the middle of the screen is where you are.
+    const middle = new IntersectionObserver(
+      (entries) => {
+        for (const e of entries) if (e.isIntersecting) index.current(Number((e.target as HTMLElement).dataset.page));
+      },
+      { root, rootMargin: "-50% 0px -50% 0px" },
+    );
+    for (const el of items) {
+      near.observe(el);
+      middle.observe(el);
+    }
+    // Start where you left off, and let the keyboard scroll (Space, Page Down, arrows).
+    items[start]?.scrollIntoView({ block: "start" });
+    root.focus({ preventScroll: true });
+    return () => {
+      live = false;
+      near.disconnect();
+      middle.disconnect();
+      for (const u of created) URL.revokeObjectURL(u);
+    };
+    // A new chapter gets a new component (key), so this runs once.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  useEffect(() => {
+    if (jump) box.current?.querySelector(`[data-page="${jump.page}"]`)?.scrollIntoView({ block: "start" });
+  }, [jump]);
+
+  return (
+    <div className="scroll-pages" ref={box} tabIndex={0}>
+      {pages.map((name, i) => (
+        <div key={name} className={`scroll-page ${urls[i] ? "" : "loading"}`} data-page={i}>
+          {urls[i] ? <img src={urls[i]} alt={`Page ${i + 1}`} draggable={false} /> : <span className="muted">Page {i + 1}</span>}
+        </div>
+      ))}
+      <div className="scroll-end">
+        {next ? (
+          <button type="button" className="primary" onClick={onNext}>
+            Next: {next.title} <ArrowRight size={16} aria-hidden="true" />
+          </button>
+        ) : (
+          <p className="muted">The end of this chapter.</p>
+        )}
+        <button type="button" onClick={onBack}>
+          <ArrowLeft size={16} aria-hidden="true" /> {backLabel}
+        </button>
+      </div>
+    </div>
   );
 }
 
