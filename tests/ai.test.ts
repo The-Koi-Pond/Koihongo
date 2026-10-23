@@ -116,7 +116,7 @@ test("AI requests: each helper gets what it needs, and off sends nothing", () =>
   assert.equal(cc.prompt, "hi");
 
   const api = backendRequest({ ...DEFAULT_AI, provider: "anthropic" }, chat);
-  assert.deepEqual(api, { provider: "anthropic", model: "claude-opus-5-5", system: "sys", messages: chat.messages });
+  assert.deepEqual(api, { provider: "anthropic", model: "claude-opus-5-5", system: "sys", messages: chat.messages, image: undefined });
 
   // Known services are named, not addressed: Rust fixes the address and the key.
   const gemini = backendRequest({ ...DEFAULT_AI, provider: "openai-compatible", compatPreset: "gemini", compatModel: "m", compatBaseUrl: "https://evil.example" }, chat);
@@ -140,7 +140,7 @@ test("explaining a manga box: the box, its page and the series context go in; SF
   const sfx = explainBoxPrompt({ kind: "SFX", text: "コツ", unsure: true }, [], "");
   assert.match(sfx, /what this sound effect depicts/);
   assert.match(sfx, /misread/);
-  assert.doesNotMatch(sfx, /About the manga|Everything marked on this page/);
+  assert.doesNotMatch(sfx, /About the manga|The text around it/);
 });
 
 test("an explanation's kana line and translation can be kept; other first lines aren't a reading", async () => {
@@ -149,4 +149,16 @@ test("an explanation's kana line and translation can be kept; other first lines 
   assert.deepEqual(explainedParts(reply), { kana: "もう まちません", translation: "I won't wait any longer." });
   assert.deepEqual(explainedParts("Sorry, I can't read that.\n5. translation: Footsteps (tap, tap)."), { kana: undefined, translation: "Footsteps (tap, tap)." });
   assert.deepEqual(explainedParts(""), { kana: undefined, translation: undefined });
+});
+
+test("reading a box with AI: the picture goes to every helper, and the reply is just the text", async () => {
+  const { backendRequest } = await import("../src/ai/ai.ts");
+  const { readImageReply } = await import("../src/ai/prompts.ts");
+  const request = { system: "s", messages: [{ role: "user" as const, text: "read" }], image: "QUJD" };
+  for (const provider of ["claude-code", "anthropic"] as const) {
+    assert.equal((backendRequest({ ...DEFAULT_AI, provider }, request) as { image?: string }).image, "QUJD");
+  }
+  assert.equal(readImageReply("「コツ」"), "コツ");
+  assert.equal(readImageReply("もう待ちません\n(It means: I won't wait)"), "もう待ちません");
+  assert.equal(readImageReply("(none)"), "");
 });

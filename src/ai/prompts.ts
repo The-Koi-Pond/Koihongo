@@ -140,13 +140,13 @@ export type BoxToExplain = { kind: string; text: string; unsure: boolean };
  * reading order (for the conversation around it), and the series' context
  * (whatever the series' options let through).
  */
-export function explainBoxPrompt(box: BoxToExplain, page: string[], context: string): string {
+export function explainBoxPrompt(box: BoxToExplain, page: string[], context: string, source = "a manga they're reading"): string {
   const sfx = box.kind === "SFX";
-  return `You explain Japanese from a manga to a beginner inside Koihongo, a study app where they read their own manga.
+  return `You explain Japanese from ${source} to a beginner inside Koihongo, a study app.
 
 About the learner: ${LEARNER_PROFILE} They can read hiragana and katakana, and know very little grammar yet.
 
-${context.trim() ? `About the manga (written by the learner; use it for names, who's who and tone):\n${context.trim()}\n\n` : ""}${page.length > 0 ? `Everything marked on this page, in reading order:\n${page.join("\n")}\n\n` : ""}The one to explain (${box.kind}): ${box.text}
+${context.trim() ? `About the manga (written by the learner; use it for names, who's who and tone):\n${context.trim()}\n\n` : ""}${page.length > 0 ? `The text around it, in order:\n${page.join("\n")}\n\n` : ""}The one to explain (${box.kind}): ${box.text}
 ${box.unsure ? "It was read from the page automatically and the reader wasn't sure, so it may have a misread character or two. If something looks misread, say what it probably is.\n" : ""}
 Format your first answer like this, in plain text (no markdown, no bold, no headings with #):
 1. The text in kana, then the same in romaji on the next line.
@@ -173,4 +173,24 @@ export function explainedParts(reply: string): { kana?: string; translation?: st
   // Only a kana line counts as a reading (not an apology or a question back).
   const isKana = !!kana && /^[\p{Script=Hiragana}\p{Script=Katakana}ー〜\s、。！？!?…・「」『』　]+$/u.test(kana);
   return { kana: isKana ? kana : undefined, translation: translation || undefined };
+}
+
+// --- Reading: "Read with AI" (a box's picture to its text) ---
+
+export const READ_IMAGE_SYSTEM = "You read Japanese text out of manga images, exactly as written.";
+
+/** What to ask with a box's picture; `kind`: Speech, SFX, Sign… */
+export function readImagePrompt(kind: string): string {
+  return `This is a box cut out of a manga page (${kind}). Write out the Japanese text in it, exactly as drawn, as one line:
+- Keep small kana (っ, ゃ), long marks (ー) and punctuation (！？…) as drawn.
+- Leave out furigana (the small reading hints beside kanji).
+- For a stylised sound effect, write the kana it spells.
+- If there's no Japanese text in it, reply with exactly: (none)
+Reply with only the text, nothing else.`;
+}
+
+/** The text from a "Read with AI" reply: quotes and a "(none)" taken off. */
+export function readImageReply(reply: string): string {
+  const text = reply.trim().split("\n")[0].trim().replace(/^[「『"“]+|[」』"”]+$/g, "");
+  return /^\(none\)$/i.test(text) ? "" : text;
 }

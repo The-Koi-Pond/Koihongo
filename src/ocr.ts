@@ -3,6 +3,8 @@
 // The models are an optional download, set up in Settings.
 
 import { Channel, invoke } from "@tauri-apps/api/core";
+import { aiComplete } from "./ai/ai.ts";
+import { READ_IMAGE_SYSTEM, readImagePrompt, readImageReply } from "./ai/prompts.ts";
 import { tidyRead, type Box, type FoundText } from "./reading.ts";
 
 export type OcrStatus = { installed: boolean; /** The download's size in bytes. */ size: number };
@@ -47,6 +49,19 @@ export async function pictureOf(url: string, box: Box, maxSide = 480): Promise<s
   canvas.height = Math.max(1, Math.round(h * scale));
   canvas.getContext("2d")!.drawImage(img, x, y, w, h, 0, 0, canvas.width, canvas.height);
   return canvas.toDataURL("image/jpeg", 0.82);
+}
+
+/** The text in a mark's boxes read by your AI helper from their pictures (one request a box, joined in box order). */
+export async function readBoxesWithAi(url: string, boxes: Box[], kind: string): Promise<string> {
+  const parts: string[] = [];
+  for (const box of boxes) {
+    const png = await cutOut(url, box);
+    let binary = "";
+    for (const b of png) binary += String.fromCharCode(b);
+    const reply = await aiComplete({ system: READ_IMAGE_SYSTEM, messages: [{ role: "user", text: readImagePrompt(kind) }], image: btoa(binary) });
+    parts.push(readImageReply(reply));
+  }
+  return tidyRead(parts.join(""));
 }
 
 /** The text in a mark's boxes (a bubble in two parts reads as one text, in box order). */

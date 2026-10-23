@@ -34,7 +34,9 @@ pub fn find_claude() -> Option<PathBuf> {
 }
 
 /// Sends `prompt` (via stdin) with `system` instructions and returns the reply text.
-pub fn complete(claude: &Path, workdir: &Path, system: &str, prompt: &str, model: &str) -> Result<String, String> {
+/// With `image` (a PNG, base64), the prompt goes as a stream-json message with the
+/// picture in it: the only way to show Claude Code a picture with its tools off.
+pub fn complete(claude: &Path, workdir: &Path, system: &str, prompt: &str, model: &str, image: Option<&str>) -> Result<String, String> {
     if !MODELS.contains(&model) {
         return Err(format!("unknown model: {model}"));
     }
@@ -43,7 +45,18 @@ pub fn complete(claude: &Path, workdir: &Path, system: &str, prompt: &str, model
         // Text only: no file or shell tools, no MCP tool servers (--strict-mcp-config
         // with no config loads none), no personal settings or CLAUDE.md.
         .args(["--tools", "", "--strict-mcp-config", "--setting-sources", "", "--no-session-persistence"])
-        .args(["--output-format", "json", "--model", model])
+        .args(["--model", model]);
+    let input = match image {
+        Some(png) => {
+            cmd.args(["--input-format", "stream-json", "--output-format", "stream-json", "--verbose"]);
+            image_message(prompt, png)
+        }
+        None => {
+            cmd.args(["--output-format", "json"]);
+            prompt.to_owned()
+        }
+    };
+    cmd
         .current_dir(workdir)
         .stdin(Stdio::piped())
         .stdout(Stdio::piped())
@@ -57,9 +70,8 @@ pub fn complete(claude: &Path, workdir: &Path, system: &str, prompt: &str, model
 
     // Write and read on separate threads so a full pipe can't deadlock us.
     let mut stdin = child.stdin.take().expect("stdin is piped");
-    let prompt = prompt.to_owned();
     let writer = thread::spawn(move || {
-        let _ = stdin.write_all(prompt.as_bytes());
+        let _ = stdin.write_all(input.as_bytes());
     });
     let read_all = |mut pipe: Box<dyn Read + Send>| {
         thread::spawn(move || {
@@ -84,7 +96,24 @@ pub fn complete(claude: &Path, workdir: &Path, system: &str, prompt: &str, model
         }
     }
     let _ = writer.join();
-    parse_output(&stdout.join().unwrap_or_default(), &stderr.join().unwrap_or_default())
+    let (stdout, stderr) = (stdout.join().unwrap_or_default(), stderr.join().unwrap_or_default());
+    match image {
+        // stream-json: one JSON object per line; the answer is the "result" one.
+        Some(_) => parse_output(stdout.lines().find(|l| l.contains("\"type\":\"result\"")).unwrap_or(&stdout), &stderr),
+        None => parse_output(&stdout, &stderr),
+    }
+}
+
+/// A stream-json user message: the picture, then the prompt.
+fn image_message(prompt: &str, png: &str) -> String {
+    let message = serde_json::json!({
+        "type": "user",
+        "message": {"role": "user", "content": [
+            {"type": "image", "source": {"type": "base64", "media_type": "image/png", "data": png}},
+            {"type": "text", "text": prompt},
+        ]},
+    });
+    format!("{message}\n")
 }
 
 #[derive(Deserialize)]
@@ -120,11 +149,13 @@ pub struct AiRequest {
     messages: Vec<ChatMessage>,
     /// The conversation written out as one prompt, for Claude Code (one prompt per call).
     prompt: Option<String>,
+    /// A picture (PNG, base64) to show with the last message, e.g. a box cut out of a manga page.
+    image: Option<String>,
 }
 
 #[tauri::command]
 pub async fn ai_complete(app: tauri::AppHandle, request: AiRequest) -> Result<String, String> {
-    let AiRequest { provider, model, preset, base_url, system, messages, prompt } = request;
+    let AiRequest { provider, model, preset, base_url, system, messages, prompt, image } = request;
     match provider.as_str() {
         "claude-code" => {
             let claude = find_claude().ok_or("Claude Code wasn't found. Install it, or check that `claude` works in a terminal.")?;
@@ -132,17 +163,17 @@ pub async fn ai_complete(app: tauri::AppHandle, request: AiRequest) -> Result<St
             // An empty folder, so no project CLAUDE.md or settings get picked up.
             let workdir = app.path().app_data_dir().map_err(|e| e.to_string())?.join("ai-workdir");
             std::fs::create_dir_all(&workdir).map_err(|e| e.to_string())?;
-            tauri::async_runtime::spawn_blocking(move || complete(&claude, &workdir, &system, &prompt, &model))
+            tauri::async_runtime::spawn_blocking(move || complete(&claude, &workdir, &system, &prompt, &model, image.as_deref()))
                 .await
                 .map_err(|e| e.to_string())?
         }
         "anthropic" => {
             let key = get_key("anthropic")?.ok_or("No Anthropic API key is saved. Add one in Settings → AI helper.")?;
-            anthropic(&key, &model, &system, &messages).await
+            anthropic(&key, &model, &system, &messages, image.as_deref()).await
         }
         "openai-compatible" => {
             let (url, key) = compat_target(preset.as_deref().unwrap_or(""), base_url)?;
-            openai_compatible(&url, key.as_deref(), &model, &system, &messages).await
+            openai_compatible(&url, key.as_deref(), &model, &system, &messages, image.as_deref()).await
         }
         _ => Err("AI is turned off. You can turn it on in Settings → AI helper.".into()),
     }
@@ -178,7 +209,7 @@ mod tests {
 
     #[test]
     fn rejects_unknown_models() {
-        let err = complete(Path::new("nope"), Path::new("."), "", "", "gpt").unwrap_err();
+        let err = complete(Path::new("nope"), Path::new("."), "", "", "gpt", None).unwrap_err();
         assert!(err.contains("unknown model"));
     }
 
@@ -190,7 +221,16 @@ mod tests {
         let claude = find_claude().expect("claude on PATH");
         let dir = std::env::temp_dir().join("koihongo-ai-test");
         std::fs::create_dir_all(&dir).unwrap();
-        let reply = complete(&claude, &dir, "Follow the instruction exactly.", "Reply with exactly: ok & done", "haiku").unwrap();
+        let reply = complete(&claude, &dir, "Follow the instruction exactly.", "Reply with exactly: ok & done", "haiku", None).unwrap();
         assert_eq!(reply.trim(), "ok & done");
+    }
+
+    #[test]
+    fn image_messages_carry_the_picture_then_the_prompt() {
+        let line = image_message("Read it", "QUJD");
+        assert!(line.ends_with('\n'), "stream-json wants one message per line");
+        let v: serde_json::Value = serde_json::from_str(line.trim()).unwrap();
+        assert_eq!(v["message"]["content"][0]["source"]["data"], "QUJD");
+        assert_eq!(v["message"]["content"][1]["text"], "Read it");
     }
 }
