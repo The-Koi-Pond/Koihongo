@@ -245,6 +245,16 @@ const MIGRATIONS: string[][] = [
     // in your manga (Reading: word help → Add to deck).
     `ALTER TABLE deck_cards ADD COLUMN image TEXT`,
   ],
+  [
+    // Scroll mode (pages stacked top to bottom, for manhwa and webtoons): set
+    // for a whole series, or for a book on the shelf by itself. And a Manhwa
+    // category, unless you've made one already.
+    `ALTER TABLE series ADD COLUMN scroll INTEGER NOT NULL DEFAULT 0`,
+    `ALTER TABLE books ADD COLUMN scroll INTEGER NOT NULL DEFAULT 0`,
+    `INSERT INTO categories (name, position)
+     SELECT 'Manhwa', (SELECT coalesce(max(position), -1) + 1 FROM categories)
+     WHERE NOT EXISTS (SELECT 1 FROM categories WHERE lower(name) = 'manhwa')`,
+  ],
 ];
 
 export const SCHEMA_VERSION = MIGRATIONS.length;

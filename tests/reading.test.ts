@@ -362,7 +362,7 @@ test("categories: new things go where you're looking; moving and removing keep e
   const { listCategories, createCategory, renameCategory, deleteCategory, setCategory } = await import("../src/reading.ts");
   const db = openTestDb(() => {});
   await migrate(db);
-  assert.deepEqual((await listCategories(db)).map((c) => c.name), ["Manga"], "a starting category");
+  assert.deepEqual((await listCategories(db)).map((c) => c.name), ["Manga", "Manhwa"], "starting categories");
   const novels = await createCategory(db, "Light novels");
   await addBooks(db, [{ path: "C:/m/Koi/Ch 1", title: "Ch 1", kind: "folder", pages: 9, series: "Koi" }], T0, undefined, novels);
   await addBooks(db, [{ path: "C:/m/One", title: "One shot", kind: "folder", pages: 9 }], T0, undefined, 1);
@@ -385,7 +385,7 @@ test("categories: new things go where you're looking; moving and removing keep e
   await removeSeries(db, extras);
   assert.equal((await listBooks(db)).find((b) => b.id === oneShot.id)!.category_id, novels);
   await renameCategory(db, novels, "Novels");
-  assert.deepEqual((await listCategories(db)).map((c) => c.name), ["Manga", "Novels"]);
+  assert.deepEqual((await listCategories(db)).map((c) => c.name), ["Manga", "Manhwa", "Novels"]);
   await deleteCategory(db, novels);
   assert.equal((await listBooks(db)).find((b) => b.id === chapter.id)!.category_id, null, "uncategorised, not deleted");
   assert.equal((await listSeries(db))[0].category_id, 1);
@@ -522,4 +522,31 @@ test("deck cards can carry a picture", async () => {
   await addDeckCard(db, deck, "もう", "already", null, T0);
   const cards = await deckCards(db, deck);
   assert.deepEqual(cards.map((c) => [c.front, c.image]).sort(), [["もう", null], ["溺愛", "data:image/jpeg;base64,AAAA"]]);
+});
+
+test("upgrading: a Manhwa category is added, unless you made one", async () => {
+  const { listCategories } = await import("../src/reading.ts");
+  const db = openTestDb(() => {});
+  await migrate(db, 18);
+  await db.batch([{ sql: "INSERT INTO categories (name, position) VALUES ('manhwa', 1)" }]);
+  await migrate(db);
+  assert.deepEqual((await listCategories(db)).map((c) => c.name), ["Manga", "manhwa"]);
+});
+
+test("scroll mode is set for a whole series (or a book by itself), and the next chapter follows in order", async () => {
+  const { setScrolling, nextChapter, getBook } = await import("../src/reading.ts");
+  const db = openTestDb(() => {});
+  await migrate(db);
+  await addBooks(db, ["Ch 2", "Ch 10", "Ch 1"].map((t) => ({ path: `C:/w/Solo/${t}`, title: t, kind: "folder" as const, pages: 3, series: "Solo" })), T0);
+  await addBooks(db, [{ path: "C:/w/Oneshot", title: "Oneshot", kind: "folder", pages: 3 }], T0);
+  const books = await listBooks(db);
+  const ch = (t: string) => books.find((b) => b.title === t)!;
+  await setScrolling(db, ch("Ch 2"), true);
+  assert.equal((await getBook(db, ch("Ch 10").id))?.scrolling, 1, "the whole series");
+  assert.equal((await getBook(db, ch("Oneshot").id))?.scrolling, 0);
+  await setScrolling(db, ch("Oneshot"), true);
+  assert.equal((await getBook(db, ch("Oneshot").id))?.scrolling, 1);
+  assert.equal((await nextChapter(db, ch("Ch 2")))?.title, "Ch 10");
+  assert.equal(await nextChapter(db, ch("Ch 10")), undefined);
+  assert.equal(await nextChapter(db, ch("Oneshot")), undefined);
 });

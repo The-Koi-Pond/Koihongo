@@ -7109,3 +7109,52 @@ button.aka-add {
   margin: 0;
   color: var(--muted);
 }
+
+/* Scroll mode (Reading.tsx, ScrollPages): pages stacked top to bottom, no side panel. */
+.reader.scrolling {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.reader.scrolling .reader-side {
+  display: none;
+}
+
+.scroll-pages {
+  min-height: 0;
+  overflow-y: auto;
+  overflow-anchor: auto;
+  border-radius: 10px;
+  background: rgb(0 0 0 / 0.28);
+  outline: none;
+}
+
+.scroll-page {
+  width: min(100%, 860px);
+  margin: 0 auto;
+}
+
+.scroll-page img {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+.scroll-page.loading {
+  display: grid;
+  place-items: center;
+  min-height: 60vh;
+}
+
+.scroll-end {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 10px;
+  padding: 28px 12px 40px;
+}
+
+.scroll-end button {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
