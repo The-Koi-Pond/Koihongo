@@ -41,7 +41,7 @@ export const COMPONENTS_3: MnemonicBatch = {
   "component:矢": m("An arrow with its feathers flying: a DART."),
   "component:牛": m("A COW's head from the front: a horn poking up on the left, its long face down the middle."),
   "component:戸": m("A single swinging DOOR with a beam above it."),
-  "component:品": m("Three boxes (口) stacked in a warehouse: GOODS."),
+  "component:品": m("Three mouths (口) all asking for things at a market stall: GOODS."),
   "component:歹": m("A broken BARE BONE with a crack running through it."),
   "component:禾": m("A tree (木) with a heavy head of GRAIN drooping over the top."),
   "component:糸": m("A twisted skein of THREAD, with loose ends dangling at the bottom."),
