@@ -2597,10 +2597,13 @@ function DropOverlay({ over, status, icon, title, hint }: { over: boolean; statu
 
 /** Pages loaded ahead of (and behind) the screen in scroll mode, in pixels. */
 const SCROLL_AHEAD = 2500;
+/** Pages of the chapter loaded in the background at once, in scroll mode. */
+const PRELOAD_AT_ONCE = 3;
 
 /**
  * Scroll mode: a chapter's pages stacked top to bottom at a readable width,
- * as manhwa and webtoons are drawn. Pages load as they come near the screen;
+ * as manhwa and webtoons are drawn. Pages near the screen load first, and the
+ * rest of the chapter loads in the background;
  * the one in the middle of the screen is "where you are" (`onIndex`), which
  * is remembered. The chapter ends with the next one.
  */
@@ -2640,18 +2643,34 @@ function ScrollPages({
     const items = [...root.querySelectorAll<HTMLElement>("[data-page]")];
     let live = true;
     const created: string[] = [];
-    // Load pages near the screen.
+    /** Loads page i (once). */
+    const load = async (i: number) => {
+      if (loading.current.has(i)) return;
+      loading.current.add(i);
+      try {
+        const u = await pageUrl(path, pages[i]);
+        created.push(u);
+        if (live) setUrls((all) => ({ ...all, [i]: u }));
+        else URL.revokeObjectURL(u);
+      } catch {
+        loading.current.delete(i); // tried again when it comes near the screen
+      }
+    };
+    // The whole chapter loads in the background, a few at a time, nearest to where you
+    // start first: fast scrolling finds pages ready, and the pages' heights stop changing.
+    // (Started first, so your own page is the first one asked for.)
+    const queue = pages.map((_, i) => i).sort((a, b) => Math.abs(a - start) - Math.abs(b - start) || b - a);
+    const worker = async () => {
+      while (live && queue.length) await load(queue.shift()!);
+    };
+    for (let w = 0; w < PRELOAD_AT_ONCE; w++) worker();
+    // And pages that come near the screen as you scroll jump the queue, the closest first.
     const near = new IntersectionObserver(
       (entries) => {
-        for (const e of entries) {
-          const i = Number((e.target as HTMLElement).dataset.page);
-          if (!e.isIntersecting || loading.current.has(i)) continue;
-          loading.current.add(i);
-          pageUrl(path, pages[i]).then((u) => {
-            created.push(u);
-            if (live) setUrls((all) => ({ ...all, [i]: u }));
-            else URL.revokeObjectURL(u);
-          }, () => loading.current.delete(i));
+        const middle = root.getBoundingClientRect().top + root.clientHeight / 2;
+        const distance = (e: IntersectionObserverEntry) => Math.abs(e.boundingClientRect.top + e.boundingClientRect.height / 2 - middle);
+        for (const e of entries.filter((x) => x.isIntersecting).sort((a, b) => distance(a) - distance(b))) {
+          load(Number((e.target as HTMLElement).dataset.page));
         }
       },
       { root, rootMargin: `${SCROLL_AHEAD}px 0px` },
