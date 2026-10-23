@@ -23,6 +23,11 @@ export type Book = {
   /** The series it's in, if any. */
   series_id: number | null;
   series_title: string | null;
+  /** Its category, when it's on the shelf by itself (in a series, the series' counts). */
+  category_id: number | null;
+  /** Its series' bookmark (getBook only): which chapter and page. */
+  bookmark_book?: number | null;
+  bookmark_page?: string | null;
   /** How many marks it has (listBooks only). */
   marks?: number;
 };
@@ -38,6 +43,16 @@ export type Series = {
   /** Unused since migration 10 (it became one of its "also known as" names). */
   japanese_title: string;
   synopsis: string;
+  /** Its genres as tags, comma-separated (see splitTags). */
+  genres: string;
+  /** Parts of its info not to send to the AI helper: a JSON list of context keys (see ContextPart). */
+  context_off: string;
+  /** Its category on the shelf (null: uncategorised). */
+  category_id: number | null;
+  /** Your bookmark in it: a chapter (book id), the page's file name, and its number when bookmarked. */
+  bookmark_book: number | null;
+  bookmark_page: string | null;
+  bookmark_page_no: number | null;
   /** A cover you picked (a file in Documents\Koihongo\Covers); null: the first chapter's first page. */
   cover: string | null;
   created_at: number;
@@ -55,7 +70,6 @@ export type SeriesExtras = {
 /** Boxes offered on a series page, each with a hint of what goes in it. */
 export const BOX_IDEAS: { label: string; hint: string }[] = [
   { label: "Cast", hint: "Who's who: names (with readings), roles, how they relate" },
-  { label: "Genre", hint: "e.g. otome isekai, villainess, romantic comedy" },
   { label: "Setting", hint: "Where and when: a fantasy kingdom, a modern high school…" },
   { label: "Names and terms", hint: "Made-up words, places, titles and how you'd translate them" },
   { label: "How characters talk", hint: "Formal, rough, a dialect, a verbal tic, what they call each other" },
@@ -64,7 +78,8 @@ export const BOX_IDEAS: { label: string; hint: string }[] = [
 /** "Series · Chapter", or just the book's title when it's in no series. */
 const FULL_TITLE = "CASE WHEN s.title IS NULL THEN b.title ELSE s.title || ' · ' || b.title END";
 
-export type MarkKind = "speech" | "sfx" | "sign" | "narration" | "other";
+export type { MarkKind } from "./textKey.ts";
+import { textKey, type MarkKind } from "./textKey.ts";
 
 export const MARK_KINDS: { kind: MarkKind; name: string; hint: string }[] = [
   { kind: "speech", name: "Speech", hint: "A speech or thought bubble" },
@@ -86,6 +101,10 @@ export type Mark = Box & {
   reading: string;
   meaning: string;
   notes: string;
+  /** Its place in the page's list (within its kind's section). */
+  position: number;
+  /** JSON Box[]: its other parts, past the first box (see markBoxes). */
+  more_boxes: string;
   created_at: number;
   updated_at: number;
 };
@@ -94,29 +113,7 @@ export type MarkText = Pick<Mark, "text" | "reading" | "meaning" | "notes">;
 
 // --- Matching text you've seen before ---
 
-const KATAKANA = /[ァ-ヶ]/g;
-
-/**
- * Text written so that the same words match however they're written: width,
- * katakana or hiragana, spaces and punctuation don't matter. SFX are matched
- * more loosely, since they're stretched and repeated freely: ドーン and ドン,
- * ドンッ and ドン, and ゴゴゴゴ and ゴゴゴ all match.
- */
-export function textKey(text: string, kind: MarkKind): string {
-  let key = text
-    .normalize("NFKC")
-    .toLowerCase()
-    .replace(KATAKANA, (c) => String.fromCharCode(c.charCodeAt(0) - 0x60))
-    .replace(/[\s\p{P}\p{S}]/gu, "");
-  if (kind === "sfx") {
-    key = key
-      .replace(/[ー〜]/g, "")
-      .replace(/っ+$/, "")
-      // Three or more of the same sound count as two: ゴゴゴゴ = ゴゴゴ = ゴゴ, ドキドキドキ = ドキドキ.
-      .replace(/(.+?)\1{2,}/gu, "$1$1");
-  }
-  return key;
-}
+export { textKey } from "./textKey.ts";
 
 /** One meaning you gave this text before, and where you last saw it. */
 export type SeenBefore = {
@@ -149,6 +146,30 @@ export async function seenBefore(db: Db, key: string, exceptMarkId: number): Pro
     else byMeaning.set(id, { ...r, times: 1, last: { bookId: r.book_id, title: r.title, page: r.page } });
   }
   return [...byMeaning.values()];
+}
+
+/** A suggestion from the built-in SFX dictionary. */
+export type SfxMeaning = {
+  forms: string[];
+  meanings: string[];
+  /** "koihongo": a manga sound effect written for Koihongo; "jmdict": from JMdict. */
+  source: "jmdict" | "koihongo";
+  /** Related rather than the same word: ドキッ ~ どきどき. */
+  loose: boolean;
+};
+
+/** The SFX dictionary's entries for a mark's text key (see textKey): the same word first, then related ones. */
+export async function sfxDictionary(db: Db, key: string): Promise<SfxMeaning[]> {
+  if (!key) return [];
+  const rows = await db.all<{ forms: string; meanings: string; source: SfxMeaning["source"]; loose: number }>(
+    `SELECT w.forms, w.meanings, w.source, k.loose
+     FROM content.sfx_keys k JOIN content.sfx_words w ON w.id = k.word_id
+     WHERE k.key = ?
+     ORDER BY k.loose, w.rank, w.id
+     LIMIT 6`,
+    [key],
+  );
+  return rows.map((r) => ({ forms: JSON.parse(r.forms), meanings: JSON.parse(r.meanings), source: r.source, loose: r.loose === 1 }));
 }
 
 /** Everything you've written down, grouped by text (see textKey). */
@@ -193,7 +214,11 @@ export async function listBooks(db: Db): Promise<Book[]> {
 }
 
 export async function getBook(db: Db, id: number): Promise<Book | undefined> {
-  const [book] = await db.all<Book>("SELECT b.*, s.title AS series_title FROM books b LEFT JOIN series s ON s.id = b.series_id WHERE b.id = ?", [id]);
+  const [book] = await db.all<Book>(
+    `SELECT b.*, s.title AS series_title, s.bookmark_book, s.bookmark_page
+     FROM books b LEFT JOIN series s ON s.id = b.series_id WHERE b.id = ?`,
+    [id],
+  );
   return book;
 }
 
@@ -203,18 +228,18 @@ export async function getBook(db: Db, id: number): Promise<Book | undefined> {
  * they were found in (made if you don't have one by that name yet). Returns
  * how many were new.
  */
-export async function addBooks(db: Db, found: FoundBook[], now: number, seriesId?: number): Promise<number> {
+export async function addBooks(db: Db, found: FoundBook[], now: number, seriesId?: number, categoryId: number | null = null): Promise<number> {
   const before = await db.all<{ path: string }>("SELECT path FROM books");
   const known = new Set(before.map((b) => b.path));
   const fresh = found.filter((f, i) => !known.has(f.path) && found.findIndex((g) => g.path === f.path) === i);
   const seriesIds = new Map<string, number>();
   if (seriesId === undefined) {
-    for (const name of new Set(fresh.flatMap((f) => (f.series ? [f.series] : [])))) seriesIds.set(name, await seriesNamed(db, name, now));
+    for (const name of new Set(fresh.flatMap((f) => (f.series ? [f.series] : [])))) seriesIds.set(name, await seriesNamed(db, name, now, categoryId));
   }
   await db.batch(
     fresh.map((f) => ({
-      sql: "INSERT INTO books (title, path, kind, pages, added_at, series_id) VALUES (?, ?, ?, ?, ?, ?)",
-      params: [f.title, f.path, f.kind, f.pages, now, seriesId ?? (f.series ? seriesIds.get(f.series)! : null)],
+      sql: "INSERT INTO books (title, path, kind, pages, added_at, series_id, category_id) VALUES (?, ?, ?, ?, ?, ?, ?)",
+      params: [f.title, f.path, f.kind, f.pages, now, seriesId ?? (f.series ? seriesIds.get(f.series)! : null), seriesId === undefined && !f.series ? categoryId : null],
     })),
   );
   return fresh.length;
@@ -231,16 +256,16 @@ export async function listSeries(db: Db): Promise<Series[]> {
 }
 
 /** Makes a series and returns its id. */
-export async function createSeries(db: Db, title: string, now: number): Promise<number> {
-  await db.batch([{ sql: "INSERT INTO series (title, created_at) VALUES (?, ?)", params: [title.trim(), now] }]);
+export async function createSeries(db: Db, title: string, now: number, categoryId: number | null = null): Promise<number> {
+  await db.batch([{ sql: "INSERT INTO series (title, created_at, category_id) VALUES (?, ?, ?)", params: [title.trim(), now, categoryId] }]);
   const [{ id }] = await db.all<{ id: number }>("SELECT max(id) AS id FROM series");
   return id;
 }
 
 /** Your series called `title` (any capitals), made if there isn't one. */
-async function seriesNamed(db: Db, title: string, now: number): Promise<number> {
+async function seriesNamed(db: Db, title: string, now: number, categoryId: number | null = null): Promise<number> {
   const [found] = await db.all<{ id: number }>("SELECT id FROM series WHERE lower(title) = lower(?) ORDER BY id LIMIT 1", [title.trim()]);
-  return found?.id ?? createSeries(db, title, now);
+  return found?.id ?? createSeries(db, title, now, categoryId);
 }
 
 export async function renameSeries(db: Db, id: number, title: string): Promise<void> {
@@ -250,6 +275,8 @@ export async function renameSeries(db: Db, id: number, title: string): Promise<v
 /** Removes a series; its chapters go back on the shelf by themselves (nothing is deleted). */
 export async function removeSeries(db: Db, id: number): Promise<void> {
   await db.batch([
+    // Its chapters stay in its category, now on the shelf by themselves.
+    { sql: "UPDATE books SET category_id = (SELECT category_id FROM series WHERE id = ?) WHERE series_id = ?", params: [id, id] },
     { sql: "UPDATE books SET series_id = NULL WHERE series_id = ?", params: [id] },
     { sql: "DELETE FROM series_titles WHERE series_id = ?", params: [id] },
     { sql: "DELETE FROM series_boxes WHERE series_id = ?", params: [id] },
@@ -267,7 +294,7 @@ export async function seriesExtras(db: Db, seriesId: number): Promise<SeriesExtr
   return { titles, boxes };
 }
 
-export async function updateSeriesInfo(db: Db, id: number, fields: Partial<Pick<Series, "synopsis">>): Promise<void> {
+export async function updateSeriesInfo(db: Db, id: number, fields: Partial<Pick<Series, "synopsis" | "genres" | "context_off">>): Promise<void> {
   const entries = Object.entries(fields);
   if (entries.length === 0) return;
   await db.batch([{ sql: `UPDATE series SET ${entries.map(([k]) => `${k} = ?`).join(", ")} WHERE id = ?`, params: [...entries.map(([, v]) => v), id] }]);
@@ -306,23 +333,45 @@ export async function deleteSeriesBox(db: Db, id: number): Promise<void> {
 
 /** What context there is for a chapter: its series' info (if it's in one) and its own notes. */
 export type ContextParts = {
-  series?: Pick<Series, "title" | "synopsis"> & SeriesExtras;
+  /** `off`: keys of the parts you chose not to send (see seriesParts). */
+  series?: Pick<Series, "title" | "synopsis" | "genres"> & SeriesExtras & { off?: string[] };
   chapter?: { title: string; about: string };
 };
 
+/** One part of a series' info, as it's sent: its key (for switching it off), name, and text. */
+export type ContextPart = { key: string; name: string; text: string; multiline: boolean };
+
+/** A series' info as the parts the AI helper can be sent, in order (empty ones included, with text ""). */
+export function seriesParts(series: NonNullable<ContextParts["series"]>): ContextPart[] {
+  return [
+    { key: "name", name: "Series", text: series.title.trim(), multiline: false },
+    { key: "aka", name: "Also known as", text: series.titles.map((t) => t.title.trim()).filter(Boolean).join("; "), multiline: false },
+    { key: "synopsis", name: "Synopsis", text: series.synopsis.trim(), multiline: true },
+    { key: "genres", name: "Genre", text: series.genres.trim(), multiline: false },
+    ...series.boxes.map((b) => ({ key: `box:${b.id}`, name: b.label.trim() || "Notes", text: b.text.trim(), multiline: true })),
+  ];
+}
+
+/** The stored list of parts not to send ("[]" if missing or broken). */
+export function contextOff(json: string | null | undefined): string[] {
+  try {
+    const off = JSON.parse(json ?? "[]");
+    return Array.isArray(off) ? off.filter((k): k is string => typeof k === "string") : [];
+  } catch {
+    return [];
+  }
+}
+
 /**
  * The context written out as plain text, the way it's sent with a
- * translation request (empty parts are left out).
+ * translation request (empty parts and parts switched off are left out).
  */
 export function contextText({ series, chapter }: ContextParts): string {
   const parts: string[] = [];
   const add = (label: string, text: string | undefined) => text?.trim() && parts.push(`${label}: ${text.trim()}`);
   const block = (label: string, text: string | undefined) => text?.trim() && parts.push(`${label}:\n${text.trim()}`);
   if (series) {
-    add("Series", series.title);
-    add("Also known as", series.titles.map((t) => t.title.trim()).filter(Boolean).join("; "));
-    block("Synopsis", series.synopsis);
-    for (const box of series.boxes) block(box.label.trim() || "Notes", box.text);
+    for (const p of seriesParts(series)) if (!series.off?.includes(p.key)) (p.multiline ? block : add)(p.name, p.text);
   }
   if (chapter) {
     add(series ? "This chapter" : "Book", chapter.title);
@@ -337,17 +386,75 @@ export async function readingContext(db: Db, bookId: number): Promise<string> {
   if (!book) return "";
   let series: ContextParts["series"];
   if (book.series_id !== null) {
-    const [row] = await db.all<Pick<Series, "title" | "synopsis">>("SELECT title, synopsis FROM series WHERE id = ?", [
-      book.series_id,
-    ]);
-    if (row) series = { ...row, ...(await seriesExtras(db, book.series_id)) };
+    const [row] = await db.all<Pick<Series, "title" | "synopsis" | "genres" | "context_off">>(
+      "SELECT title, synopsis, genres, context_off FROM series WHERE id = ?",
+      [book.series_id],
+    );
+    if (row) series = { ...row, off: contextOff(row.context_off), ...(await seriesExtras(db, book.series_id)) };
   }
   return contextText({ series, chapter: { title: book.title, about: book.about } });
 }
 
+/** Bookmarks a page of a chapter in its series (replacing the series' old bookmark). `pageNo`: from 1, for showing. */
+export async function setBookmark(db: Db, seriesId: number, bookId: number, page: string, pageNo: number): Promise<void> {
+  await db.batch([
+    { sql: "UPDATE series SET bookmark_book = ?, bookmark_page = ?, bookmark_page_no = ? WHERE id = ?", params: [bookId, page, pageNo, seriesId] },
+  ]);
+}
+
+export async function clearBookmark(db: Db, seriesId: number): Promise<void> {
+  await db.batch([{ sql: "UPDATE series SET bookmark_book = NULL, bookmark_page = NULL, bookmark_page_no = NULL WHERE id = ?", params: [seriesId] }]);
+}
+
+// --- Categories (tabs on the bookshelf) ---
+
+export type Category = { id: number; name: string; position: number };
+
+/** Your categories, in tab order. */
+export async function listCategories(db: Db): Promise<Category[]> {
+  return db.all<Category>("SELECT * FROM categories ORDER BY position, id");
+}
+
+/** Makes a category (last in the tabs) and returns its id. */
+export async function createCategory(db: Db, name: string): Promise<number> {
+  await db.batch([{ sql: "INSERT INTO categories (name, position) VALUES (?, (SELECT coalesce(max(position), -1) + 1 FROM categories))", params: [name.trim()] }]);
+  const [{ id }] = await db.all<{ id: number }>("SELECT max(id) AS id FROM categories");
+  return id;
+}
+
+export async function renameCategory(db: Db, id: number, name: string): Promise<void> {
+  await db.batch([{ sql: "UPDATE categories SET name = ? WHERE id = ?", params: [name.trim(), id] }]);
+}
+
+/** Removes a category; what was in it becomes uncategorised (nothing is deleted). */
+export async function deleteCategory(db: Db, id: number): Promise<void> {
+  await db.batch([
+    { sql: "UPDATE series SET category_id = NULL WHERE category_id = ?", params: [id] },
+    { sql: "UPDATE books SET category_id = NULL WHERE category_id = ?", params: [id] },
+    { sql: "DELETE FROM categories WHERE id = ?", params: [id] },
+  ]);
+}
+
+/** Moves a series (with its chapters) or a book on the shelf by itself into a category (null: none). */
+export async function setCategory(db: Db, item: { series: number } | { book: number }, categoryId: number | null): Promise<void> {
+  await db.batch([
+    "series" in item
+      ? { sql: "UPDATE series SET category_id = ? WHERE id = ?", params: [categoryId, item.series] }
+      : { sql: "UPDATE books SET category_id = ? WHERE id = ?", params: [categoryId, item.book] },
+  ]);
+}
+
 /** Puts a book in a series, or (null) on the shelf by itself. */
 export async function setBookSeries(db: Db, bookId: number, seriesId: number | null): Promise<void> {
-  await db.batch([{ sql: "UPDATE books SET series_id = ? WHERE id = ?", params: [seriesId, bookId] }]);
+  await db.batch([
+    { sql: "UPDATE series SET bookmark_book = NULL, bookmark_page = NULL, bookmark_page_no = NULL WHERE bookmark_book = ?", params: [bookId] },
+    // Back on the shelf by itself, it stays in its series' category.
+    {
+      sql: "UPDATE books SET category_id = coalesce((SELECT s.category_id FROM series s WHERE s.id = books.series_id), category_id) WHERE id = ?",
+      params: [bookId],
+    },
+    { sql: "UPDATE books SET series_id = ? WHERE id = ?", params: [seriesId, bookId] },
+  ]);
 }
 
 export async function updateBook(db: Db, id: number, fields: Partial<Pick<Book, "title" | "about" | "right_to_left">>): Promise<void> {
@@ -371,6 +478,7 @@ export async function relinkBook(db: Db, id: number, path: string): Promise<void
 /** Takes a book off the shelf with its marks. Its files are not touched. */
 export async function removeBook(db: Db, id: number): Promise<void> {
   await db.batch([
+    { sql: "UPDATE series SET bookmark_book = NULL, bookmark_page = NULL, bookmark_page_no = NULL WHERE bookmark_book = ?", params: [id] },
     { sql: "DELETE FROM book_marks WHERE book_id = ?", params: [id] },
     { sql: "DELETE FROM books WHERE id = ?", params: [id] },
   ]);
@@ -378,17 +486,83 @@ export async function removeBook(db: Db, id: number): Promise<void> {
 
 // --- Marks ---
 
-/** A page's marks, in the order you made them. */
+/** A page's marks, in your order (see reorderMarks). */
 export async function pageMarks(db: Db, bookId: number, page: string): Promise<Mark[]> {
-  return db.all<Mark>("SELECT * FROM book_marks WHERE book_id = ? AND page = ? ORDER BY created_at, id", [bookId, page]);
+  return db.all<Mark>("SELECT * FROM book_marks WHERE book_id = ? AND page = ? ORDER BY position, id", [bookId, page]);
+}
+
+/** All of a mark's boxes: its first, then any more parts (a speech bubble in two pieces). */
+export function markBoxes(mark: Mark): Box[] {
+  const { x, y, w, h } = mark;
+  return [{ x, y, w, h }, ...(JSON.parse(mark.more_boxes || "[]") as Box[])];
+}
+
+/** How a box is being changed: moved, or resized by a corner or edge (n, ne, e, se, s, sw, w, nw). */
+export type BoxGrip = "move" | "n" | "ne" | "e" | "se" | "s" | "sw" | "w" | "nw";
+
+/**
+ * A box moved or resized by (dx, dy), in page fractions: kept on the page,
+ * and resizing past the opposite side flips it rather than going negative.
+ */
+export function adjustBox(box: Box, grip: BoxGrip, dx: number, dy: number): Box {
+  const clamp = (v: number, lo: number, hi: number) => Math.min(Math.max(v, lo), hi);
+  if (grip === "move") {
+    return { ...box, x: clamp(box.x + dx, 0, 1 - box.w), y: clamp(box.y + dy, 0, 1 - box.h) };
+  }
+  let [left, top, right, bottom] = [box.x, box.y, box.x + box.w, box.y + box.h];
+  if (grip.includes("w")) left += dx;
+  if (grip.includes("e")) right += dx;
+  if (grip.includes("n")) top += dy;
+  if (grip.includes("s")) bottom += dy;
+  const [x1, x2] = [clamp(Math.min(left, right), 0, 1), clamp(Math.max(left, right), 0, 1)];
+  const [y1, y2] = [clamp(Math.min(top, bottom), 0, 1), clamp(Math.max(top, bottom), 0, 1)];
+  return { x: x1, y: y1, w: x2 - x1, h: y2 - y1 };
+}
+
+/** Saves one of a mark's boxes (`part`: its place in markBoxes). */
+export async function setMarkBox(db: Db, mark: Mark, part: number, box: Box): Promise<Mark> {
+  if (part === 0) {
+    await db.batch([{ sql: "UPDATE book_marks SET x = ?, y = ?, w = ?, h = ? WHERE id = ?", params: [box.x, box.y, box.w, box.h, mark.id] }]);
+    return { ...mark, ...box };
+  }
+  const more = markBoxes(mark).slice(1);
+  more[part - 1] = box;
+  await setMoreBoxes(db, mark.id, more);
+  return { ...mark, more_boxes: JSON.stringify(more) };
+}
+
+/** Saves a mark's parts past its first box. */
+export async function setMoreBoxes(db: Db, id: number, boxes: Box[]): Promise<void> {
+  await db.batch([{ sql: "UPDATE book_marks SET more_boxes = ? WHERE id = ?", params: [JSON.stringify(boxes), id] }]);
+}
+
+/** Saves a page's marks in this order (ids, first to last). */
+export async function reorderMarks(db: Db, ids: number[]): Promise<void> {
+  await db.batch(ids.map((id, i) => ({ sql: "UPDATE book_marks SET position = ? WHERE id = ?", params: [i + 1, id] })));
+}
+
+/**
+ * A page's marks in sections, one per kind (in MARK_KINDS order, empty ones
+ * left out), each in your order and numbered from 1.
+ */
+export function markSections(marks: Mark[]): { kind: MarkKind; name: string; marks: Mark[] }[] {
+  const sorted = [...marks].sort((a, b) => a.position - b.position || a.id - b.id);
+  return MARK_KINDS.map((k) => ({ kind: k.kind, name: k.name, marks: sorted.filter((m) => m.kind === k.kind) })).filter((s) => s.marks.length > 0);
+}
+
+/** Each mark's number: its place in its kind's section. */
+export function markNumbers(marks: Mark[]): Map<number, number> {
+  return new Map(markSections(marks).flatMap((s) => s.marks.map((m, i) => [m.id, i + 1] as const)));
 }
 
 /** Adds an empty mark and returns its id. */
 export async function addMark(db: Db, bookId: number, page: string, kind: MarkKind, box: Box, now: number): Promise<number> {
   await db.batch([
     {
-      sql: "INSERT INTO book_marks (book_id, page, kind, x, y, w, h, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
-      params: [bookId, page, kind, box.x, box.y, box.w, box.h, now, now],
+      // Last on the page.
+      sql: `INSERT INTO book_marks (book_id, page, kind, x, y, w, h, created_at, updated_at, position)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, (SELECT coalesce(max(position), 0) + 1 FROM book_marks WHERE book_id = ? AND page = ?))`,
+      params: [bookId, page, kind, box.x, box.y, box.w, box.h, now, now, bookId, page],
     },
   ]);
   const [{ id }] = await db.all<{ id: number }>("SELECT max(id) AS id FROM book_marks");
@@ -418,9 +592,9 @@ export async function marksPerPage(db: Db, bookId: number): Promise<Record<strin
 // --- Chapters you make from separate images ---
 
 /** Makes a new, empty chapter (its folder is in Documents\Koihongo\Books), in a series if given, and returns its id. */
-export async function makeChapter(db: Db, title: string, now: number, seriesId?: number): Promise<number> {
+export async function makeChapter(db: Db, title: string, now: number, seriesId?: number, categoryId: number | null = null): Promise<number> {
   const made = await invoke<FoundBook>("book_new", { title });
-  await addBooks(db, [made], now, seriesId);
+  await addBooks(db, [made], now, seriesId, categoryId);
   const [{ id }] = await db.all<{ id: number }>("SELECT id FROM books WHERE path = ?", [made.path]);
   return id;
 }
@@ -561,4 +735,17 @@ export function timeAgo(then: number, now: number): string {
   if (days < 30) return `${Math.floor(days / 7)}w ago`;
   if (days < 365) return `${Math.floor(days / 30)}mo ago`;
   return `${Math.floor(days / 365)}y ago`;
+}
+
+/** A tag box's text as its tags: "Romance, Fantasy" → ["Romance", "Fantasy"] (commas, 、 or new lines). */
+export function splitTags(text: string): string[] {
+  return text
+    .split(/[,、\n]/)
+    .map((t) => t.trim())
+    .filter(Boolean);
+}
+
+/** Tags back into a box's text: "Romance, Fantasy". */
+export function joinTags(tags: string[]): string {
+  return tags.map((t) => t.trim()).filter(Boolean).join(", ");
 }

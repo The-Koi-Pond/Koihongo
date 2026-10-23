@@ -5049,7 +5049,7 @@ button.danger {
 .reader-toolbar .deck-back {
   margin: 0;
   flex: none;
-  max-width: 130px;
+  max-width: 92px;
 }
 
 .deck-back svg {
@@ -5149,7 +5149,9 @@ button.danger {
   cursor: grab;
 }
 
-.reader-stage.panning:active {
+.reader-stage.panning:active,
+.reader-zoom.is-panning,
+.reader-zoom.is-panning .mark-layer {
   cursor: grabbing;
 }
 
@@ -5184,12 +5186,13 @@ button.danger {
   position: absolute;
   border: calc(2px / var(--zoom)) solid var(--mark);
   border-radius: calc(6px / var(--zoom));
-  background: color-mix(in srgb, var(--mark) 12%, transparent);
   pointer-events: none;
 }
 
+/* An open mark's boxes can be moved (drag inside) and resized (the grips). */
 .mark-box.selected {
-  background: color-mix(in srgb, var(--mark) 22%, transparent);
+  pointer-events: auto;
+  cursor: move;
   box-shadow: 0 0 0 calc(2px / var(--zoom)) #fff, 0 0 0 calc(4px / var(--zoom)) var(--mark);
 }
 
@@ -5666,6 +5669,7 @@ button.danger {
 
 /* A series' info (Reading.tsx, SeriesInfo): the context for translation requests. */
 .series-info {
+  position: relative;
   display: grid;
   grid-template-columns: 180px minmax(0, 1fr);
   gap: 18px;
@@ -5748,31 +5752,6 @@ button.danger {
   border-radius: 999px;
   background: transparent;
   font-size: 0.8rem;
-}
-
-.series-ideas {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 6px;
-}
-
-.series-context summary {
-  cursor: pointer;
-  font-size: 0.85rem;
-  font-weight: 700;
-  color: var(--hint);
-}
-
-.series-context pre {
-  margin: 8px 0 4px;
-  padding: 10px 12px;
-  border-radius: 8px;
-  background: rgb(0 0 0 / 0.25);
-  font: inherit;
-  font-size: 0.85rem;
-  white-space: pre-wrap;
-  overflow-wrap: anywhere;
 }
 
 /* "Chapters", a heading with a count and a line running out to the right. */
@@ -6114,7 +6093,7 @@ button.aka-add {
   flex-wrap: wrap;
   align-items: center;
   gap: 4px 16px;
-  padding: 10px 52px 12px 16px; /* right: room for the pencil */
+  padding: 10px 16px 12px; /* right: set inline, room for the tools */
   overflow: hidden;
   text-align: left;
   border: 2px solid var(--panel-border);
@@ -6192,10 +6171,37 @@ button.aka-add {
   background: var(--accent);
 }
 
-.chapter-list .shelf-edit {
+/* Rename and edit pages, over the bar's right end, shown on hover. */
+.chapter-tools {
+  position: absolute;
   top: 50%;
   right: 10px;
+  display: flex;
+  gap: 4px;
   transform: translateY(-50%);
+  opacity: 0;
+  transition: opacity 0.15s;
+}
+
+.chapter-tools .icon-action {
+  background: var(--surface);
+  color: var(--text);
+}
+
+.chapter-list > li:hover .chapter-tools,
+.chapter-tools:focus-within {
+  opacity: 1;
+}
+
+.chapter-rename {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 11px 16px;
+  border: 2px solid var(--accent);
+  border-radius: 12px;
+  background: var(--surface-2);
+  font-family: var(--font-title);
+  font-size: 1.1rem;
 }
 
 /* Dragging pages into order (Reading.tsx, PageEditor with useReorderDrag):
@@ -6236,4 +6242,495 @@ button.aka-add {
 
 .page-tile.drop-after::after {
   right: -8px;
+}
+
+/* "+ Add more" on a series page and its menu of boxes (Reading.tsx, AddMore). */
+.series-more {
+  position: relative;
+  justify-self: start;
+}
+
+.series-more-menu {
+  left: 0;
+  right: auto;
+  min-width: 300px;
+}
+
+.series-more-item {
+  display: grid;
+  gap: 1px;
+  text-align: left;
+}
+
+.series-more-item .muted {
+  font-size: 0.8rem;
+}
+
+/* The series info's options (Reading.tsx, ContextOptions): what the AI helper is sent. */
+.context-options {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  z-index: 5;
+}
+
+.context-panel {
+  position: absolute;
+  top: calc(100% + 6px);
+  right: 0;
+  width: min(440px, 80vw);
+  max-height: 70vh;
+  overflow-y: auto;
+  display: grid;
+  gap: 8px;
+  padding: 14px 16px 16px;
+  border: 2px solid var(--panel-border);
+  border-radius: 12px;
+  background: #25235f;
+  box-shadow: 0 10px 28px rgb(0 0 0 / 0.5);
+}
+
+.context-panel h3 {
+  margin: 0;
+  font-size: 1rem;
+}
+
+.context-parts {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 4px;
+}
+
+.context-parts label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+}
+
+.context-parts label.muted {
+  cursor: default;
+}
+
+.context-empty {
+  font-size: 0.8rem;
+}
+
+.context-panel pre {
+  margin: 0;
+  padding: 10px 12px;
+  border-radius: 8px;
+  background: rgb(0 0 0 / 0.25);
+  font: inherit;
+  font-size: 0.85rem;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+/* Room for the options button beside the first field. */
+.series-fields {
+  padding-right: 36px;
+}
+
+/* Under a series' cover (Reading.tsx, SeriesNav): back to your bookmark, the first and latest chapters. */
+.series-nav {
+  display: grid;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.series-bookmark {
+  display: flex;
+  border: 2px solid var(--panel-border);
+  border-radius: 10px;
+  background: var(--surface);
+  overflow: hidden;
+}
+
+.series-bookmark button {
+  border: none;
+  border-radius: 0;
+  background: none;
+  color: var(--text);
+}
+
+.series-bookmark-go {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 8px 10px;
+}
+
+.series-bookmark-go svg {
+  flex: none;
+  color: var(--accent);
+}
+
+.series-bookmark .series-bookmark-clear {
+  display: grid;
+  place-items: center;
+  padding: 0 10px;
+  border-left: 1px solid var(--panel-border);
+  color: var(--muted);
+}
+
+.series-bookmark button:hover {
+  background: rgb(255 255 255 / 0.08);
+}
+
+.series-bookmark-none {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  margin: 0;
+  padding: 9px 10px;
+  font-size: 0.8rem;
+  color: var(--muted);
+}
+
+.series-nav-ends {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+.series-nav-ends button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-width: 0;
+  padding: 7px 6px;
+  border: 2px solid var(--panel-border);
+  border-radius: 10px;
+  background: var(--surface-2);
+}
+
+.series-nav-ends button:hover,
+.series-bookmark:hover {
+  border-color: #fd93bb;
+}
+
+.series-nav-ends svg {
+  flex: none;
+  color: var(--accent);
+}
+
+.series-nav-text {
+  display: grid;
+  min-width: 0;
+  text-align: left;
+  line-height: 1.15;
+}
+
+.series-nav-kind {
+  font-family: var(--font-title);
+  font-size: 0.62rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.series-nav-value {
+  font-family: var(--font-title);
+  font-size: 0.8rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* The bookshelf's category tabs (Reading.tsx, CategoryTabs). */
+.category-bar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 14px;
+  border-bottom: 2px solid var(--panel-border);
+}
+
+.category-tabs {
+  flex: 1;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 4px;
+  min-width: 0;
+}
+
+.category-tab {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: -2px;
+  padding: 6px 14px;
+  border: 2px solid transparent;
+  border-bottom: none;
+  border-radius: 10px 10px 0 0;
+  background: none;
+  color: var(--muted);
+  font-weight: 700;
+}
+
+.category-tab:hover {
+  color: var(--text);
+}
+
+.category-tab.on {
+  border-color: var(--panel-border);
+  background: var(--bg);
+  color: var(--text);
+}
+
+.category-tab.drop-ready[data-drop] {
+  border-color: color-mix(in srgb, var(--accent) 55%, transparent);
+}
+
+.category-tab.drop-over[data-drop] {
+  outline: none;
+  border-color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 18%, var(--bg));
+  color: var(--text);
+}
+
+.category-count {
+  padding: 0 7px;
+  border-radius: 999px;
+  background: rgb(255 255 255 / 0.1);
+  font: 400 0.8rem/1.5 var(--font-num);
+}
+
+.category-tab.on .category-count {
+  background: var(--accent);
+  color: var(--accent-text);
+}
+
+.category-add {
+  display: grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  margin: 0 0 4px 4px;
+  padding: 0;
+  border: 1px dashed var(--panel-border);
+  border-radius: 50%;
+  background: none;
+  color: var(--muted);
+}
+
+.category-tabs .aka-input {
+  margin-bottom: 4px;
+}
+
+.category-tools {
+  display: flex;
+  gap: 4px;
+  padding-bottom: 4px;
+}
+
+/* The bookshelf's heading row: "Reading" on the left, Glossary on the right. */
+.reading-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.reading-top button {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+/* In the shelf's grid the + is a tile as tall as the books. */
+.shelf .shelf-add-btn {
+  min-height: 220px;
+  flex-direction: column;
+}
+
+/* The mark editor's SFX dictionary (Reading.tsx, MarkEditor): built-in suggestions, beside "Seen before". */
+.sfx-dictionary {
+  border-color: var(--panel-border);
+  background: rgb(255 255 255 / 0.04);
+}
+
+.sfx-dictionary .seen-before-title {
+  color: var(--muted);
+}
+
+.sfx-related {
+  padding: 0 6px;
+  border-radius: 999px;
+  background: rgb(255 255 255 / 0.1);
+  color: var(--muted);
+  font-size: 0.72rem;
+}
+
+/* The reader's side list in sections, one per kind, each numbered from 1; rows drag to reorder within theirs. */
+.mark-sections {
+  display: grid;
+  gap: 14px;
+}
+
+.mark-section {
+  display: grid;
+  gap: 6px;
+}
+
+.mark-section-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0;
+  color: var(--mark);
+  font-family: var(--font-title);
+  font-size: 0.78rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.mark-section-count {
+  padding: 0 7px;
+  border-radius: 999px;
+  background: rgb(255 255 255 / 0.1);
+  color: var(--muted);
+  font: 400 0.75rem/1.5 var(--font-num);
+}
+
+.mark-list > li {
+  position: relative;
+}
+
+.mark-sections.dragging .mark-row {
+  cursor: grabbing;
+}
+
+.mark-list > li.drag-source {
+  opacity: 0.4;
+}
+
+.mark-list > li.drop-before::before,
+.mark-list > li.drop-after::after {
+  content: "";
+  position: absolute;
+  left: 4px;
+  right: 4px;
+  height: 3px;
+  border-radius: 2px;
+  background: var(--accent);
+}
+
+.mark-list > li.drop-before::before {
+  top: -5px;
+}
+
+.mark-list > li.drop-after::after {
+  bottom: -5px;
+}
+
+/* A mark's extra parts (Reading.tsx, PageView): × removes one while the mark is open. */
+.mark-box-remove {
+  position: absolute;
+  top: calc(-26px / var(--zoom));
+  right: calc(-9px / var(--zoom));
+  display: grid;
+  place-items: center;
+  width: 18px;
+  height: 18px;
+  padding: 0;
+  border: none;
+  border-radius: 50%;
+  background: var(--mark);
+  color: var(--accent-text);
+  box-shadow: 0 1px 3px rgb(0 0 0 / 0.5);
+  transform: scale(calc(1 / var(--zoom)));
+  transform-origin: top right;
+  pointer-events: auto;
+  cursor: pointer;
+}
+
+.mark-extend-hint {
+  margin: 0;
+  padding: 6px 10px;
+  border-radius: 8px;
+  border: 1px dashed var(--mark);
+  background: color-mix(in srgb, var(--mark) 12%, transparent);
+  font-size: 0.85rem;
+}
+
+.mark-parts {
+  margin: 0;
+  font-size: 0.8rem;
+}
+
+.mark-box .mark-num {
+  pointer-events: none;
+}
+
+/* Space held: dragging pans, even over an open mark's boxes. */
+.reader-stage.panning .mark-box,
+.reader-stage.panning .mark-grip {
+  pointer-events: none;
+}
+
+.mark-grip {
+  --g: calc(10px / var(--zoom));
+  position: absolute;
+  width: var(--g);
+  height: var(--g);
+  border: calc(1.5px / var(--zoom)) solid var(--mark);
+  border-radius: 50%;
+  background: #fff;
+}
+
+.grip-n,
+.grip-s {
+  left: calc(50% - var(--g) / 2);
+  cursor: ns-resize;
+}
+
+.grip-e,
+.grip-w {
+  top: calc(50% - var(--g) / 2);
+  cursor: ew-resize;
+}
+
+.grip-n,
+.grip-ne,
+.grip-nw {
+  top: calc(var(--g) / -2);
+}
+
+.grip-s,
+.grip-se,
+.grip-sw {
+  bottom: calc(var(--g) / -2);
+}
+
+.grip-e,
+.grip-ne,
+.grip-se {
+  right: calc(var(--g) / -2);
+}
+
+.grip-w,
+.grip-nw,
+.grip-sw {
+  left: calc(var(--g) / -2);
+}
+
+.grip-ne,
+.grip-sw {
+  cursor: nesw-resize;
+}
+
+.grip-nw,
+.grip-se {
+  cursor: nwse-resize;
 }

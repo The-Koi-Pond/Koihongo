@@ -201,7 +201,7 @@ test("series info becomes the context sent with translation requests", async () 
   await addBooks(db, [{ path: "C:/m/Ch 2", title: "Ch 2", kind: "folder", pages: 3, series: "Villainess" }], T0);
   const [book] = await listBooks(db);
   const seriesId = book.series_id!;
-  await updateSeriesInfo(db, seriesId, { synopsis: "  A noble girl remembers her past life.  " });
+  await updateSeriesInfo(db, seriesId, { synopsis: "  A noble girl remembers her past life.  ", genres: "Otome isekai, Romance" });
   await addSeriesTitle(db, seriesId, "悪役令嬢");
   await addSeriesTitle(db, seriesId, "The Villainess");
   const blank = await addSeriesTitle(db, seriesId, "");
@@ -209,7 +209,7 @@ test("series info becomes the context sent with translation requests", async () 
   await setSeriesTitle(db, blank, " "); // left empty: removed
   const cast = await addSeriesBox(db, seriesId, "Cast");
   await setSeriesBox(db, cast, "Cast", "Claire: the villainess");
-  await addSeriesBox(db, seriesId, "Genre"); // nothing written: left out
+  await addSeriesBox(db, seriesId, "Setting"); // nothing written: left out
   await updateBook(db, book.id, { about: "The ball scene." });
 
   assert.equal(
@@ -218,6 +218,7 @@ test("series info becomes the context sent with translation requests", async () 
       "Series: Villainess",
       "Also known as: 悪役令嬢; The Villainess; Villainess Route",
       "Synopsis:\nA noble girl remembers her past life.",
+      "Genre: Otome isekai, Romance",
       "Cast:\nClaire: the villainess",
       "This chapter: Ch 2",
       "Notes on this chapter:\nThe ball scene.",
@@ -279,4 +280,209 @@ test("time ago, in short steps", async () => {
     [0, 5 * MIN, 3 * 60 * MIN, 2 * 1440 * MIN, 8 * 1440 * MIN, 40 * 1440 * MIN, 400 * 1440 * MIN].map((ago) => timeAgo(T0 - ago, T0)),
     ["just now", "5m ago", "3h ago", "2d ago", "1w ago", "1mo ago", "1y ago"],
   );
+});
+
+test("tag boxes: text to tags and back", async () => {
+  const { joinTags, splitTags } = await import("../src/reading.ts");
+  assert.deepEqual(splitTags("Romance, Fantasy\nIsekai、悪役令嬢 ,, "), ["Romance", "Fantasy", "Isekai", "悪役令嬢"]);
+  assert.deepEqual(splitTags(""), []);
+  assert.equal(joinTags([" Romance ", "", "Fantasy"]), "Romance, Fantasy");
+});
+
+test("upgrading: a Genre box you'd made becomes the series' genres", async () => {
+  const db = openTestDb(() => {});
+  await migrate(db, 10);
+  await db.batch([
+    { sql: "INSERT INTO series (title, created_at) VALUES ('Villainess', 1), ('Other', 1)" },
+    { sql: "INSERT INTO series_boxes (series_id, label, text) VALUES (1, ' genre ', 'Otome isekai, Romance'), (1, 'Cast', 'Claire'), (2, 'Genre', '  ')" },
+  ]);
+  await migrate(db);
+  const series = await db.all<{ id: number; genres: string }>("SELECT id, genres FROM series ORDER BY id");
+  assert.deepEqual(series.map((s) => s.genres), ["Otome isekai, Romance", ""]);
+  const boxes = await db.all<{ label: string }>("SELECT label FROM series_boxes");
+  assert.deepEqual(boxes.map((b) => b.label), ["Cast"]);
+});
+
+test("context: parts you switch off aren't sent", async () => {
+  const { contextText, contextOff } = await import("../src/reading.ts");
+  const series = {
+    title: "Villainess",
+    synopsis: "A noble girl remembers her past life.",
+    genres: "Otome isekai",
+    titles: [{ id: 1, title: "The Villainess" }],
+    boxes: [
+      { id: 7, label: "Cast", text: "Claire" },
+      { id: 8, label: "Setting", text: "A fantasy kingdom" },
+    ],
+  };
+  assert.equal(contextText({ series, chapter: undefined }).split("\n\n").length, 6);
+  const off = ["synopsis", "box:7", "aka"];
+  assert.equal(contextText({ series: { ...series, off } }), "Series: Villainess\n\nGenre: Otome isekai\n\nSetting:\nA fantasy kingdom");
+  assert.deepEqual(contextOff('["synopsis"]'), ["synopsis"]);
+  assert.deepEqual(contextOff("not json"), [], "a broken value sends everything rather than failing");
+
+  // Stored per series and used by readingContext.
+  const db = openTestDb(() => {});
+  await migrate(db);
+  await addBooks(db, [{ path: "C:/m/Ch 1", title: "Ch 1", kind: "folder", pages: 3, series: "Villainess" }], T0);
+  const [book] = await listBooks(db);
+  await updateSeriesInfo(db, book.series_id!, { synopsis: "Secret plot", context_off: JSON.stringify(["synopsis"]) });
+  assert.equal(await readingContext(db, book.id), "Series: Villainess\n\nThis chapter: Ch 1");
+});
+
+test("bookmarks: one per series, moving with you; gone with its chapter", async () => {
+  const { setBookmark, clearBookmark, getBook } = await import("../src/reading.ts");
+  const db = openTestDb(() => {});
+  await migrate(db);
+  const ch = (n: number) => ({ path: `C:/m/Ch ${n}`, title: `Ch ${n}`, kind: "folder" as const, pages: 20, series: "Koi" });
+  await addBooks(db, [ch(1), ch(2)], T0);
+  const [one, two] = await listBooks(db);
+  const seriesId = one.series_id!;
+  const series = async () => (await listSeries(db))[0];
+
+  await setBookmark(db, seriesId, one.id, "005.jpg", 5);
+  await setBookmark(db, seriesId, two.id, "012.jpg", 12); // replaces the first
+  assert.deepEqual([(await series()).bookmark_book, (await series()).bookmark_page, (await series()).bookmark_page_no], [two.id, "012.jpg", 12]);
+  const book = (await getBook(db, two.id))!;
+  assert.deepEqual([book.bookmark_book, book.bookmark_page], [two.id, "012.jpg"], "the reader knows it");
+
+  await clearBookmark(db, seriesId);
+  assert.equal((await series()).bookmark_book, null);
+
+  // Taking the chapter out of the series, or off the shelf, takes its bookmark with it.
+  await setBookmark(db, seriesId, two.id, "012.jpg", 12);
+  await setBookSeries(db, two.id, null);
+  assert.equal((await series()).bookmark_book, null);
+  await setBookmark(db, seriesId, one.id, "001.jpg", 1);
+  await removeBook(db, one.id);
+  assert.equal((await series()).bookmark_book, null);
+});
+
+test("categories: new things go where you're looking; moving and removing keep everything", async () => {
+  const { listCategories, createCategory, renameCategory, deleteCategory, setCategory } = await import("../src/reading.ts");
+  const db = openTestDb(() => {});
+  await migrate(db);
+  assert.deepEqual((await listCategories(db)).map((c) => c.name), ["Manga"], "a starting category");
+  const novels = await createCategory(db, "Light novels");
+  await addBooks(db, [{ path: "C:/m/Koi/Ch 1", title: "Ch 1", kind: "folder", pages: 9, series: "Koi" }], T0, undefined, novels);
+  await addBooks(db, [{ path: "C:/m/One", title: "One shot", kind: "folder", pages: 9 }], T0, undefined, 1);
+  const [koi] = await listSeries(db);
+  assert.equal(koi.category_id, novels, "a series made from a folder goes into the category");
+  const books = await listBooks(db);
+  const chapter = books.find((b) => b.title === "Ch 1")!;
+  const oneShot = books.find((b) => b.title === "One shot")!;
+  assert.equal(chapter.category_id, null, "a chapter goes by its series");
+  assert.equal(oneShot.category_id, 1);
+
+  // Taken out of its series, a chapter stays in the series' category.
+  await setBookSeries(db, chapter.id, null);
+  assert.equal((await listBooks(db)).find((b) => b.id === chapter.id)!.category_id, novels);
+
+  await setCategory(db, { series: koi.id }, 1);
+  // A removed series' chapters stay in its category.
+  const extras = await createSeries(db, "Extras", T0, novels);
+  await setBookSeries(db, oneShot.id, extras);
+  await removeSeries(db, extras);
+  assert.equal((await listBooks(db)).find((b) => b.id === oneShot.id)!.category_id, novels);
+  await renameCategory(db, novels, "Novels");
+  assert.deepEqual((await listCategories(db)).map((c) => c.name), ["Manga", "Novels"]);
+  await deleteCategory(db, novels);
+  assert.equal((await listBooks(db)).find((b) => b.id === chapter.id)!.category_id, null, "uncategorised, not deleted");
+  assert.equal((await listSeries(db))[0].category_id, 1);
+  assert.equal((await listBooks(db)).length, 2);
+});
+
+test("upgrading: everything already on the shelf is manga", async () => {
+  const db = openTestDb(() => {});
+  await migrate(db, 13);
+  await db.batch([
+    { sql: "INSERT INTO series (title, created_at) VALUES ('Koi', 1)" },
+    { sql: "INSERT INTO books (title, path, kind, pages, added_at, series_id) VALUES ('Ch 1', 'a', 'folder', 1, 1, 1), ('Loose', 'b', 'folder', 1, 1, NULL)" },
+  ]);
+  await migrate(db);
+  assert.equal((await listSeries(db))[0].category_id, 1);
+  const books = await listBooks(db);
+  assert.deepEqual(books.map((b) => [b.title, b.category_id]).sort(), [["Ch 1", null], ["Loose", 1]]);
+});
+
+test("marks: sections by kind, numbered within, in the order you drag them", async () => {
+  const { reorderMarks, markSections, markNumbers, updateMark } = await import("../src/reading.ts");
+  const db = openTestDb(() => {});
+  await migrate(db);
+  const book = await addBooks(db, [{ path: "C:/m/A", title: "A", kind: "folder", pages: 3 }], T0).then(async () => (await listBooks(db))[0].id);
+  const a = await addMark(db, book, "001.jpg", "speech", BOX, T0);
+  const b = await addMark(db, book, "001.jpg", "sfx", BOX, T0);
+  const c = await addMark(db, book, "001.jpg", "speech", BOX, T0);
+  const other = await addMark(db, book, "002.jpg", "speech", BOX, T0);
+  let marks = await pageMarks(db, book, "001.jpg");
+  assert.deepEqual(markSections(marks).map((s) => [s.kind, s.marks.map((m) => m.id)]), [["speech", [a, c]], ["sfx", [b]]]);
+  assert.deepEqual([...markNumbers(marks)], [[a, 1], [c, 2], [b, 1]], "SFX starts its own count");
+
+  await reorderMarks(db, [c, a, b]);
+  marks = await pageMarks(db, book, "001.jpg");
+  assert.deepEqual(markSections(marks)[0].marks.map((m) => m.id), [c, a]);
+  // A new mark goes last; one changing kind joins that section in its place.
+  const d = await addMark(db, book, "001.jpg", "sfx", BOX, T0);
+  await updateMark(db, c, "sfx", { text: "", reading: "", meaning: "", notes: "" }, T0);
+  marks = await pageMarks(db, book, "001.jpg");
+  assert.deepEqual(markSections(marks).map((s) => s.marks.map((m) => m.id)), [[a], [c, b, d]]);
+  assert.equal((await pageMarks(db, book, "002.jpg"))[0].id, other);
+});
+
+test("upgrading: marks keep the order they were made in", async () => {
+  const db = openTestDb(() => {});
+  await migrate(db, 14);
+  await db.batch([
+    { sql: "INSERT INTO books (title, path, kind, pages, added_at) VALUES ('A', 'a', 'folder', 1, 1)" },
+    { sql: "INSERT INTO book_marks (book_id, page, kind, x, y, w, h, created_at, updated_at) VALUES (1, 'p', 'speech', 0, 0, 1, 1, 1, 1), (1, 'p', 'speech', 0, 0, 1, 1, 2, 2)" },
+  ]);
+  await migrate(db);
+  assert.deepEqual((await pageMarks(db, 1, "p")).map((m) => [m.id, m.position]), [[1, 1], [2, 2]]);
+});
+
+test("marks: one mark can have more boxes (a bubble in two parts)", async () => {
+  const { markBoxes, setMoreBoxes } = await import("../src/reading.ts");
+  const db = openTestDb(() => {});
+  await migrate(db);
+  await addBooks(db, [{ path: "C:/m/A", title: "A", kind: "folder", pages: 1 }], T0);
+  const book = (await listBooks(db))[0].id;
+  const id = await addMark(db, book, "001.jpg", "speech", BOX, T0);
+  let [mark] = await pageMarks(db, book, "001.jpg");
+  assert.deepEqual(markBoxes(mark), [BOX]);
+  const second = { x: 0.5, y: 0.6, w: 0.1, h: 0.2 };
+  await setMoreBoxes(db, id, [second]);
+  [mark] = await pageMarks(db, book, "001.jpg");
+  assert.deepEqual(markBoxes(mark), [BOX, second]);
+  await setMoreBoxes(db, id, []);
+  [mark] = await pageMarks(db, book, "001.jpg");
+  assert.deepEqual(markBoxes(mark), [BOX]);
+});
+
+test("marks: boxes move and resize, staying on the page", async () => {
+  const { adjustBox, setMarkBox, markBoxes, setMoreBoxes } = await import("../src/reading.ts");
+  const box = { x: 0.2, y: 0.2, w: 0.2, h: 0.1 };
+  const near = (a: { x: number; y: number; w: number; h: number }, b: typeof a) =>
+    assert.ok((["x", "y", "w", "h"] as const).every((k) => Math.abs(a[k] - b[k]) < 1e-9), `${JSON.stringify(a)} ≠ ${JSON.stringify(b)}`);
+  near(adjustBox(box, "move", 0.1, 0.05), { x: 0.3, y: 0.25, w: 0.2, h: 0.1 });
+  near(adjustBox(box, "move", 2, -2), { x: 0.8, y: 0, w: 0.2, h: 0.1 }, );
+  near(adjustBox(box, "se", 0.1, 0.1), { x: 0.2, y: 0.2, w: 0.3, h: 0.2 });
+  near(adjustBox(box, "w", -0.1, 0.5), { x: 0.1, y: 0.2, w: 0.3, h: 0.1 }, );
+  near(adjustBox(box, "e", -0.3, 0), { x: 0.1, y: 0.2, w: 0.1, h: 0.1 }); // dragged past the left side: flips
+  near(adjustBox(box, "nw", -1, -1), { x: 0, y: 0, w: 0.4, h: 0.3 });
+
+  const db = openTestDb(() => {});
+  await migrate(db);
+  await addBooks(db, [{ path: "C:/m/A", title: "A", kind: "folder", pages: 1 }], T0);
+  const book = (await listBooks(db))[0].id;
+  const id = await addMark(db, book, "001.jpg", "speech", BOX, T0);
+  await setMoreBoxes(db, id, [BOX]);
+  let [mark] = await pageMarks(db, book, "001.jpg");
+  const moved = { x: 0.5, y: 0.5, w: 0.1, h: 0.1 };
+  const returned = await setMarkBox(db, mark, 1, moved);
+  [mark] = await pageMarks(db, book, "001.jpg");
+  assert.deepEqual(markBoxes(mark), [BOX, moved]);
+  assert.deepEqual(markBoxes(returned), [BOX, moved]);
+  await setMarkBox(db, mark, 0, moved);
+  [mark] = await pageMarks(db, book, "001.jpg");
+  assert.deepEqual(markBoxes(mark), [moved, moved]);
 });

@@ -91,6 +91,8 @@ levels              level, region (N5…N1, approximate), position in region, ka
 path                position, item_key, kind, track, level      (7,869 items)
 path_requirements   item_key → requires_key   (an item unlocks when these are learned)
 mnemonics           item_key, kind, text      (Koihongo's default mnemonics)
+sfx_words, sfx_keys forms, meanings, source; key → word (the SFX dictionary for Reading: 1,382 entries, every JMdict
+                    sound/mimetic word plus ~40 manga effects written for Koihongo in scripts/content/sfx.ts)
 search              term, field, item_key, weight, rank
                     (dictionary index over every word and kanji, ~226k terms)
 ```
@@ -121,6 +123,7 @@ notes        item_key, kind (mnemonic_meaning|mnemonic_reading|note), text,
              author (you|ai|ai_edited), created_at        (every version kept; newest = current)
 synonyms     item_key, text                               (extra meanings you accept)
 books        your manga: title, path on disk, kind (folder|cbz|made), page you're on, about (notes for AI), series_id
+categories   tabs on the bookshelf (name, position); series.category_id and books.category_id (a book by itself) point at one, NULL = uncategorised
 series       a group of chapters on the shelf: title, japanese_title, synopsis, cover (a copy in Documents\Koihongo\Covers, read by series_cover); removing one puts its chapters back on the shelf
 series_titles  its other titles ("also known as")
 series_boxes   your boxes on its page: label, text (Cast, Genre…)

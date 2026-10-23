@@ -137,6 +137,22 @@ CREATE TABLE path_requirements (
 -- Dictionary search index (terms from src/searchTerms.ts) over every word and
 -- kanji, on the path or not. rank: how common the item is, lower = more common
 -- (words.priority for words, kanji.freq_rank for kanji, 9999 if unranked).
+-- The SFX dictionary (Reading: suggestions for boxes marked SFX). See scripts/content/sfx.ts.
+CREATE TABLE sfx_words (
+  id       INTEGER PRIMARY KEY,
+  forms    TEXT NOT NULL,     -- JSON string[]: kana forms, the first shown
+  meanings TEXT NOT NULL,     -- JSON string[]: one per sense
+  source   TEXT NOT NULL CHECK (source IN ('jmdict', 'koihongo')),
+  rank     INTEGER NOT NULL   -- lower first (koihongo 0, then JMdict priority)
+);
+
+CREATE TABLE sfx_keys (
+  key     TEXT NOT NULL,      -- textKey(form, "sfx")
+  word_id INTEGER NOT NULL REFERENCES sfx_words (id),
+  loose   INTEGER NOT NULL,   -- 1: related, not the same word (ドキッ ~ どきどき)
+  PRIMARY KEY (key, word_id)
+) WITHOUT ROWID;
+
 CREATE TABLE search (
   term     TEXT NOT NULL,
   field    TEXT NOT NULL CHECK (field IN ('form', 'reading', 'meaning', 'meaning_word')),
