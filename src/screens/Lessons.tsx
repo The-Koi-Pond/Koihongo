@@ -1,7 +1,7 @@
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 import { tauriDb } from "../db/tauriDb.ts";
-import { cardTypesFor, startLessons, todaySummary, type Lesson } from "../srs/progress.ts";
+import { cardTypesFor, startAsKnown, startLessons, todaySummary, type Lesson } from "../srs/progress.ts";
 import { FIRST_REVIEW_DELAY_MS } from "../srs/scheduler.ts";
 import { answerCurrent, currentQuestion, spreadOutPairs, startSession, type Question, type Session } from "../srs/session.ts";
 import { FastTrackButton } from "../ui/FastTrack.tsx";
@@ -30,10 +30,13 @@ export function Lessons({ onExit, exitLabel = "Back to Today" }: { onExit: () =>
   const [batch, setBatch] = useState<Lesson[]>([]);
   const [phase, setPhase] = useState<Phase>({ name: "loading" });
   const [moreAvailable, setMoreAvailable] = useState(false);
+  /** The round was skipped with "I know all of these" (fast-tracked, no quiz). */
+  const [knewAll, setKnewAll] = useState(false);
   const [error, setError] = useState<string>();
 
   const loadBatch = useCallback(() => {
     setPhase({ name: "loading" });
+    setKnewAll(false);
     todaySummary(tauriDb, Date.now())
       .then((s) => {
         setBatch(s.lessons.slice(0, BATCH_SIZE));
@@ -66,6 +69,19 @@ export function Lessons({ onExit, exitLabel = "Back to Today" }: { onExit: () =>
   function startQuiz() {
     const questions: Question[] = batch.flatMap((l) => cardTypesFor(l.kind).map((card_type) => ({ item_key: l.item_key, card_type })));
     setPhase({ name: "quiz", session: startSession(spreadOutPairs(shuffle(questions))), turn: 0 });
+  }
+
+  /** "I know all of these": the whole round goes on fast track and skips the quiz. */
+  async function knowAll() {
+    try {
+      await startAsKnown(tauriDb, batch, Date.now());
+      const after = await todaySummary(tauriDb, Date.now());
+      setMoreAvailable(after.lessons.length > 0);
+      setKnewAll(true);
+      setPhase({ name: "done" });
+    } catch (e) {
+      setError(String(e));
+    }
   }
 
   async function onQuizAnswer(correct: boolean) {
@@ -103,7 +119,7 @@ export function Lessons({ onExit, exitLabel = "Back to Today" }: { onExit: () =>
   if (phase.name === "done") {
     return (
       <DoneView
-        title={`Learned ${batch.length} new items!`}
+        title={knewAll ? `Fast-tracked ${batch.length} items` : `Learned ${batch.length} new items!`}
         actions={
           <>
             {moreAvailable && (
@@ -117,7 +133,12 @@ export function Lessons({ onExit, exitLabel = "Back to Today" }: { onExit: () =>
           </>
         }
       >
-        <p>Their first review comes in {FIRST_REVIEW_DELAY_MS / 3_600_000} hours.</p>
+        <p>
+          Their first review comes in {FIRST_REVIEW_DELAY_MS / 3_600_000} hours.{knewAll && " Get each one right once and it passes."}
+        </p>
+        {knewAll && !moreAvailable && batch.some((l) => l.kind === "kana") && (
+          <p className="muted">Already know lots of kana? Library → Kana → "I already know these" starts whole sets at once.</p>
+        )}
       </DoneView>
     );
   }
@@ -151,7 +172,25 @@ export function Lessons({ onExit, exitLabel = "Back to Today" }: { onExit: () =>
   return (
     <div className="session with-bottom-bar">
       {item ? (
-        <ItemView item={item} onChange={reload} bannerEnd={<FastTrackButton itemKey={item.item_key} offLabel="I already know this" />} />
+        <ItemView
+          item={item}
+          onChange={reload}
+          bannerEnd={
+            <>
+              <FastTrackButton itemKey={item.item_key} offLabel="I already know this" />
+              {batch.length > 1 && (
+                <button
+                  type="button"
+                  className="fast-track-btn"
+                  title="Put the whole round on fast track and skip its quiz. The first review still checks you know them."
+                  onClick={knowAll}
+                >
+                  I know all {batch.length}
+                </button>
+              )}
+            </>
+          }
+        />
       ) : (
         <p className="muted">Loading…</p>
       )}

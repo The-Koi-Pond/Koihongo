@@ -1,7 +1,7 @@
 // Your progress: which lessons are available, what's due, recording answers.
 
 import type { Db, Statement } from "../db/db.ts";
-import { isFastTracked } from "./fastTrack.ts";
+import { isFastTracked, setFastTrackMany } from "./fastTrack.ts";
 import { newCard, PASS_STABILITY_DAYS, retrievability, review, type CardRow, type CardType } from "./scheduler.ts";
 import { DEFAULT_PACING, LESSON_WINDOW, loadPacing, type Pacing } from "./settings.ts";
 
@@ -85,6 +85,38 @@ export async function startLessons(db: Db, lessons: Pick<Lesson, "item_key" | "k
       params: [c.item_key, c.card_type, c.state, c.due, c.stability, c.difficulty, c.scheduled_days, c.learning_steps, c.reps, c.lapses, c.last_review, c.started_at],
     })),
   );
+}
+
+/**
+ * Starts items you say you already know, skipping their lessons and the daily
+ * limits: they go on fast track, so their first review (in a few hours)
+ * passes them with one right answer, and a miss puts them back to normal pace.
+ */
+export async function startAsKnown(db: Db, items: Pick<Lesson, "item_key" | "kind">[], now: number): Promise<void> {
+  await setFastTrackMany(db, items.map((i) => i.item_key), now);
+  await startLessons(db, items, now);
+}
+
+export type KanaScript = "hiragana" | "katakana";
+export type KanaGroupName = "basic" | "dakuten" | "combo" | "extended";
+/** A set of kana (e.g. basic hiragana) and which of them you haven't started yet. */
+export type KanaGroup = { script: KanaScript; group: KanaGroupName; total: number; notStarted: string[] };
+
+/** The kana on the path by script and group, in path order, with the ones not started yet. */
+export async function kanaGroups(db: Db): Promise<KanaGroup[]> {
+  const rows = await db.all<{ item_key: string; script: KanaScript; grp: KanaGroupName; started: number }>(
+    `SELECT p.item_key, ka.script, ka.grp, p.item_key IN (SELECT item_key FROM srs_cards) AS started
+     FROM content.path p JOIN content.kana ka ON p.kind = 'kana' AND ka.character = substr(p.item_key, 6)
+     ORDER BY p.position`,
+  );
+  const groups: KanaGroup[] = [];
+  for (const r of rows) {
+    let g = groups.find((x) => x.script === r.script && x.group === r.grp);
+    if (!g) groups.push((g = { script: r.script, group: r.grp, total: 0, notStarted: [] }));
+    g.total++;
+    if (!r.started) g.notStarted.push(r.item_key);
+  }
+  return groups;
 }
 
 /** Cards due now, most likely to be forgotten first. */

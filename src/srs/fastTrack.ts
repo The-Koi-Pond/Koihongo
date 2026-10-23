@@ -9,6 +9,11 @@ export async function isFastTracked(db: Db, itemKey: string): Promise<boolean> {
   return rows[0].n > 0;
 }
 
+/** Puts many items on fast track at once (already-flagged ones stay as they are). */
+export async function setFastTrackMany(db: Db, itemKeys: string[], now: number): Promise<void> {
+  await db.batch(itemKeys.map((key) => ({ sql: "INSERT OR IGNORE INTO fast_track (item_key, since) VALUES (?, ?)", params: [key, now] })));
+}
+
 export async function setFastTrack(db: Db, itemKey: string, on: boolean, now: number): Promise<void> {
   await db.batch([
     on
