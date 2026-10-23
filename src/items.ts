@@ -142,12 +142,15 @@ export async function getItemDetails(db: Db, itemKey: string): Promise<ItemDetai
     );
     if (!row) throw new Error(`Unknown component ${id}`);
     const c = { display: row.display, name: row.name, strokeSvg: row.stroke_svg };
+    // The first few kanji on the path that use it. A component that's also a
+    // kanji by itself (王, 糸) lists that kanji first, so you can check its
+    // reading, even when it comes late on the path.
     const usedIn = await db.all<{ character: string; meanings: string }>(
-      `SELECT k.character, k.meanings FROM content.kanji_components kc
-       JOIN content.kanji k ON k.character = kc.kanji
+      `SELECT k.character, k.meanings FROM content.kanji k
        JOIN content.path p ON p.item_key = 'kanji:' || k.character
-       WHERE kc.component = ? ORDER BY p.position LIMIT 6`,
-      [id],
+       WHERE k.character IN (?, ?) OR k.character IN (SELECT kanji FROM content.kanji_components WHERE component = ?)
+       ORDER BY k.character IN (?, ?) DESC, p.position LIMIT 6`,
+      [id, row.display, id, id, row.display],
     );
     return { ...common, kind, ...c, usedIn: usedIn.map((k) => ({ character: k.character, meaning: first(k.meanings) })) };
   }

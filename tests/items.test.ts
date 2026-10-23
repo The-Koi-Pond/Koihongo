@@ -116,3 +116,28 @@ test("a sentence's words come with readings, meanings and whether you've started
   const db = await freshDb();
   assert.deepEqual(await sentenceWords(db, "9"), [{ written: "休み", reading: "やすみ", meaning: "rest; break", started: false }]);
 });
+
+test("a component that's also a kanji lists itself first, even when it comes late on the path", async () => {
+  // 王: six kanji built from it come before the 王 kanji itself on the path.
+  const others = ["国", "金", "業", "理", "主", "住", "望"];
+  const db = openTestDb((content) =>
+    content.exec(`
+      INSERT INTO components (glyph, display, name, stroke_count) VALUES ('王', '王', 'king', 4);
+      INSERT INTO kanji (character, meanings, on_readings, kun_readings, nanori, stroke_count) VALUES
+        ${[...others, "王"].map((k) => `('${k}', '["${k === "王" ? "king" : "x"}"]', '[]', '[]', '[]', 1)`).join(", ")};
+      INSERT INTO kanji_components VALUES ${[...others, "王"].map((k) => `('${k}', '王')`).join(", ")};
+      INSERT INTO path (position, item_key, kind) VALUES (1, 'component:王', 'component'),
+        ${others.map((k, i) => `(${i + 2}, 'kanji:${k}', 'kanji')`).join(", ")}, (99, 'kanji:王', 'kanji');
+    `),
+  );
+  await migrate(db);
+  const d = await getItemDetails(db, "component:王");
+  if (d.kind !== "component") return assert.fail("not a component");
+  assert.equal(d.usedIn.length, 6);
+  assert.deepEqual(d.usedIn[0], { character: "王", meaning: "king" });
+  assert.deepEqual(
+    d.usedIn.slice(1).map((k) => k.character),
+    others.slice(0, 5),
+    "then the others in path order",
+  );
+});
