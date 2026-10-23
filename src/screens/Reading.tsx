@@ -3,6 +3,9 @@ import {
   ArrowRight,
   BookOpen,
   ClipboardPaste,
+  CircleAlert,
+  CircleCheck,
+  LoaderCircle,
   Bookmark as BookmarkIcon,
   BookmarkCheck,
   ChevronLeft,
@@ -304,10 +307,14 @@ function Shelf({
   async function add(kind: "folder" | "files", dropped?: string[]) {
     setError(undefined);
     setMessage(undefined);
+    // A drop shows its progress and result in the drop frame, so you know it worked.
+    const show = (text: string, state: DropState) => dropped && showDrop(text, state);
     try {
+      show("Looking through what you dropped…", "working");
       const found = dropped ? await scanBooks(dropped) : await pickBooks(kind);
       if (!found) return; // cancelled
       if (found.length === 0) {
+        show("No books in what you dropped", "problem");
         setMessage(
           dropped
             ? "No books in what you dropped. Drop a folder with page images in it (or with chapter folders inside), or .cbz files."
@@ -315,19 +322,23 @@ function Shelf({
         );
         return;
       }
+      show(`Adding ${found.length} ${found.length === 1 ? "book" : "books"}…`, "working");
       const added = await addBooks(tauriDb, found, Date.now(), seriesId, newCategory);
       const already = found.length - added;
-      const into = current?.title ?? (found.every((f) => f.series && f.series === found[0].series) ? found[0].series : undefined);
-      setMessage(
-        [
-          added > 0 && `Added ${added} ${added === 1 ? "book" : "books"}${into ? ` to ${into}` : ""}.`,
-          already > 0 && `${already} already on your shelf.`,
-        ]
-          .filter(Boolean)
-          .join(" "),
-      );
+      const into =
+        current?.title ??
+        (found.every((f) => f.series && f.series === found[0].series) ? found[0].series : categories?.find((c) => c.id === newCategory)?.name);
+      const text = [
+        added > 0 && `Added ${added} ${added === 1 ? "book" : "books"}${into ? ` to ${into}` : ""}.`,
+        already > 0 && `${already} already on your shelf.`,
+      ]
+        .filter(Boolean)
+        .join(" ");
+      setMessage(text);
+      show(text, added > 0 ? "done" : "problem");
       load();
     } catch (e) {
+      show("That didn't work: see the message on the page", "problem");
       setError(String(e));
     }
   }
@@ -394,6 +405,7 @@ function Shelf({
     </form>
   );
   const { over: dropOver } = useFileDrop((paths) => add("folder", paths));
+  const [dropStatus, showDrop] = useDropStatus();
   const toggle = (what: "chapter" | "series" | "rename", text = "") => setNaming(naming?.what === what ? undefined : { what, text });
   const addItems = [
     { icon: FolderOpen, text: "Add a folder", onClick: () => add("folder") },
@@ -487,13 +499,13 @@ function Shelf({
       )}
       {naming?.what !== "rename" && naming_form}
       {message && <p className="reading-message">{message}</p>}
-      {dropOver && (
-        <div className="drop-overlay" aria-hidden="true">
-          <FolderOpen size={36} strokeWidth={1.75} />
-          <span>Drop to add {current ? `to ${current.title}` : "to your bookshelf"}</span>
-          <span className="muted small">Folders of page images, folders of chapters, or .cbz files</span>
-        </div>
-      )}
+      <DropOverlay
+        over={dropOver}
+        status={dropStatus}
+        icon={<FolderOpen size={36} strokeWidth={1.75} />}
+        title={`Drop to add ${current ? `to ${current.title}` : "to your bookshelf"}`}
+        hint="Folders of page images, folders of chapters, or .cbz files"
+      />
       {error && <p className="error">{error}</p>}
       {books && series && shown.length === 0 && (
         <p className="muted">
@@ -2510,6 +2522,43 @@ function PageView({
   );
 }
 
+type DropState = "working" | "done" | "problem";
+type DropStatus = { text: string; state: DropState };
+
+/** What a drop from Explorer is doing: set it as it goes; a result clears itself after a moment. */
+function useDropStatus(): [DropStatus | undefined, (text: string, state: DropState) => void] {
+  const [status, setStatus] = useState<DropStatus>();
+  const timer = useRef<number>(undefined);
+  useEffect(() => () => window.clearTimeout(timer.current), []);
+  const show = useCallback((text: string, state: DropState) => {
+    window.clearTimeout(timer.current);
+    setStatus({ text, state });
+    if (state !== "working") timer.current = window.setTimeout(() => setStatus(undefined), state === "done" ? 2200 : 4000);
+  }, []);
+  return [status, show];
+}
+
+/** The frame over the screen while files are dragged over it, then what the drop is doing and how it went. */
+function DropOverlay({ over, status, icon, title, hint }: { over: boolean; status?: DropStatus; icon: React.ReactNode; title: string; hint: string }) {
+  if (!over && !status) return null;
+  const shown = over ? undefined : status;
+  return (
+    <div className={`drop-overlay ${shown?.state ?? ""}`} role="status" aria-live="polite">
+      {!shown ? (
+        icon
+      ) : shown.state === "working" ? (
+        <LoaderCircle size={36} strokeWidth={1.75} className="spin" />
+      ) : shown.state === "done" ? (
+        <CircleCheck size={36} strokeWidth={1.75} />
+      ) : (
+        <CircleAlert size={36} strokeWidth={1.75} />
+      )}
+      <span>{shown?.text ?? title}</span>
+      {!shown && <span className="muted small">{hint}</span>}
+    </div>
+  );
+}
+
 /** Pages loaded ahead of (and behind) the screen in scroll mode, in pixels. */
 const SCROLL_AHEAD = 2500;
 
@@ -3111,19 +3160,34 @@ function PageEditor({ id, onBack, onRead }: { id: number; onBack: () => void; on
   // Images dragged in from Explorer (the listener starts before the page loads; add is set up below).
   const dropped = useRef<(paths: string[]) => void>(() => {});
   const { over: dropOver } = useFileDrop((paths) => dropped.current(paths));
+  const [dropStatus, showDrop] = useDropStatus();
 
   if (!book || !pages) return error ? <p className="error">{error}</p> : <p className="muted">Loading…</p>;
 
-  /** Adds images, picked or (`dropped`) dragged in from Explorer, after the last page. */
-  const add = (dropped?: string[]) =>
+  /** Adds images you pick, after the last page (dropped ones: see dropped.current below). */
+  const add = () =>
     run(async () => {
-      const added = dropped ? await dropImages(book.path, dropped) : await addImages(book.path);
-      if (!added?.length) return; // cancelled, or nothing that's an image
+      if (!(await addImages(book.path))) return; // cancelled
       const all = await bookPages(book.path);
       await arrangeChapter(tauriDb, book, all, all); // records the new page count
       setPages(all);
     });
-  dropped.current = (paths) => add(paths);
+  dropped.current = (paths) => {
+    showDrop(`Copying ${paths.length} ${paths.length === 1 ? "file" : "files"}…`, "working");
+    run(async () => {
+      try {
+        const added = await dropImages(book.path, paths);
+        if (!added.length) return showDrop("No images in what you dropped", "problem");
+        const all = await bookPages(book.path);
+        await arrangeChapter(tauriDb, book, all, all); // records the new page count
+        setPages(all);
+        showDrop(`Added ${added.length} ${added.length === 1 ? "page" : "pages"}`, "done");
+      } catch (e) {
+        showDrop("That didn't work: see the message on the page", "problem");
+        throw e;
+      }
+    });
+  };
   const arrange = (next: string[]) =>
     run(async () => {
       await arrangeChapter(tauriDb, book, pages, next);
@@ -3160,13 +3224,13 @@ function PageEditor({ id, onBack, onRead }: { id: number; onBack: () => void; on
         Add page images (or drag them in from Explorer), one or a few at a time, and drag them into reading order. Removing a page deletes
         Koihongo's copy, never your original.
       </p>
-      {dropOver && (
-        <div className="drop-overlay" aria-hidden="true">
-          <ImagePlus size={36} strokeWidth={1.75} />
-          <span>Drop to add these images as pages</span>
-          <span className="muted small">They go after the last page; Koihongo keeps its own copies</span>
-        </div>
-      )}
+      <DropOverlay
+        over={dropOver}
+        status={dropStatus}
+        icon={<ImagePlus size={36} strokeWidth={1.75} />}
+        title="Drop to add these images as pages"
+        hint="They go after the last page; Koihongo keeps its own copies"
+      />
       <div className="reading-actions">
         <button type="button" className="primary" onClick={() => add()} disabled={busy}>
           <ImagePlus size={16} strokeWidth={2.25} aria-hidden="true" /> Add images
