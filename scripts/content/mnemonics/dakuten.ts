@@ -14,7 +14,7 @@ const m = (text: string, rule: string) => ({ reading: `${text} ${rule}` });
 
 export const DAKUTEN: MnemonicBatch = {
   "kana:が": m("The karate chop from か with two extra sparks: a GAsp of effort! (GA)", K),
-  "kana:ぎ": m("The key from き with two gleams: the key to a GEEky treasure chest (GI).", K),
+  "kana:ぎ": m("The key from き has grown two little teeth: it's a GEAR now (GI). Gear is even ギア in Japanese!", K),
   "kana:ぐ": m("The cuckoo from く with two sweat drops: it's stuck in GOO (GU).", K),
   "kana:げ": m("The keg from け, fizzing over: GET a towel! (GE)", K),
   "kana:ご": m("The two koi from こ, splashing: GO, GO, GO! (GO)", K),
