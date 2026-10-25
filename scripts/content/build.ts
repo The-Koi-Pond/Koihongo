@@ -12,6 +12,7 @@ import { strFromU8, unzipSync } from "fflate";
 import { japaneseName, NAME_NOTES } from "./componentNames.ts";
 import { describeComponent, partsOf } from "./components.ts";
 import { allKana, CURATED_EXAMPLES, kanaTrack, pickExample, type ExampleCandidate } from "./kana.ts";
+import { partSvg } from "./strokeParts.ts";
 import { allMnemonics } from "./mnemonics/index.ts";
 import { planLevels } from "./levels.ts";
 import { buildPath, type PathKanji, type PathWord } from "./path.ts";
@@ -242,10 +243,24 @@ async function main() {
   const insertComponent = db.prepare(
     "INSERT INTO components (glyph, display, name, stroke_count, stroke_svg, ja_name, ja_note) VALUES (?, ?, ?, ?, ?, ?, ?)",
   );
+  // A component shown as a part (𠂉) with no KanjiVG drawing of its own: that
+  // part cut out of the full character's drawing (乞). Never the full
+  // character itself, whose strokes aren't the part's. KanjiVG names some
+  // parts by another character: ⺅ (in 化) is 亻, ⺹ (in 老) 耂, 丷 (in 并) 八.
+  const KANJIVG_PART: Record<string, string> = { "⺅": "亻", "⺹": "耂", "丷": "八" };
+  const partsCutOut: string[] = [];
+  const noComponentSvg: string[] = [];
+  const componentSvg = (display: string, glyph: string) => {
+    const full = display === glyph ? "" : (strokeSvg(glyph) ?? "");
+    const own = strokeSvg(display) ?? partSvg(full, display) ?? partSvg(full, KANJIVG_PART[display] ?? display);
+    if (!own) noComponentSvg.push(display);
+    else if (!strokeSvg(display)) partsCutOut.push(`${display} (from ${glyph})`);
+    return own;
+  };
   for (const g of componentGlyphs) {
     const { display, name } = componentDisplay.get(g)!;
     const jaName = japaneseName(display, display !== g, kanjidicNames);
-    insertComponent.run(g, display, name, componentStrokes.get(g) ?? 0, strokeSvg(display) ?? strokeSvg(g), jaName, jaName ? (NAME_NOTES[display] ?? null) : null);
+    insertComponent.run(g, display, name, componentStrokes.get(g) ?? 0, componentSvg(display, g), jaName, jaName ? (NAME_NOTES[display] ?? null) : null);
   }
 
   const insertKanji = db.prepare(
@@ -424,6 +439,8 @@ async function main() {
   if (curatedMissing.length) console.log(`  hand-picked kana examples not found in common words: ${curatedMissing.join(" ")}`);
   if (kanaWithoutExample.length) console.log(`  kana without an example word: ${kanaWithoutExample.join(" ")}`);
   if (noSvg.length) console.log(`  jōyō kanji without stroke order: ${noSvg.join(" ")}`);
+  if (partsCutOut.length) console.log(`  component stroke orders cut out of a bigger character: ${partsCutOut.join(" ")}`);
+  if (noComponentSvg.length) console.log(`  components without stroke order: ${noComponentSvg.join(" ")}`);
   const wordsWithSentences = new Set(sentenceLinks.map((l) => l.wordId));
   const pathWordsWithout = path.filter((p) => p.kind === "word" && !wordsWithSentences.has(p.key.slice(5))).length;
   console.log(`  example sentences: ${sentences.length}, for ${wordsWithSentences.size} words (${pathWordsWithout} path words have none)`);

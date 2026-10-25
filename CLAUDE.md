@@ -33,7 +33,7 @@ pnpm tauri dev          # run the app (live reload for src/; Rust changes rebuil
 pnpm test               # all Node tests
 pnpm typecheck          # TypeScript, app and scripts
 cd src-tauri && cargo test
-pnpm content:build      # rebuild content.db (~10 s; datasets cached in data/raw/)
+pnpm content:build      # rebuild content.db (~5 min, mostly CPU; datasets cached in data/raw/). Run it in the background, never under a short timeout
 pnpm mnemonics:kanji 151 50   # list the next kanji to write mnemonics for
 ```
 

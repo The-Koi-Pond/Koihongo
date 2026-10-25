@@ -9,6 +9,7 @@ import { migrate } from "../src/db/migrations.ts";
 import { acceptedAnswers, getItemDetails } from "../src/items.ts";
 import { checkKana, checkMeaning, checkReading, readingKeys } from "../src/srs/answers.ts";
 import { availableLessons } from "../src/srs/progress.ts";
+import { strokePaths } from "../src/strokes.ts";
 import { openDbWithContent } from "./nodeDb.ts";
 
 const CONTENT = join(import.meta.dirname, "..", "src-tauri", "resources", "content.db");
@@ -51,6 +52,19 @@ test("every path item loads and accepts its own answers", { skip: !existsSync(CO
   }
   assert.deepEqual(failures.slice(0, 20), [], `${failures.length} problems`);
   assert.ok(path.length > 7000);
+});
+
+test("component stroke orders draw the component, not a whole kanji it's taken from", { skip: !existsSync(CONTENT) && "content.db not built" }, async () => {
+  const db = openDbWithContent(CONTENT);
+  const rows = await db.all<{ display: string; stroke_count: number; stroke_svg: string }>(
+    "SELECT display, stroke_count, stroke_svg FROM content.components WHERE stroke_svg IS NOT NULL",
+  );
+  // RADKFILE and KanjiVG count these two differently (牙 4 or 5, 舛 6 or 7).
+  const counted = new Set(["牙", "舛"]);
+  const wrong = rows.filter((c) => !counted.has(c.display) && strokePaths(c.stroke_svg).length !== c.stroke_count);
+  assert.deepEqual(wrong.map((c) => `${c.display}: ${strokePaths(c.stroke_svg).length} strokes drawn, ${c.stroke_count} expected`), []);
+  const hook = rows.find((c) => c.display === "𠂉");
+  assert.equal(hook && strokePaths(hook.stroke_svg).length, 2, "𠂉, the top of 乞");
 });
 
 test("a brand-new learner starts with あ on the kana track and components on the main track", { skip: !existsSync(CONTENT) && "content.db not built" }, async () => {
