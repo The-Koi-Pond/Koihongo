@@ -1,5 +1,6 @@
 // Koihongo's own default mnemonics, written in batches. Learners see these
-// until they write or pick their own. Keys are path item keys.
+// until they write or pick their own. Keys are path item keys (or a kana
+// rule's example, whose mnemonic becomes a hint on the rule's page).
 
 import { COMBOS } from "./combos.ts";
 import { COMPONENTS_1 } from "./components-1.ts";
@@ -13,10 +14,11 @@ import { KANJI_1 } from "./kanji-1.ts";
 import { KANJI_2 } from "./kanji-2.ts";
 import { KANJI_3 } from "./kanji-3.ts";
 import { KATAKANA_BASIC } from "./katakana-basic.ts";
+import { RULES } from "./rules.ts";
 
 export type MnemonicBatch = Record<string, { meaning?: string; reading?: string }>;
 
-const BATCHES: MnemonicBatch[] = [HIRAGANA_BASIC, KATAKANA_BASIC, DAKUTEN, COMBOS, COMPONENTS_1, COMPONENTS_2, COMPONENTS_3, COMPONENTS_4, COMPONENTS_5, KANJI_1, KANJI_2, KANJI_3];
+const BATCHES: MnemonicBatch[] = [HIRAGANA_BASIC, KATAKANA_BASIC, DAKUTEN, COMBOS, RULES, COMPONENTS_1, COMPONENTS_2, COMPONENTS_3, COMPONENTS_4, COMPONENTS_5, KANJI_1, KANJI_2, KANJI_3];
 
 /** All batches merged; a key appearing in two batches is a mistake. */
 export function allMnemonics(): MnemonicBatch {

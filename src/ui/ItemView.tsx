@@ -64,11 +64,12 @@ function bannerFacts(item: ItemDetails): {
 } {
   switch (item.kind) {
     case "kana":
+      // A rule (か→が) has no one sound to speak; its badge says what it does.
       return {
         kind: item.script,
-        detail: GROUP_NAME[item.group],
+        detail: item.examples.length > 0 ? `${GROUP_NAME[item.group]} rule` : GROUP_NAME[item.group],
         badge: item.romaji,
-        speak: item.character,
+        speak: item.examples.length > 0 ? undefined : item.character,
       };
     case "component":
       // Its Japanese name under the English one (くにがまえ), spoken by the speaker button.

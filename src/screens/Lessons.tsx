@@ -1,9 +1,9 @@
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 import { tauriDb } from "../db/tauriDb.ts";
-import { cardTypesFor, startAsKnown, startLessons, todaySummary, type Lesson } from "../srs/progress.ts";
+import { cardTypesFor, firstRound, isKanaRule, startAsKnown, startLessons, todaySummary, type Lesson } from "../srs/progress.ts";
 import { FIRST_REVIEW_DELAY_MS } from "../srs/scheduler.ts";
-import { answerCurrent, currentQuestion, spreadOutPairs, startSession, type Question, type Session } from "../srs/session.ts";
+import { answerCurrent, currentQuestion, shuffle, spreadOutPairs, startSession, type Question, type Session } from "../srs/session.ts";
 import { FastTrackButton } from "../ui/FastTrack.tsx";
 import { ItemView } from "../ui/ItemView.tsx";
 import { DoneView } from "../ui/DoneView.tsx";
@@ -11,19 +11,15 @@ import { QuestionCard } from "../ui/QuestionCard.tsx";
 import { useItem } from "../ui/useItem.ts";
 import { ErrorView } from "./Reviews.tsx";
 
-/** Items per lesson round: read them, then a practice quiz that doesn't affect scheduling. */
+/**
+ * Items per lesson round: read them, then a practice quiz that doesn't affect
+ * scheduling. Kana go a row at a time instead (lesson_round in content.path).
+ */
 const BATCH_SIZE = 5;
+/** Practice questions per kana rule (か→が), each a random kana it covers. */
+const RULE_QUESTIONS = 3;
 
 type Phase = { name: "loading" } | { name: "learn"; page: number } | { name: "quiz"; session: Session; turn: number } | { name: "done" };
-
-function shuffle<T>(list: T[]): T[] {
-  const out = [...list];
-  for (let i = out.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [out[i], out[j]] = [out[j], out[i]];
-  }
-  return out;
-}
 
 /** Lesson rounds. `exitLabel` replaces "Back to Today" when this is part of a longer study session. */
 export function Lessons({ onExit, exitLabel = "Back to Today" }: { onExit: () => void; exitLabel?: string }) {
@@ -39,7 +35,7 @@ export function Lessons({ onExit, exitLabel = "Back to Today" }: { onExit: () =>
     setKnewAll(false);
     todaySummary(tauriDb, Date.now())
       .then((s) => {
-        setBatch(s.lessons.slice(0, BATCH_SIZE));
+        setBatch(firstRound(s.lessons, BATCH_SIZE));
         setPhase({ name: "learn", page: 0 });
       })
       .catch((e) => setError(String(e)));
@@ -67,7 +63,9 @@ export function Lessons({ onExit, exitLabel = "Back to Today" }: { onExit: () =>
   const { item, error: itemError, reload } = useItem(currentKey);
 
   function startQuiz() {
-    const questions: Question[] = batch.flatMap((l) => cardTypesFor(l.kind).map((card_type) => ({ item_key: l.item_key, card_type })));
+    const questions: Question[] = batch.flatMap((l) =>
+      cardTypesFor(l.kind).flatMap((card_type) => Array(isKanaRule(l.item_key) ? RULE_QUESTIONS : 1).fill({ item_key: l.item_key, card_type })),
+    );
     setPhase({ name: "quiz", session: startSession(spreadOutPairs(shuffle(questions))), turn: 0 });
   }
 
@@ -124,7 +122,7 @@ export function Lessons({ onExit, exitLabel = "Back to Today" }: { onExit: () =>
           <>
             {moreAvailable && (
               <button className="primary" onClick={loadBatch} autoFocus>
-                Next {BATCH_SIZE} lessons
+                Next lessons
               </button>
             )}
             <button onClick={onExit} autoFocus={!moreAvailable}>

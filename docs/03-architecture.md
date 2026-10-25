@@ -100,7 +100,7 @@ search              term, field, item_key, weight, rank
 
 ### Tracks
 
-`content.path` has a `track` column. The **kana** track (positions 1–224, built from [`scripts/content/kana.ts`](../scripts/content/kana.ts)) and the **main** track (components → kanji → words) each have their own lesson window and daily limit, so kana and kanji can be learned in parallel. Kana item keys are `kana:<character>`; kana have one card (`reading`, answered in romaji).
+`content.path` has a `track` column. The **kana** track (positions 1–99, built from [`scripts/content/kana.ts`](../scripts/content/kana.ts): basic kana plus seven rules like `kana:か→が`, whose `content.kana.examples` lists the kana they cover; `path.lesson_round` groups a row into one lesson round) and the **main** track (components → kanji → words) each have their own lesson window and daily limit, so kana and kanji can be learned in parallel. Kana item keys are `kana:<character>`; kana have one card (`reading`, answered in romaji).
 
 ### How the default path is built
 

@@ -11,7 +11,7 @@ import { DatabaseSync } from "node:sqlite";
 import { strFromU8, unzipSync } from "fflate";
 import { japaneseName, NAME_NOTES } from "./componentNames.ts";
 import { describeComponent, partsOf } from "./components.ts";
-import { allKana, CURATED_EXAMPLES, pickExample, type ExampleCandidate } from "./kana.ts";
+import { allKana, CURATED_EXAMPLES, kanaTrack, pickExample, type ExampleCandidate } from "./kana.ts";
 import { allMnemonics } from "./mnemonics/index.ts";
 import { planLevels } from "./levels.ts";
 import { buildPath, type PathKanji, type PathWord } from "./path.ts";
@@ -338,7 +338,7 @@ async function main() {
   });
 
   const insertKana = db.prepare(
-    "INSERT INTO kana (character, romaji, accept, script, grp, counterpart, stroke_svg, example_word_id, example_form) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
+    "INSERT INTO kana (character, romaji, accept, script, grp, counterpart, stroke_svg, example_word_id, example_form, examples) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
   );
   const candidates: ExampleCandidate[] = words.map((w) => ({
     id: w.id,
@@ -352,15 +352,26 @@ async function main() {
   const curatedMissing: string[] = [];
   for (const k of kana) {
     const example = pickExample(k, candidates);
-    if (!example) kanaWithoutExample.push(k.character);
+    if (!example && !k.examples) kanaWithoutExample.push(k.character);
     const curated = CURATED_EXAMPLES[k.character];
     if (curated && example?.form !== curated[0]) curatedMissing.push(`${k.character}=${curated[0]}`);
-    insertKana.run(k.character, k.romaji, JSON.stringify(k.accept), k.script, k.group, k.counterpart, [...k.character].length === 1 ? strokeSvg(k.character) : null, example?.word.id ?? null, example?.form ?? null);
+    insertKana.run(
+      k.character,
+      k.romaji,
+      JSON.stringify(k.accept),
+      k.script,
+      k.group,
+      k.counterpart,
+      [...k.character].length === 1 ? strokeSvg(k.character) : null,
+      example?.word.id ?? null,
+      example?.form ?? null,
+      k.examples && JSON.stringify(k.examples),
+    );
   }
 
   // Kana track first, then the main (components → kanji → words) track.
-  const fullPath = [
-    ...kana.map((k) => ({ key: `kana:${k.character}`, kind: "kana", track: "kana", requires: k.requires.map((r) => `kana:${r}`) })),
+  const fullPath: { key: string; kind: string; track: string; requires: string[]; round?: number }[] = [
+    ...kanaTrack().map((k) => ({ key: `kana:${k.character}`, kind: "kana", track: "kana", requires: k.requires.map((r) => `kana:${r}`), round: k.round })),
     ...path.map((p) => ({ ...p, track: "main" })),
   ];
   // Levels and regions over the main track.
@@ -369,17 +380,24 @@ async function main() {
   const insertLevel = db.prepare("INSERT INTO levels (level, region, region_level, region_levels, needed) VALUES (?, ?, ?, ?, ?)");
   for (const l of levels) insertLevel.run(l.level, l.region, l.regionLevel, l.regionLevels, l.needed);
 
-  const insertPath = db.prepare("INSERT INTO path (position, item_key, kind, track, level) VALUES (?, ?, ?, ?, ?)");
+  const insertPath = db.prepare("INSERT INTO path (position, item_key, kind, track, level, lesson_round) VALUES (?, ?, ?, ?, ?, ?)");
   const insertRequirement = db.prepare("INSERT INTO path_requirements (item_key, requires_key) VALUES (?, ?)");
-  fullPath.forEach((p, i) => insertPath.run(i + 1, p.key, p.kind, p.track, itemLevel.get(p.key) ?? null));
+  fullPath.forEach((p, i) => insertPath.run(i + 1, p.key, p.kind, p.track, itemLevel.get(p.key) ?? null, p.round ?? null));
   for (const p of fullPath) for (const r of p.requires) insertRequirement.run(p.key, r);
 
   // Default mnemonics. Kana and components only have one kind (sound or name).
   const pathKinds = new Map(fullPath.map((p) => [p.key, p.kind]));
   const insertMnemonic = db.prepare("INSERT INTO mnemonics (item_key, kind, text) VALUES (?, ?, ?)");
   const mnemonics = allMnemonics();
+  // A rule's examples (が, きゃ…) aren't on the path: their mnemonic is a hint shown on the rule's page.
+  const ruleExamples = new Set(kana.flatMap((k) => k.examples ?? []));
+  const setHint = db.prepare("UPDATE kana SET hint = ? WHERE character = ?");
   for (const [key, m] of Object.entries(mnemonics)) {
     const kind = pathKinds.get(key);
+    if (!kind && key.startsWith("kana:") && ruleExamples.has(key.slice(5)) && m.reading && !m.meaning) {
+      setHint.run(m.reading.trim(), key.slice(5));
+      continue;
+    }
     if (!kind) throw new Error(`Mnemonic for ${key}, which isn't on the path`);
     if (kind === "kana" && m.meaning) throw new Error(`Kana mnemonics are reading-only: ${key}`);
     if (kind === "component" && m.reading) throw new Error(`Component mnemonics are meaning-only: ${key}`);
@@ -401,7 +419,7 @@ async function main() {
   const noSvg = joyo.filter((c) => !svgs[svgName(c.literal)]).map((c) => c.literal);
   console.log(`Wrote ${OUT}`);
   console.log(`  kanji: ${kanjiChars.length} (${joyo.length} jōyō), words: ${words.length}, components: ${componentGlyphs.size}`);
-  console.log(`  kana track: ${kana.length} kana; main path: ${path.length} items (${count("component")} components, ${count("kanji")} kanji, ${count("word")} words)`);
+  console.log(`  kana track: ${kanaTrack().length} items (${kana.length} kana and rules); main path: ${path.length} items (${count("component")} components, ${count("kanji")} kanji, ${count("word")} words)`);
   if (noComponents.length) console.log(`  jōyō kanji without KRADFILE components: ${noComponents.join(" ")}`);
   if (curatedMissing.length) console.log(`  hand-picked kana examples not found in common words: ${curatedMissing.join(" ")}`);
   if (kanaWithoutExample.length) console.log(`  kana without an example word: ${kanaWithoutExample.join(" ")}`);

@@ -1,10 +1,20 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { migrate } from "../src/db/migrations.ts";
+import { migrate, SCHEMA_VERSION } from "../src/db/migrations.ts";
 import { acceptedAnswers, getItemDetails } from "../src/items.ts";
 import { itemPreview, libraryItems } from "../src/library.ts";
 import { checkKana } from "../src/srs/answers.ts";
-import { availableLessons, cardTypesFor, lessonAllowance, startLessons, todaySummary } from "../src/srs/progress.ts";
+import {
+  availableLessons,
+  cardTypesFor,
+  finishRound,
+  firstRound,
+  isKanaRule,
+  lessonAllowance,
+  startLessons,
+  todaySummary,
+  type Lesson,
+} from "../src/srs/progress.ts";
 import { DEFAULT_PACING } from "../src/srs/settings.ts";
 
 const { kanaPerDay: KANA_PER_DAY, newPerDay: NEW_PER_DAY } = DEFAULT_PACING;
@@ -87,4 +97,57 @@ test("kana details, answers, preview and library entry", async () => {
   assert.equal(lib["kana:が"].status, "locked");
   assert.equal(lib["kana:が"].meaning, "ga");
   assert.match(lib["kana:を"].search, /wo/);
+});
+
+test("a lesson round is a whole row of kana: the daily limit finishes it, the main track goes 5 at a time", () => {
+  const l = (item_key: string, round: number | null): Lesson => ({ item_key, kind: "kana", track: "kana", position: 0, label: "", round });
+  const kana = [l("kana:や", 9), l("kana:ゆ", 9), l("kana:よ", 9), l("kana:わ", 9), l("kana:を", 9), l("kana:ん", 9), l("kana:か→が", 10)];
+  assert.equal(finishRound(kana, 2), 6, "2 allowed, but the row finishes");
+  assert.equal(finishRound(kana, 6), 6);
+  assert.equal(finishRound(kana, 0), 0, "none allowed: none, not a whole row");
+  assert.equal(finishRound(kana, 99), 7);
+  assert.deepEqual(keys(firstRound(kana, 5)), ["kana:や", "kana:ゆ", "kana:よ", "kana:わ", "kana:を", "kana:ん"]);
+  const main = ["a", "b", "c", "d", "e", "f"].map((x): Lesson => ({ ...l(`kanji:${x}`, null), track: "main", kind: "kanji" }));
+  assert.equal(finishRound(main, 2), 2);
+  assert.equal(firstRound(main, 5).length, 5);
+  assert.ok(isKanaRule("kana:か→が") && !isKanaRule("kana:か"));
+});
+
+test("a kana rule loads the kana it covers, each with its own answers and hint", async () => {
+  const db = openTestDb((content) =>
+    content.exec(`
+      INSERT INTO kana (character, romaji, accept, script, grp, counterpart, examples, hint) VALUES
+        ('か→が', 'k→g, s→z, t→d, h→b', '[]', 'hiragana', 'dakuten', 'カ→ガ', '["が","ぢ"]', NULL),
+        ('が', 'ga', '[]', 'hiragana', 'dakuten', 'ガ', NULL, 'GAsp! (GA)'),
+        ('ぢ', 'ji', '["ji","di"]', 'hiragana', 'dakuten', 'ヂ', NULL, 'Rare (JI)');
+      INSERT INTO path (position, item_key, kind, track, lesson_round) VALUES (1, 'kana:か→が', 'kana', 'kana', 1);
+    `),
+  );
+  await migrate(db);
+  const d = await getItemDetails(db, "kana:か→が");
+  if (d.kind !== "kana") return assert.fail("not kana");
+  assert.deepEqual(d.examples, [
+    { character: "が", romaji: "ga", accept: [], hint: "GAsp! (GA)" },
+    { character: "ぢ", romaji: "ji", accept: ["ji", "di"], hint: "Rare (JI)" },
+  ]);
+  assert.equal(checkKana("di", "ぢ", "ji", d.examples[1].accept).result, "correct");
+  assert.deepEqual(
+    (await availableLessons(db)).map((l) => [l.item_key, l.round]),
+    [["kana:か→が", 1]],
+  );
+});
+
+test("updating retires review cards for kana that left the path (が is now part of the か→が rule)", async () => {
+  const db = openTestDb((content) =>
+    content.exec(`
+      INSERT INTO kana (character, romaji, accept, script, grp, counterpart) VALUES ('か', 'ka', '[]', 'hiragana', 'basic', 'カ'), ('が', 'ga', '[]', 'hiragana', 'dakuten', 'ガ');
+      INSERT INTO path (position, item_key, kind, track) VALUES (1, 'kana:か', 'kana', 'kana');
+    `),
+  );
+  await migrate(db, SCHEMA_VERSION - 1);
+  await startLessons(db, [{ item_key: "kana:か", kind: "kana" }, { item_key: "kana:が", kind: "kana" }], T0);
+  await db.batch([{ sql: "INSERT INTO fast_track (item_key, since) VALUES ('kana:が', 0), ('kana:か', 0)" }]);
+  await migrate(db);
+  assert.deepEqual(await db.all("SELECT item_key FROM srs_cards"), [{ item_key: "kana:か" }]);
+  assert.deepEqual(await db.all("SELECT item_key FROM fast_track"), [{ item_key: "kana:か" }]);
 });

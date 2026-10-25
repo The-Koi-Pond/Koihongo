@@ -10,6 +10,7 @@ import {
   currentQuestion,
   questionId,
   sessionStats,
+  shuffle,
   spreadOutPairs,
   startSession,
   type DeckQuestion,
@@ -24,8 +25,8 @@ import { useItem } from "../ui/useItem.ts";
 type ReviewQuestion = Question | DeckQuestion;
 
 /**
- * Due reviews, most at-risk first: path cards plus cards from decks that are
- * in daily reviews (flip and rate). With `minutes`, wraps up once time is up.
+ * Due reviews in a random order: path cards plus cards from decks that are
+ * in daily reviews (flip and rate). Catch-up picks the most at-risk ones. With `minutes`, wraps up once time is up.
  * During catch-up only today's share is asked, unless `extra` (or you pick
  * "Do extra anyway" at the end). `exitLabel` replaces "Back to Today" when
  * this is part of a longer study session.
@@ -68,7 +69,11 @@ export function Reviews({
         );
         const fresh = deckCards.filter((c) => c.state === 0).map((c) => ({ q: deckQuestion(c.id) as ReviewQuestion }));
         const cards = [...reviews, ...fresh];
-        const asked = extra ? cards : [...reviews.slice(0, summary.reviewsToday - summary.newDeckCardsDue), ...fresh];
+        // Risk picks which reviews make today's share; they're then asked in a
+        // random order. Cards learned together tie on risk, so without the
+        // shuffle they'd come back in the order they were taught (あいうえお).
+        const share = extra ? reviews : reviews.slice(0, summary.reviewsToday - summary.newDeckCardsDue);
+        const asked = [...shuffle(share), ...fresh];
         const s = startSession(spreadOutPairs(asked.map((c) => c.q)));
         setSession(s);
         setTotal(s.queue.length);

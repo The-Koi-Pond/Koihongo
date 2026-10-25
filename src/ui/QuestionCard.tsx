@@ -54,13 +54,16 @@ export function QuestionCard({
   const inputRef = useRef<HTMLInputElement>(null);
   const page = useRef<HTMLDivElement>(null);
   useSharedCardPattern(page);
-  const accepted = acceptedAnswers(item);
+  // A kana rule (か→が) asks one of its kana, picked when the question appears.
+  const [pick] = useState(Math.random);
+  const ruleExample = item.kind === "kana" && item.examples.length > 0 ? item.examples[Math.floor(pick * item.examples.length)] : undefined;
+  const accepted = ruleExample ? { meanings: [], readings: [ruleExample.romaji, ...ruleExample.accept] } : acceptedAnswers(item);
   const ask = askFor(item, cardType);
   // Kanji/word readings are typed in romaji that turns into kana; kana questions are answered in romaji itself.
   const kanaInput = cardType === "reading" && item.kind !== "kana";
   const graded = verdict && verdict.result !== "retry";
   const correct = overridden || verdict?.result === "correct";
-  const label = itemLabel(item);
+  const label = ruleExample?.character ?? itemLabel(item);
   const [rankNews, setRankNews] = useState<RankUp | null>(null);
   // Reviews only (they pass rankUp): whether the item is on fast track.
   const [fast, setFast] = useState<boolean>();
@@ -90,7 +93,7 @@ export function QuestionCard({
     if (graded) return onDone(correct, answer);
     const v =
       item.kind === "kana"
-        ? checkKana(answer, item.character, item.romaji, item.accept)
+        ? checkKana(answer, label, accepted.readings[0], accepted.readings.slice(1))
         : cardType === "meaning"
           ? checkMeaning(answer, accepted.meanings, accepted.readings)
           : checkReading(answer, accepted.readings);
@@ -114,7 +117,7 @@ export function QuestionCard({
 
   const expected =
     item.kind === "kana"
-      ? accepted.readings.join(" / ")
+      ? [...new Set(accepted.readings)].join(" / ")
       : cardType === "meaning"
         ? accepted.meanings.slice(0, 4).join(", ")
         : accepted.readings.join("、");
@@ -186,7 +189,7 @@ export function QuestionCard({
             <p className="feedback-links">
               {rankNews && (
                 <span className="rank-up">
-                  <span lang="ja">{label}</span> ▸ <RankBadge rank={rankNews.to} /> RANK UP!
+                  <span lang="ja">{itemLabel(item)}</span> ▸ <RankBadge rank={rankNews.to} /> RANK UP!
                 </span>
               )}
               {correct && fast === false && (
@@ -219,7 +222,9 @@ export function QuestionCard({
 
       {/* Always in the layout (0px high while closed), so answering doesn't shift the page. */}
       <div className={`question-details ${graded && showInfo ? "open" : ""}`} aria-hidden={!(graded && showInfo)}>
-        <div className="question-details-inner">{graded && <ItemInfo item={item} onChange={onReload} />}</div>
+        <div className="question-details-inner">
+          {graded && <ItemInfo item={item} onChange={onReload} example={ruleExample?.character} />}
+        </div>
       </div>
     </div>
   );

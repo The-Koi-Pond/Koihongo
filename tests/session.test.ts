@@ -5,6 +5,7 @@ import {
   currentQuestion,
   REQUEUE_GAP,
   sessionStats,
+  shuffle,
   spreadOutPairs,
   startSession,
   type Question,
@@ -54,4 +55,13 @@ test("meaning and reading of one item aren't asked back to back", () => {
 
 test("spreading keeps everything even when it can't separate them", () => {
   assert.deepEqual(ids(spreadOutPairs([q("a"), q("a", "reading")])), ["a/m", "a/r"]);
+});
+
+test("shuffling keeps every card and leaves the original alone", () => {
+  const items = Array.from({ length: 30 }, (_, i) => `k${i}`);
+  const before = [...items];
+  const orders = new Set(Array.from({ length: 5 }, () => shuffle(items).join()));
+  assert.deepEqual(items, before);
+  for (const o of orders) assert.deepEqual(o.split(",").sort(), [...items].sort());
+  assert.ok(orders.size > 1, "five shuffles of 30 cards all came out the same");
 });

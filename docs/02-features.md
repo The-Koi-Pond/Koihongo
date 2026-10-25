@@ -21,8 +21,9 @@ The one place you start every session. Fits the window without scrolling.
 
 ## A2. Kana (hiragana and katakana)
 
-- **[v1]** Separate kana track with its own lesson queue and daily limit (20/day), running alongside the kanji track: 46 basic hiragana → 25 with ゛/゜ → 33 combinations (きゃ) → the same in katakana → 16 extended katakana (ファ, ティ, ヴ…). 224 in total.
-- **[v1]** が unlocks after か passes; きゃ after き. Lessons come in rows of five.
+- **[v1]** Separate kana track with its own lesson queue and daily limit (20/day), running alongside the kanji track: 46 basic hiragana → the rules ゛ (か→が) and ゜ (は→ぱ) → small ゃゅょ (き→きゃ) → the same in katakana → small ァィゥェォ (フ→ファ). 99 items in total.
+- **[v1]** Rules, not lists (2026-10-25, from Deci's feedback): が, ぱ, きゃ and ファ aren't items of their own. Each rule is one item; its lesson shows every kana it covers (each with its own mnemonic as a hint), and each review asks a random one. A rule unlocks once the kana it builds on pass.
+- **[v1]** Lessons go a row at a time (や ゆ よ join わ を ん, so no row is split); the daily limit finishes a row rather than cutting it.
 - **[v1]** Review: see the kana, type its romaji. Hepburn, other romanisations (si, tu, sya) and sensible extras (を → "o") are accepted.
 - **[v1]** Stroke order, the same sound in the other script, mnemonics and Ask AI (shape → sound).
 - **[later]** "I already know these" button to skip a group; small っ and long vowel ー explained; kana *writing* practice.

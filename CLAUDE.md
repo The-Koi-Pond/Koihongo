@@ -94,7 +94,7 @@ Use **browser mode** with the Playwright tools: while `pnpm tauri dev` runs, ope
 
 ## Writing mnemonics
 
-- **Kana:** link the shape to the sound, with the sound in CAPITALS: (KA). Katakana reuse their hiragana's image where the shapes match. Combos and dakuten state their rule.
+- **Kana:** link the shape to the sound, with the sound in CAPITALS: (KA). Katakana reuse their hiragana's image where the shapes match. Combos and dakuten state their rule. Those are hints on the rule items now (`mnemonics/rules.ts` holds the rules' own mnemonics).
 - **Components:** link the shape to the component's name (as stored in `components.name`) in CAPITALS.
 - **Kanji meaning:** a short story built only from the kanji's component names, with the meaning in CAPITALS. A kanji that is a single component says so.
 - **Kanji reading:** a *note*, not a story (the UI calls it "Reading note"). Either name a sound part that predicts the reading, with other kanji that share it (語 ← 五, 主 → 注 柱 駐), or point to common words, preferring words on the path. Skip it if neither helps.

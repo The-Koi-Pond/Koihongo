@@ -276,6 +276,13 @@ const MIGRATIONS: string[][] = [
     )`,
     `CREATE INDEX deki_messages_by_thread ON deki_messages(thread_id)`,
   ],
+  [
+    // が, ぱ, きゃ, ファ… are no longer items of their own: they're taught by a
+    // few rules (か→が…). Their review cards retire; the review log, notes and
+    // synonyms stay. (content is attached, so this sees the new kana track.)
+    `DELETE FROM srs_cards WHERE item_key LIKE 'kana:%' AND item_key NOT IN (SELECT item_key FROM content.path)`,
+    `DELETE FROM fast_track WHERE item_key LIKE 'kana:%' AND item_key NOT IN (SELECT item_key FROM content.path)`,
+  ],
 ];
 
 export const SCHEMA_VERSION = MIGRATIONS.length;

@@ -28,7 +28,11 @@ export type KanaDetails = Common & {
   strokeSvg: string | null;
   /** A common word starting with this sound (ウナギ for ウ). */
   example: { form: string; reading: string; romaji: string; meaning: string } | null;
+  /** A rule (か→が): the kana it covers, asked at random in reviews, each with its own mnemonic. Empty for a kana. */
+  examples: KanaExample[];
 };
+
+export type KanaExample = { character: string; romaji: string; accept: string[]; hint: string | null };
 
 export type ComponentDetails = Common & {
   kind: "component";
@@ -116,6 +120,12 @@ export async function getItemDetails(db: Db, itemKey: string): Promise<ItemDetai
       [id],
     );
     if (!k) throw new Error(`Unknown kana ${id}`);
+    const examples = await db.all<{ character: string; romaji: string; accept: string; hint: string | null }>(
+      `SELECT x.character, x.romaji, x.accept, x.hint
+       FROM content.kana k, json_each(k.examples) e JOIN content.kana x ON x.character = e.value
+       WHERE k.character = ? ORDER BY e.key`,
+      [id],
+    );
     return {
       ...common,
       kind,
@@ -135,6 +145,7 @@ export async function getItemDetails(db: Db, itemKey: string): Promise<ItemDetai
               meaning: first<{ glosses: string[] }>(k.example_senses).glosses[0],
             }
           : null,
+      examples: examples.map((x) => ({ ...x, accept: JSON.parse(x.accept) })),
     };
   }
 

@@ -16,7 +16,7 @@ test("stroke paths come out in stroke order, with or without extra attributes", 
 });
 
 test("every kana sound has a hand-written one-line hint", () => {
-  const missing = [...new Set(allKana().map((k) => k.romaji))].filter((r) => !HINTED.includes(r));
+  const missing = [...new Set(allKana().filter((k) => !k.examples).map((k) => k.romaji))].filter((r) => !HINTED.includes(r));
   assert.deepEqual(missing, []);
   for (const r of HINTED) {
     const h = soundHint(r);

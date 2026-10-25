@@ -1897,6 +1897,50 @@ textarea {
   font-size: 1.2rem;
 }
 
+/* A kana rule's kana (が ぎ ぐ…), each with its romaji; pick one for its mnemonic. */
+.rule-examples {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(52px, 1fr));
+  gap: 6px;
+}
+
+.rule-example {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0;
+  padding: 4px 2px;
+  background: var(--surface-2);
+  border: 2px solid transparent;
+  border-radius: 8px;
+  color: var(--text);
+  cursor: pointer;
+}
+
+.rule-example span {
+  font-size: 1.2rem;
+  line-height: 1.3;
+}
+
+.rule-example small {
+  color: var(--muted);
+}
+
+.rule-example:hover,
+.rule-example.picked {
+  border-color: var(--kana);
+}
+
+.rule-example.picked span {
+  color: var(--kana);
+}
+
+/* Room for a few lines, so picking a kana doesn't shift the page. */
+.rule-hint {
+  margin: 10px 0 0;
+  min-height: 4.5em;
+}
+
 .senses {
   margin: 0;
   padding-left: 1.4em;

@@ -10,7 +10,8 @@ export type ItemKind = "kana" | "component" | "kanji" | "word";
 /** kana: hiragana/katakana. main: components → kanji → words. Each has its own lesson queue and daily limit. */
 export type Track = "kana" | "main";
 
-export type Lesson = { item_key: string; kind: ItemKind; track: Track; position: number; label: string };
+/** round: kana track only, items taught together (a row of kana); null on the main track. */
+export type Lesson = { item_key: string; kind: ItemKind; track: Track; position: number; label: string; round: number | null };
 
 const HOUR_MS = 60 * 60 * 1000;
 const DAY_MS = 24 * HOUR_MS;
@@ -24,6 +25,9 @@ export function cardTypesFor(kind: ItemKind): CardType[] {
   if (kind === "kana") return ["reading"];
   return kind === "component" ? ["meaning"] : ["meaning", "reading"];
 }
+
+/** A kana rule (か→が, see scripts/content/kana.ts): one item whose questions ask a random kana it covers. */
+export const isKanaRule = (itemKey: string) => itemKey.startsWith("kana:") && itemKey.includes("→");
 
 /** Start of the current study day (local time, rolling over at `startHour`, 4 am by default). */
 export function studyDayStart(now: number, startHour = DEFAULT_PACING.dayStartsAtHour): number {
@@ -55,7 +59,8 @@ export async function availableLessons(db: Db, limit = 2 * LESSON_WINDOW, window
           passed AS (SELECT item_key FROM srs_cards GROUP BY item_key HAVING min(stability) >= ?),
           frontier AS (SELECT track, min(position) AS pos FROM content.path
                        WHERE item_key NOT IN (SELECT item_key FROM started) GROUP BY track)
-     SELECT p.item_key, p.kind, p.track, p.position, coalesce(ka.character, c.display, k.character, w.written) AS label
+     SELECT p.item_key, p.kind, p.track, p.position, coalesce(ka.character, c.display, k.character, w.written) AS label,
+            p.lesson_round AS round
      FROM content.path p
      JOIN frontier ON frontier.track = p.track
      LEFT JOIN content.kana ka ON p.kind = 'kana' AND ka.character = substr(p.item_key, 6)
@@ -162,6 +167,23 @@ export async function recordReview(
   return card;
 }
 
+/**
+ * How many of `lessons` to offer when `allowed` may be started: a little more
+ * if that's what it takes to finish a round, so the daily limit never splits
+ * a row of kana.
+ */
+export function finishRound(lessons: Pick<Lesson, "round">[], allowed: number): number {
+  let n = Math.min(allowed, lessons.length);
+  while (n > 0 && n < lessons.length && lessons[n].round !== null && lessons[n].round === lessons[n - 1].round) n++;
+  return n;
+}
+
+/** The first lesson round: the lessons sharing the first one's round, else up to `size` lessons. */
+export function firstRound(lessons: Lesson[], size: number): Lesson[] {
+  const round = lessons[0]?.round;
+  return round == null ? lessons.slice(0, size) : lessons.filter((l) => l.round === round);
+}
+
 /** Catch-up after a break: today's share of a pile of due reviews, and the rest. */
 export type CatchUp = {
   /** Reviews left in today's share (0 once it's done). */
@@ -238,7 +260,8 @@ export async function todaySummary(db: Db, now: number): Promise<TodaySummary> {
   // Kana first, so a lesson round doesn't mix a kana row with kanji.
   const pick = (track: Track, allowed: number) => {
     const all = unlocked.filter((l) => l.track === track);
-    return { lessons: all.slice(0, allowed), waiting: Math.max(0, all.length - allowed) };
+    const n = finishRound(all, allowed);
+    return { lessons: all.slice(0, n), waiting: all.length - n };
   };
   const kana = pick("kana", lessonAllowance(counts.throttle_due, counts.kana_today, pacing.kanaPerDay, pacing.pauseLessonsAtDue));
   const main = pick("main", lessonAllowance(counts.throttle_due, counts.main_today, pacing.newPerDay, pacing.pauseLessonsAtDue));

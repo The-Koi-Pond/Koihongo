@@ -22,6 +22,17 @@ test("every path item loads and accepts its own answers", { skip: !existsSync(CO
   for (const { item_key, kind } of path) {
     const item = await getItemDetails(db, item_key);
     const { meanings, readings } = acceptedAnswers(item);
+    if (item.kind === "kana" && item.examples.length > 0) {
+      // A rule (か→が): each kana it covers is asked, accepts its answers, and has a hint.
+      for (const x of item.examples) {
+        for (const r of [x.romaji, ...x.accept]) {
+          if (checkKana(r, x.character, x.romaji, x.accept).result !== "correct") failures.push(`${item_key} ${x.character}: "${r}" not accepted`);
+        }
+        if (!x.hint) failures.push(`${item_key} ${x.character}: no hint`);
+      }
+      if (!item.notes.mnemonic_reading) failures.push(`${item_key}: no mnemonic for the rule`);
+      continue;
+    }
     if (item.kind === "kana") {
       for (const r of readings) {
         if (checkKana(r, item.character, item.romaji, item.accept).result !== "correct") failures.push(`${item_key}: "${r}" not accepted`);

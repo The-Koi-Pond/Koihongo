@@ -2,7 +2,7 @@ import { BookOpen, Ear, Languages, Lightbulb, List, Pencil, PenLine, Quote, Sear
 import { useContext, useState } from "react";
 import { useAiSettings } from "../ai/settings.ts";
 import { tauriDb } from "../db/tauriDb.ts";
-import { addSynonym, removeSynonym, saveNote, type ItemDetails, type Note, type NoteKind } from "../items.ts";
+import { addSynonym, removeSynonym, saveNote, type ItemDetails, type KanaExample, type Note, type NoteKind } from "../items.ts";
 import { Examples } from "./Examples.tsx";
 import { Gloss } from "./Gloss.tsx";
 import { InfoTip } from "./InfoTip.tsx";
@@ -15,12 +15,22 @@ import { StrokeOrder } from "./StrokeOrder.tsx";
 
 const KANA_ONLY = /^[\p{Script=Hiragana}\p{Script=Katakana}ー]+$/u;
 
-/** An item's details as a grid of cards. ItemView adds the hero panel for full pages. */
-export function ItemInfo({ item, onChange }: { item: ItemDetails; onChange: () => void }) {
+/**
+ * An item's details as a grid of cards. ItemView adds the hero panel for full pages.
+ * `example`: for a kana rule, the kana just asked, shown picked.
+ */
+export function ItemInfo({ item, onChange, example }: { item: ItemDetails; onChange: () => void; example?: string }) {
   const findByParts = useContext(FindByPartsContext);
   return (
     <div className="item-info">
-      {item.kind === "kana" && (
+      {item.kind === "kana" && item.examples.length > 0 && (
+        <div className="split-card wide">
+          <RuleExamples examples={item.examples} picked={example} />
+          <NoteEditor item={item} kind="mnemonic_reading" label="The rule" onSaved={onChange} />
+        </div>
+      )}
+
+      {item.kind === "kana" && item.examples.length === 0 && (
         <>
           {/* Pronunciation strip: one card, two halves (overlaps the banner on item pages). */}
           <div className="split-card wide overlap">
@@ -192,6 +202,31 @@ function SoundsLike({ romaji, accept }: { romaji: string; accept: string[] }) {
         </p>
         {tip && <InfoTip label={tip}>{tip}</InfoTip>}
       </div>
+    </Field>
+  );
+}
+
+/** A kana rule's kana (が ぎ ぐ…): pick one to see its own mnemonic. */
+function RuleExamples({ examples, picked: initial }: { examples: KanaExample[]; picked?: string }) {
+  const [picked, setPicked] = useState(initial);
+  const hint = examples.find((x) => x.character === picked)?.hint;
+  return (
+    <Field label="Kana it covers" icon={List}>
+      <div className="rule-examples">
+        {examples.map((x) => (
+          <button
+            key={x.character}
+            type="button"
+            className={`rule-example ${x.character === picked ? "picked" : ""}`}
+            aria-pressed={x.character === picked}
+            onClick={() => setPicked(x.character === picked ? undefined : x.character)}
+          >
+            <span lang="ja">{x.character}</span>
+            <small>{x.romaji}</small>
+          </button>
+        ))}
+      </div>
+      <p className={`rule-hint ${hint ? "" : "muted"}`}>{hint ?? "Pick one to see its own mnemonic."}</p>
     </Field>
   );
 }

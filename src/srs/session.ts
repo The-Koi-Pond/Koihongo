@@ -48,6 +48,15 @@ export function sessionStats(s: Session<AnyQuestion>): { answered: number; corre
   return { answered: results.length, correctFirstTry: results.filter(Boolean).length, remaining: s.queue.length };
 }
 
+export function shuffle<T>(list: T[]): T[] {
+  const out = [...list];
+  for (let i = out.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [out[i], out[j]] = [out[j], out[i]];
+  }
+  return out;
+}
+
 /**
  * Interleaves cards so a meaning and reading of the same item aren't asked
  * back to back (the first gives the second away). Keeps the order otherwise.

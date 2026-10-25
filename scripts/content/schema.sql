@@ -93,7 +93,12 @@ CREATE TABLE kana (
   counterpart TEXT,            -- same sound in the other script
   stroke_svg  TEXT,            -- KanjiVG SVG, single characters only
   example_word_id TEXT REFERENCES words(id),  -- a common word starting with this sound
-  example_form    TEXT                        -- the spelling of it to show (ウナギ rather than 鰻)
+  example_form    TEXT,                       -- the spelling of it to show (ウナギ rather than 鰻)
+  -- Rules (か→が, き→きゃ…) are rows too: romaji says what the rule does, and
+  -- examples (JSON string[]) lists the kana it covers. Those examples aren't on
+  -- the path; hint is their own mnemonic, shown on the rule's page.
+  examples    TEXT,
+  hint        TEXT
 );
 
 -- Game-style levels over the main track (scripts/content/levels.ts), grouped
@@ -115,7 +120,8 @@ CREATE TABLE path (
   item_key TEXT NOT NULL UNIQUE,
   kind     TEXT NOT NULL CHECK (kind IN ('kana', 'component', 'kanji', 'word')),
   track    TEXT NOT NULL DEFAULT 'main' CHECK (track IN ('kana', 'main')),
-  level    INTEGER REFERENCES levels(level)  -- main track only
+  level    INTEGER REFERENCES levels(level),  -- main track only
+  lesson_round INTEGER                         -- kana track only: items taught together (a row of kana)
 );
 
 -- Koihongo's default mnemonics (scripts/content/mnemonics/), shown until the
