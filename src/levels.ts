@@ -99,18 +99,19 @@ export async function kanaTally(db: Db): Promise<Tally | null> {
 export type LevelUpNews = { from: number; to: number; newRegion?: string };
 
 /**
- * A level-up to celebrate: the current level is higher than the last one you
- * were shown. The first time (nothing recorded yet), or if the level went down
- * (say, after restoring a backup), it just records the current level.
+ * A level-up to celebrate: a new high, above the highest level you were shown.
+ * The first time (nothing recorded yet), it just records the current level.
+ * Dropping a level and regaining it is quiet, like rank drops (a backup
+ * restores this setting along with your progress).
  */
 export async function levelUpToShow(db: Db, current: number): Promise<LevelUpNews | null> {
   const [row] = await db.all<{ value: string }>("SELECT value FROM settings WHERE key = ?", [SEEN_KEY]);
   const seen = row ? Number(row.value) : NaN;
-  if (!Number.isInteger(seen) || current < seen) {
+  if (!Number.isInteger(seen)) {
     await markLevelSeen(db, current);
     return null;
   }
-  if (current === seen) return null;
+  if (current <= seen) return null;
   const regions = await db.all<{ level: number; region: string }>("SELECT level, region FROM content.levels WHERE level IN (?, ?)", [seen, current]);
   const regionOf = (level: number) => regions.find((r) => r.level === level)?.region;
   const to = regionOf(current);

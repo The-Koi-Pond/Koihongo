@@ -70,7 +70,7 @@ test("kana show until every kana has passed", async () => {
   assert.equal(await kanaTally(db), null);
 });
 
-test("a level-up shows once, with the new region when one starts", async () => {
+test("a level-up shows once per new high, with the new region when one starts", async () => {
   const db = await freshDb();
   // The first time, the current level is just recorded.
   assert.equal(await levelUpToShow(db, 1), null);
@@ -78,8 +78,8 @@ test("a level-up shows once, with the new region when one starts", async () => {
   assert.deepEqual(await levelUpToShow(db, 2), { from: 1, to: 2, newRegion: undefined });
   await markLevelSeen(db, 2);
   assert.equal(await levelUpToShow(db, 2), null);
-  assert.deepEqual(await levelUpToShow(db, 3), { from: 2, to: 3, newRegion: "N4" });
-  // Going down (say, after restoring a backup) just records the lower level.
+  // Dropping a level and regaining it is quiet: only a new high is celebrated.
   assert.equal(await levelUpToShow(db, 1), null);
-  assert.deepEqual(await levelUpToShow(db, 2), { from: 1, to: 2, newRegion: undefined });
+  assert.equal(await levelUpToShow(db, 2), null);
+  assert.deepEqual(await levelUpToShow(db, 3), { from: 2, to: 3, newRegion: "N4" });
 });

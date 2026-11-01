@@ -73,7 +73,7 @@ Use **browser mode** with the Playwright tools: while `pnpm tauri dev` runs, ope
 - **Levels:** 267 game-style levels of about 8 kanji, grouped into approximate JLPT regions (N5 13, N4 23, N3 46, N2 46, N1 139).
   - Built by `scripts/content/levels.ts`; your status comes from `src/levels.ts`; the card is `src/ui/LevelCard.tsx`.
   - A level clears when all but one of its kanji have passed. Levels are display only and never lock lessons.
-  - The "LEVEL UP!" overlay shows once per new level, tracked by the `progress.seenLevel` setting.
+  - The "LEVEL UP!" overlay shows once per new high, tracked by the `progress.seenLevel` setting (the highest level shown). Dropping a level and regaining it is quiet.
 - **Ranks** (`src/srs/ranks.ts`), per item, from the weakest card's FSRS stability:
   - B = passed (3 days), A = learned (30 days), S = mastered (180 days), ★ = burned (2 years).
   - ★ items keep rare reviews; they're never retired. Forgetting drops the rank quietly.
