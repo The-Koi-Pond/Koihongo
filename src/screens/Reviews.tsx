@@ -2,7 +2,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import type { Grade } from "ts-fsrs";
 import { tauriDb } from "../db/tauriDb.ts";
 import { byRisk, deckCardId, deckQuestion, dueDeckCards, getDeckCard, recordDeckReview, type DeckCard } from "../decks.ts";
-import { dueCards, recordReview, todaySummary } from "../srs/progress.ts";
+import { dueCards, isKnownCheck, recordReview, todaySummary } from "../srs/progress.ts";
 import { rankUpFor } from "../srs/ranks.ts";
 import { Rating } from "../srs/scheduler.ts";
 import {
@@ -61,7 +61,8 @@ export function Reviews({
         // One queue, most likely to be forgotten first, whichever kind of card.
         // Path cards that have never had a review come next (FSRS rates them
         // "most at risk", which would let fresh lessons fill catch-up's share).
-        // Brand-new deck cards come after all of it and aren't part of catch-up.
+        // Known checks (started with "I already know these") and brand-new deck
+        // cards come after all of it and aren't part of catch-up.
         const pathQuestion = (c: (typeof pathCards)[number]) => ({ ...c, q: { item_key: c.item_key, card_type: c.card_type } as ReviewQuestion });
         const reviews = [
           ...byRisk(
@@ -71,15 +72,16 @@ export function Reviews({
             ],
             now,
           ),
-          ...pathCards.filter((c) => c.state === 0).map(pathQuestion),
+          ...pathCards.filter((c) => c.state === 0 && !isKnownCheck(c)).map(pathQuestion),
         ];
+        const knownChecks = pathCards.filter(isKnownCheck).map(pathQuestion);
         const fresh = deckCards.filter((c) => c.state === 0).map((c) => ({ q: deckQuestion(c.id) as ReviewQuestion }));
-        const cards = [...reviews, ...fresh];
+        const cards = [...reviews, ...knownChecks, ...fresh];
         // Risk picks which reviews make today's share; they're then asked in a
         // random order. Cards learned together tie on risk, so without the
         // shuffle they'd come back in the order they were taught (あいうえお).
-        const share = extra ? reviews : reviews.slice(0, summary.reviewsToday - summary.newDeckCardsDue);
-        const asked = [...shuffle(share), ...fresh];
+        const share = extra ? reviews : reviews.slice(0, summary.reviewsToday - summary.knownChecksDue - summary.newDeckCardsDue);
+        const asked = [...shuffle(share), ...shuffle(knownChecks), ...fresh];
         const s = startSession(spreadOutPairs(asked.map((c) => c.q)));
         setSession(s);
         setTotal(s.queue.length);

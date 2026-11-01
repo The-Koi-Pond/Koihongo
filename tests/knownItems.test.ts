@@ -3,7 +3,7 @@ import { test } from "node:test";
 import type { DatabaseSync } from "node:sqlite";
 import { migrate } from "../src/db/migrations.ts";
 import { isFastTracked } from "../src/srs/fastTrack.ts";
-import { dueCards, kanaGroups, recordReview, startAsKnown, startLessons, todaySummary } from "../src/srs/progress.ts";
+import { dueCards, isKnownCheck, kanaGroups, recordReview, startAsKnown, startLessons, todaySummary } from "../src/srs/progress.ts";
 import { FIRST_REVIEW_DELAY_MS, PASS_STABILITY_DAYS } from "../src/srs/scheduler.ts";
 import { DEFAULT_PACING, savePacing } from "../src/srs/settings.ts";
 import { openTestDb } from "./nodeDb.ts";
@@ -83,6 +83,53 @@ test("start as known: doesn't use up today's lessons, nor slow them down before 
   // Once due, the known cards wait for review without throttling lessons.
   const due = await todaySummary(db, T0 + FIRST_REVIEW_DELAY_MS);
   assert.equal(due.reviewsDue, 4);
+});
+
+test("known checks stay outside catch-up: neither while due nor once reviewed", async () => {
+  const db = await setup();
+  await savePacing(db, { ...DEFAULT_PACING, catchUpPerDay: 30 });
+  // 40 kana marked as known (fake items on the path: only the counts matter).
+  const known = Array.from({ length: 40 }, (_, i) => ({ item_key: `kana:k${i}`, kind: "kana" as const }));
+  await db.batch(
+    known.map((k, i) => ({ sql: "INSERT INTO content.path (position, item_key, kind, track) VALUES (?, ?, 'kana', 'kana')", params: [100 + i, k.item_key] })),
+  );
+  await startAsKnown(db, known, T0);
+  /** Adds `n` overdue reviews of items you've studied before. */
+  let added = 0;
+  const addOverdue = (n: number) =>
+    db.batch(
+      Array.from({ length: n }, () => {
+        const key = `kana:r${added++}`;
+        return [
+          { sql: "INSERT INTO content.path (position, item_key, kind, track) VALUES (?, ?, 'kana', 'kana')", params: [200 + added, key] },
+          {
+            sql: `INSERT INTO srs_cards (item_key, card_type, state, due, stability, difficulty, scheduled_days, learning_steps, reps, lapses, last_review, started_at)
+                  VALUES (?, 'reading', 2, ?, 5, 5, 1, 0, 1, 0, ?, 0)`,
+            params: [key, T0, T0 - 24 * 60 * 60 * 1000],
+          },
+        ];
+      }).flat(),
+    );
+  await addOverdue(5);
+  const now = T0 + FIRST_REVIEW_DELAY_MS;
+
+  // 45 due, over the 30-a-day share, but only 5 are real reviews: no catch-up.
+  const before = await todaySummary(db, now);
+  assert.equal(before.catchUp, null);
+  assert.equal(before.knownChecksDue, 40);
+  assert.equal(before.reviewsDue, 45);
+  assert.equal(before.reviewsToday, 45);
+  const due = await dueCards(db, now);
+  assert.equal(due.filter(isKnownCheck).length, 40);
+
+  // Confirming 35 of them doesn't use up today's share, and once confirmed
+  // they're normal cards.
+  for (const k of known.slice(0, 35)) await recordReview(db, k.item_key, "reading", true, "ok", now);
+  await addOverdue(30);
+  const after = await todaySummary(db, now);
+  assert.equal(after.knownChecksDue, 5);
+  assert.deepEqual(after.catchUp, { todayLeft: 30, waiting: 5, moreDays: 1 });
+  assert.equal(after.reviewsToday, 30 + 5);
 });
 
 test("start as known is one transaction: flags and cards together", async () => {
