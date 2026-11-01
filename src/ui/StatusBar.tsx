@@ -24,7 +24,7 @@ export function StatusBar() {
   const message = MESSAGES[dayNumber(now) % MESSAGES.length];
   return (
     <footer className="status-bar">
-      <Moon size={16} fill="#ffe08a" color="#ffe08a" aria-hidden="true" />
+      <Moon size={16} className="status-moon" fill="currentColor" aria-hidden="true" />
       <p lang="ja" className="status-message" title={message.en}>
         {message.ja}
       </p>

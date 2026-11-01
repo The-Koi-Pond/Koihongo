@@ -30,3 +30,6 @@ src-tauri/resources/content.db*
 # Playwright MCP logs and snapshots
 .playwright-mcp/
 *.tsbuildinfo
+
+# Python bytecode (scripts/scenery)
+__pycache__/

@@ -21,6 +21,138 @@
   --wrong: #ff9db3;
   --hint: #ffe08a;
 
+  /* Page: the soft royal navy the page fades to at the bottom of the window. */
+  --bg-low: #1f2470;
+
+  /* Title bar: the window buttons, and the current tab's lilac highlight and pink ▶ cursor. */
+  --win-min: #e3b341;
+  --win-max: #3fb9a7;
+  --win-close: #e8643c;
+  --win-close-hover: #d9442b;
+  --nav-current: #beaff8;
+  --menu-cursor-img: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 4 7' shape-rendering='crispEdges'%3E%3Cpath fill='%23fd93bb' d='M0 0h1v7H0zM1 1h1v5H1zM2 2h1v3H2zM3 3h1v1H3z'/%3E%3C/svg%3E");
+
+  /* Pixel text: the dark block shadow and outline under it, pink counts and kana, and a hovered or chosen tile's pink edge. */
+  --pixel-shadow: #1d1660;
+  --highlight: #fd93bb;
+  --hover-edge: #fd93bb;
+
+  /* The pink glow around bright buttons, big numbers and titles. */
+  --glow: #ff7ac6;
+
+  /* Buttons: the pink-to-cyan Start, Check and Go gradient, and red for deleting. */
+  --go-gradient: linear-gradient(90deg, #ff8fd0 0%, #c9a2f5 55%, #8fdcff 100%);
+  --danger: #d84d6e;
+
+  /* Rank ★ and LEVEL UP: the rainbow (start, middle, end), the title's shadow and the dark overlay. */
+  --prize-start: #ff8fd0;
+  --prize-mid: #ffe08a;
+  --prize-end: #8fdcff;
+  --level-up-shadow: #1c1e5c;
+  --level-up-backdrop: radial-gradient(ellipse at center, rgb(24 20 70 / 0.95) 0%, rgb(24 20 70 / 0.88) 55%, rgb(24 20 70 / 0.72) 100%);
+
+  /* Questions: the answer dock's colour for meaning and reading questions. */
+  --ask-meaning: #ff9bd6;
+  --ask-reading: #8fdcff;
+
+  /* Lessons' done screen: its text and the title's pink block shadow. */
+  --done-text: #e6e3ff;
+  --done-title-shadow: #c94f99;
+
+  /* Banners: the sky's top colour, the horizon glow, the sparkles' glow, and the calm tint in sessions. */
+  --sky-top: #1a2974;
+  --horizon-glow: #e08ad04d;
+  --star-glow: rgb(255 240 200 / 0.9);
+  --banner-tint: rgb(22 18 72 / 0.4);
+
+  /* Glass over the banners: windows and buttons with their pale edge, pills, the item progress box, the drop under kind chips. */
+  --glass: #2e2880;
+  --glass-edge: #cec4ff;
+  --pill-glass: rgb(38 40 102 / 0.65);
+  --progress-glass: rgb(24 18 80 / 0.55);
+  --chip-drop: rgb(20 14 60 / 0.55);
+
+  /* Today's greeting: its lavender shadow, the dark halftone behind it and the little symbols after it. */
+  --greeting-shadow: #9f85eb;
+  --halftone-small-img: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='4' height='4' shape-rendering='crispEdges'%3E%3Crect width='2' height='2' fill='%23120d40'/%3E%3C/svg%3E");
+  --halftone-big-img: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='4' height='4' shape-rendering='crispEdges'%3E%3Crect width='3' height='3' fill='%23120d40'/%3E%3C/svg%3E");
+  --flair-pink: #fd93bb;
+  --sparkle-gold: #fee797;
+  --flair-lilac: #beaff8;
+
+  /* Card title bands: the starry purple band, its edge and drop, the pale title, icon and block shadow, the gold sparkles. */
+  --title-band: linear-gradient(90deg, #4a37b4, #6a52d0 55%, #7d63da);
+  --title-band-stars-img: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='96' height='40' shape-rendering='crispEdges'%3E%3Cg fill='%23fff'%3E%3Crect x='7' y='6' width='1' height='1' opacity='.7'/%3E%3Crect x='29' y='27' width='1' height='1' opacity='.5'/%3E%3Crect x='44' y='9' width='2' height='2' opacity='.45'/%3E%3Crect x='61' y='31' width='1' height='1' opacity='.75'/%3E%3Crect x='78' y='15' width='1' height='1' opacity='.55'/%3E%3Crect x='18' y='19' width='1' height='1' opacity='.4'/%3E%3Crect x='88' y='33' width='1' height='1' opacity='.6'/%3E%3C/g%3E%3Cg fill='%23ffd6ee' opacity='.8'%3E%3Crect x='70' y='3' width='1' height='5'/%3E%3Crect x='68' y='5' width='5' height='1'/%3E%3C/g%3E%3Cg fill='%23beaff8' opacity='.8'%3E%3Crect x='36' y='30' width='1' height='3'/%3E%3Crect x='35' y='31' width='3' height='1'/%3E%3C/g%3E%3C/svg%3E");
+  --title-band-edge: rgb(206 196 255 / 0.55);
+  --title-band-drop: rgb(30 20 90 / 0.35);
+  --title-text: #f1ecff;
+  --title-icon: #e3dcff;
+  --title-shadow: #2b1c92;
+  --title-sparkles-img: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 9' shape-rendering='crispEdges'%3E%3Cg fill='%23fee797'%3E%3Crect x='4' width='1' height='9'/%3E%3Crect y='4' width='9' height='1'/%3E%3Crect x='3' y='3' width='3' height='3'/%3E%3C/g%3E%3Crect x='4' y='4' width='1' height='1' fill='%23fff'/%3E%3Cg fill='%23fee797'%3E%3Crect x='15' y='2' width='1' height='5'/%3E%3Crect x='13' y='4' width='5' height='1'/%3E%3C/g%3E%3C/svg%3E");
+
+  /* Today's big counts: the pale label after the pink number. */
+  --count-unit: #f3d5f3;
+
+  /* Cards: the pastel pattern, the faint study grid, the veil and text shadows for readability, item labels' outline, passed tiles' glyph outline. */
+  --card-gradient: linear-gradient(#b8a0f2, #d9a6ec 60%, #eaaee4);
+  --study-grid: rgb(255 170 230 / 0.07);
+  --veil: rgb(40 32 112 / 0.78);
+  --pattern-text-shadow: 0 1px 0 rgb(28 20 80 / 0.9), 1px 0 0 rgb(28 20 80 / 0.6), -1px 0 0 rgb(28 20 80 / 0.6),
+    0 0 3px rgb(28 20 80 / 0.85), 0 0 8px rgb(28 20 80 / 0.45);
+  --panel-text-shadow: 0 1px 0 rgb(12 10 40 / 0.8);
+  --label-outline: #2a1f66;
+  --glyph-shade: #1a1040;
+
+  /* Reading panels in cards: fill, lilac edge, dark inner line, Today's twinkles and wisp, the sparkles above with their plum outline and warm glow. */
+  --panel-bg: #25235f;
+  --panel-edge: #8d82e6;
+  --panel-inner: #17154a;
+  --panel-twinkles-img: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='18' height='13' shape-rendering='crispEdges'%3E%3Cg fill='%23a99cf0' opacity='.7'%3E%3Crect x='3' y='0' width='1' height='7'/%3E%3Crect x='0' y='3' width='7' height='1'/%3E%3Crect x='2' y='2' width='3' height='3'/%3E%3C/g%3E%3Cg fill='%23fd93bb' opacity='.6'%3E%3Crect x='15' y='9' width='1' height='3'/%3E%3Crect x='14' y='10' width='3' height='1'/%3E%3C/g%3E%3C/svg%3E");
+  --panel-wisp-img: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='42' height='6' shape-rendering='crispEdges'%3E%3Cg fill='%234a46a8' opacity='.55'%3E%3Crect x='10' y='0' width='22' height='2'/%3E%3Crect x='2' y='2' width='36' height='2'/%3E%3Crect x='14' y='4' width='26' height='2'/%3E%3C/g%3E%3C/svg%3E");
+  --card-sparkle-big-img: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 13 13' shape-rendering='crispEdges'%3E%3Cg fill='%23fff1c2'%3E%3Crect x='6' width='1' height='13'/%3E%3Crect y='6' width='13' height='1'/%3E%3Crect x='5' y='4' width='3' height='5'/%3E%3Crect x='4' y='5' width='5' height='3'/%3E%3C/g%3E%3Crect x='6' y='6' width='1' height='1' fill='white'/%3E%3C/svg%3E");
+  --card-sparkle-small-img: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 9 9' shape-rendering='crispEdges'%3E%3Cg fill='%23ffd6ee'%3E%3Crect x='4' y='1' width='1' height='7'/%3E%3Crect x='1' y='4' width='7' height='1'/%3E%3Crect x='3' y='3' width='3' height='3'/%3E%3C/g%3E%3C/svg%3E");
+  --sparkle-outline: #6b3fa0;
+  --sparkle-glow: #ffd678;
+
+  /* Menus and side panels. */
+  --popup-bg: #25235f;
+
+  /* Gauges: the gaps between cells and the ring inside the frame, unlit cells, the dark outer ring, the level badge. */
+  --gauge-gap: #15174a;
+  --gauge-empty: #2a2d78;
+  --gauge-outline: #1c1e5c;
+  --badge-bg: #1c1e5c;
+
+  /* Cat art: the kaomoji, the dotted heart and its glow, the ☆ sparkle, the sleepy z's, the happy face. */
+  --cat-art: #f3eaff;
+  --heart-dots: #ffb3dc;
+  --heart-glow: rgb(255 140 200 / 0.6);
+  --kaomoji-sparkle-img: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='9' height='9' shape-rendering='crispEdges'%3E%3Cg fill='%23fee797'%3E%3Crect x='4' width='1' height='9'/%3E%3Crect y='4' width='9' height='1'/%3E%3Crect x='3' y='3' width='3' height='3'/%3E%3C/g%3E%3Crect x='4' y='4' width='1' height='1' fill='%23fff'/%3E%3C/svg%3E");
+  --cat-z: #beaff8;
+  --cat-face: #e3dcff;
+
+  /* Status bar: the moon. */
+  --moon: #ffe08a;
+
+  /* Flashcard grade buttons. */
+  --grade-again: #d84d6e;
+  --grade-hard: #e0a75a;
+  --grade-good: #6fd39b;
+  --grade-easy: #63a4fb;
+
+  /* Reading: the kinds of text marks, words' known and learning colours (chips, the hover card), and the drop result. */
+  --mark-speech: #7fd8ff;
+  --mark-sfx: #ff8fd0;
+  --mark-sign: #ffe08a;
+  --mark-narration: #b48cff;
+  --mark-other: #7ee0a8;
+  --status-known: #6fdc9a;
+  --status-learning: #ffd36e;
+  --peek-known: #8ff0b5;
+  --peek-learning: #ffe08a;
+  --drop-done: #6fdc9a;
+  --drop-problem: #ffb37a;
+
   --font-pixel: "Pixelify Sans", "M PLUS Rounded 1c", sans-serif;
   /* Pixel font for kana only: complex kanji need a font that keeps every stroke legible. */
   --font-kana: "DotGothic16", "M PLUS Rounded 1c", sans-serif;
@@ -55,7 +187,6 @@ html {
 /* The page: the banners' dark navy at the top, lightening toward a soft royal
    navy at the bottom of the window (fixed, so long pages don't stretch it). */
 body {
-  --bg-low: #1f2470;
   margin: 0;
   min-height: 100vh; /* short pages too: the gradient fills the window */
   background: linear-gradient(var(--bg) 20%, var(--bg-low)) fixed var(--bg);
@@ -361,8 +492,8 @@ textarea {
 /* The current tab, like picking from a game menu: a soft lilac highlight with
    a pink pixel ▶ cursor inside it on the left, nudging back and forth. */
 .nav-tab.current {
-  background: rgb(190 175 248 / 0.16);
-  box-shadow: inset 0 0 0 2px rgb(190 175 248 / 0.45);
+  background: color-mix(in srgb, var(--nav-current) 16%, transparent);
+  box-shadow: inset 0 0 0 2px color-mix(in srgb, var(--nav-current) 45%, transparent);
   color: #fff;
 }
 
@@ -373,8 +504,8 @@ textarea {
   top: calc(50% - 7px);
   width: 8px;
   height: 14px;
-  background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 4 7' shape-rendering='crispEdges'%3E%3Cpath fill='%23fd93bb' d='M0 0h1v7H0zM1 1h1v5H1zM2 2h1v3H2zM3 3h1v1H3z'/%3E%3C/svg%3E") center / 8px 14px no-repeat;
-  filter: drop-shadow(0 2px 0 #1d1660);
+  background: var(--menu-cursor-img) center / 8px 14px no-repeat;
+  filter: drop-shadow(0 2px 0 var(--pixel-shadow));
   animation: menu-cursor 1.2s steps(1) infinite;
 }
 
@@ -442,13 +573,13 @@ textarea {
   width: 38px;
 }
 
-.win-min { color: #e3b341; }
-.win-max { color: #3fb9a7; }
-.win-close { color: #e8643c; }
+.win-min { color: var(--win-min); }
+.win-max { color: var(--win-max); }
+.win-close { color: var(--win-close); }
 
-.window-controls .win-min:hover { background: color-mix(in srgb, #e3b341 18%, transparent); color: #e3b341; }
-.window-controls .win-max:hover { background: color-mix(in srgb, #3fb9a7 18%, transparent); color: #3fb9a7; }
-.window-controls .win-close:hover { background: #d9442b; color: #fff; }
+.window-controls .win-min:hover { background: color-mix(in srgb, var(--win-min) 18%, transparent); color: var(--win-min); }
+.window-controls .win-max:hover { background: color-mix(in srgb, var(--win-max) 18%, transparent); color: var(--win-max); }
+.window-controls .win-close:hover { background: var(--win-close-hover); color: #fff; }
 
 /* Today */
 
@@ -525,7 +656,7 @@ textarea {
    overlapping the banner's fade. Reading questions are cyan, meaning questions
    pink, so the two kinds are told apart at a glance (with the label, not by colour alone). */
 .answer-dock {
-  --ask: #ff9bd6;
+  --ask: var(--ask-meaning);
   position: relative;
   z-index: 2;
   margin-top: -76px;
@@ -536,7 +667,7 @@ textarea {
 }
 
 .answer-dock.reading {
-  --ask: #8fdcff;
+  --ask: var(--ask-reading);
 }
 
 .answer-form {
@@ -566,7 +697,7 @@ textarea {
   border: 2px solid var(--panel-border);
   border-radius: 14px;
   background: var(--surface);
-  box-shadow: var(--panel-glow), 0 0 22px rgb(139 144 234 / 0.3);
+  box-shadow: var(--panel-glow), 0 0 22px color-mix(in srgb, var(--panel-border) 30%, transparent);
   transition: border-color 150ms, box-shadow 150ms;
 }
 
@@ -606,7 +737,7 @@ textarea {
   padding: 6px 20px;
   border: 2px solid #fff;
   border-radius: 10px;
-  background: linear-gradient(90deg, #ff8fd0 0%, #c9a2f5 55%, #8fdcff 100%);
+  background: var(--go-gradient);
   color: var(--on-kind);
   font-size: 1.05rem;
   font-weight: 800; /* not the pixel font: its small capital C reads as O */
@@ -658,8 +789,8 @@ textarea {
 .rank-s { background: var(--word); }
 
 .rank-star {
-  background: linear-gradient(135deg, #ff8fd0, #ffe08a 50%, #8fdcff);
-  box-shadow: inset 0 2px 0 rgb(255 255 255 / 0.5), 0 0 8px rgb(255 224 138 / 0.8);
+  background: linear-gradient(135deg, var(--prize-start), var(--prize-mid) 50%, var(--prize-end));
+  box-shadow: inset 0 2px 0 rgb(255 255 255 / 0.5), 0 0 8px color-mix(in srgb, var(--prize-mid) 80%, transparent);
 }
 
 /* The rank-up flourish on the review feedback line. */
@@ -810,7 +941,7 @@ textarea {
   padding: 3px 14px;
   border: 2px solid var(--panel-border);
   border-radius: 999px;
-  background: rgb(38 40 102 / 0.65);
+  background: var(--pill-glass);
   color: var(--text);
   font-size: 0.9rem;
 }
@@ -839,14 +970,14 @@ textarea {
   justify-items: center;
   gap: 10px;
   text-align: center;
-  color: #e6e3ff;
+  color: var(--done-text);
 }
 
 .done-content h1 {
   margin: 0;
   color: #fff;
   font-size: 2.4rem;
-  text-shadow: 0 0 22px rgb(255 122 198 / 0.6), 3px 3px 0 #c94f99;
+  text-shadow: 0 0 22px color-mix(in srgb, var(--glow) 60%, transparent), 3px 3px 0 var(--done-title-shadow);
 }
 
 .done-stat {
@@ -970,13 +1101,13 @@ textarea {
 .bar-go {
   border: 2px solid #fff;
   border-radius: 999px;
-  background: linear-gradient(90deg, #ff8fd0 0%, #c9a2f5 55%, #8fdcff 100%);
-  box-shadow: inset 0 2px 0 rgb(255 255 255 / 0.45), 0 0 14px rgb(255 122 198 / 0.4);
+  background: var(--go-gradient);
+  box-shadow: inset 0 2px 0 rgb(255 255 255 / 0.45), 0 0 14px color-mix(in srgb, var(--glow) 40%, transparent);
   color: var(--on-kind);
 }
 
 .bar-go:hover {
-  box-shadow: inset 0 2px 0 rgb(255 255 255 / 0.45), 0 0 20px rgb(255 122 198 / 0.6);
+  box-shadow: inset 0 2px 0 rgb(255 255 255 / 0.45), 0 0 20px color-mix(in srgb, var(--glow) 60%, transparent);
 }
 
 .bottom-bar-center {
@@ -1044,7 +1175,7 @@ textarea {
   justify-items: center;
   color: #fff;
   /* The sky's top colour; the other bands are layered on top (.banner-sky). */
-  background: #1a2974;
+  background: var(--sky-top);
   image-rendering: pixelated;
   box-shadow: 0 8px 28px color-mix(in srgb, var(--kind) 30%, transparent);
 }
@@ -1076,7 +1207,7 @@ textarea {
   inset: 0;
   z-index: 0;
   pointer-events: none;
-  background: radial-gradient(ellipse 70% 55% at 50% 100%, #e08ad04d, transparent 70%);
+  background: radial-gradient(ellipse 70% 55% at 50% 100%, var(--horizon-glow), transparent 70%);
   mix-blend-mode: screen;
 }
 
@@ -1103,7 +1234,7 @@ textarea {
   width: 9px;
   height: 9px;
   margin: -4px 0 0 -4px;
-  filter: drop-shadow(0 0 4px rgb(255 240 200 / 0.9));
+  filter: drop-shadow(0 0 4px var(--star-glow));
   animation: twinkle 3.2s ease-in-out infinite;
 }
 
@@ -1287,7 +1418,7 @@ textarea {
   inset: 0;
   z-index: 1;
   pointer-events: none;
-  background: rgb(22 18 72 / 0.4);
+  background: var(--banner-tint);
   backdrop-filter: saturate(0.65);
 }
 
@@ -1327,7 +1458,7 @@ textarea {
   line-height: 1;
   text-transform: uppercase;
   text-shadow: none;
-  box-shadow: inset 0 2px 0 rgb(255 255 255 / 0.35), 0 2px 0 rgb(20 14 60 / 0.55);
+  box-shadow: inset 0 2px 0 rgb(255 255 255 / 0.35), 0 2px 0 var(--chip-drop);
   cursor: help;
 }
 
@@ -1402,9 +1533,9 @@ textarea {
   display: grid;
   justify-items: center;
   padding: 0 32px 12px;
-  border: 2px solid rgb(206 196 255 / 0.35);
+  border: 2px solid color-mix(in srgb, var(--glass-edge) 35%, transparent);
   border-radius: 10px;
-  background: rgb(46 40 128 / 0.55);
+  background: color-mix(in srgb, var(--glass) 55%, transparent);
   backdrop-filter: blur(4px);
   box-shadow: 0 6px 24px rgb(0 0 0 / 0.25);
 }
@@ -2165,7 +2296,7 @@ textarea {
   height: 18px;
   border-top-left-radius: 8px;
   background: linear-gradient(135deg, var(--word) 50%, transparent 50%);
-  filter: drop-shadow(1px 1px 0 rgb(20 14 60 / 0.55));
+  filter: drop-shadow(1px 1px 0 var(--chip-drop));
   pointer-events: none;
 }
 
@@ -2199,7 +2330,7 @@ textarea {
   padding: 3px 14px;
   border: 2px solid var(--panel-border);
   border-radius: 999px;
-  background: rgb(38 40 102 / 0.65);
+  background: var(--pill-glass);
   color: var(--text);
   font-size: 0.9rem;
 }
@@ -2269,7 +2400,7 @@ textarea {
 /* The character stays white on passed tiles, with a 1px outline in a deeper
    shade of the tile's colour so it reads even on the pale butter word tiles. */
 .tile.passed .tile-glyph {
-  --edge: color-mix(in srgb, var(--kind) 45%, #1a1040);
+  --edge: color-mix(in srgb, var(--kind) 45%, var(--glyph-shade));
   color: #fff;
   text-shadow:
     1px 0 0 var(--edge), -1px 0 0 var(--edge), 0 1px 0 var(--edge), 0 -1px 0 var(--edge),
@@ -2316,7 +2447,7 @@ textarea {
   padding: 8px 12px;
   border: 1px solid rgb(255 255 255 / 0.25);
   border-radius: 14px;
-  background: rgb(24 18 80 / 0.55);
+  background: var(--progress-glass);
   backdrop-filter: blur(8px);
   font-size: 0.85rem;
   text-shadow: none;
@@ -2722,6 +2853,10 @@ select {
   color: var(--muted);
 }
 
+.status-moon {
+  color: var(--moon);
+}
+
 .app:has(.with-status-bar) {
   padding-bottom: calc(var(--statusbar-h) + var(--statusbar-gap));
 }
@@ -2749,7 +2884,7 @@ select {
   font-weight: 700;
   line-height: 1.1;
   /* A thin lavender drop shadow, then the soft dark glow. */
-  text-shadow: 0 2px 0 #9f85eb, 0 2px 10px rgb(0 0 0 / 0.3);
+  text-shadow: 0 2px 0 var(--greeting-shadow), 0 2px 10px rgb(0 0 0 / 0.3);
 }
 
 /* A tinted pixel halftone behind the greeting, for readability over the
@@ -2766,12 +2901,12 @@ select {
 }
 
 .greeting-ja::before {
-  background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='4' height='4' shape-rendering='crispEdges'%3E%3Crect width='2' height='2' fill='%23120d40'/%3E%3C/svg%3E") 0 0 / 4px 4px;
+  background: var(--halftone-small-img) 0 0 / 4px 4px;
   mask: radial-gradient(closest-side, #000 0 99%, transparent 100%);
 }
 
 .greeting-ja::after {
-  background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='4' height='4' shape-rendering='crispEdges'%3E%3Crect width='3' height='3' fill='%23120d40'/%3E%3C/svg%3E") 0 0 / 4px 4px;
+  background: var(--halftone-big-img) 0 0 / 4px 4px;
   mask: radial-gradient(closest-side, #000 0 68%, transparent 70%);
 }
 
@@ -2783,12 +2918,12 @@ select {
   letter-spacing: 0.1em;
   vertical-align: 0.2em;
   /* A crisp 1px dark outline, so they hold up over the blossoms. */
-  text-shadow: 1px 0 #1d1660, -1px 0 #1d1660, 0 1px #1d1660, 0 -1px #1d1660, 0 2px 0 #1d1660;
+  text-shadow: 1px 0 var(--pixel-shadow), -1px 0 var(--pixel-shadow), 0 1px var(--pixel-shadow), 0 -1px var(--pixel-shadow), 0 2px 0 var(--pixel-shadow);
 }
 
-.greeting-flair .pink { color: #fd93bb; }
-.greeting-flair .gold { color: #fee797; }
-.greeting-flair .lilac { color: #beaff8; }
+.greeting-flair .pink { color: var(--flair-pink); }
+.greeting-flair .gold { color: var(--sparkle-gold); }
+.greeting-flair .lilac { color: var(--flair-lilac); }
 
 .greeting-flair > :last-child {
   display: inline-block;
@@ -2824,12 +2959,12 @@ select {
   padding: 14px 28px;
   border-radius: 999px;
   border: 2px solid #fff;
-  background: linear-gradient(90deg, #ff8fd0 0%, #c9a2f5 55%, #8fdcff 100%);
+  background: var(--go-gradient);
   color: var(--on-kind);
   font-family: var(--font-pixel);
   font-size: 1.3rem;
   font-weight: 700;
-  box-shadow: 0 0 24px rgb(255 122 198 / 0.5), inset 0 2px 0 rgb(255 255 255 / 0.45);
+  box-shadow: 0 0 24px color-mix(in srgb, var(--glow) 50%, transparent), inset 0 2px 0 rgb(255 255 255 / 0.45);
   transition: transform 120ms;
 }
 
@@ -2983,27 +3118,27 @@ select {
   gap: 10px;
   margin: 0;
   padding: 5px 14px 6px;
-  border: 2px solid rgb(206 196 255 / 0.55);
+  border: 2px solid var(--title-band-edge);
   border-radius: 8px;
   background:
-    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='96' height='40' shape-rendering='crispEdges'%3E%3Cg fill='%23fff'%3E%3Crect x='7' y='6' width='1' height='1' opacity='.7'/%3E%3Crect x='29' y='27' width='1' height='1' opacity='.5'/%3E%3Crect x='44' y='9' width='2' height='2' opacity='.45'/%3E%3Crect x='61' y='31' width='1' height='1' opacity='.75'/%3E%3Crect x='78' y='15' width='1' height='1' opacity='.55'/%3E%3Crect x='18' y='19' width='1' height='1' opacity='.4'/%3E%3Crect x='88' y='33' width='1' height='1' opacity='.6'/%3E%3C/g%3E%3Cg fill='%23ffd6ee' opacity='.8'%3E%3Crect x='70' y='3' width='1' height='5'/%3E%3Crect x='68' y='5' width='5' height='1'/%3E%3C/g%3E%3Cg fill='%23beaff8' opacity='.8'%3E%3Crect x='36' y='30' width='1' height='3'/%3E%3Crect x='35' y='31' width='3' height='1'/%3E%3C/g%3E%3C/svg%3E") 0 0 / 96px 40px,
-    linear-gradient(90deg, #4a37b4, #6a52d0 55%, #7d63da);
-  box-shadow: inset 0 2px 0 rgb(255 255 255 / 0.14), 0 2px 0 rgb(30 20 90 / 0.35);
+    var(--title-band-stars-img) 0 0 / 96px 40px,
+    var(--title-band);
+  box-shadow: inset 0 2px 0 rgb(255 255 255 / 0.14), 0 2px 0 var(--title-band-drop);
   font-family: var(--font-title);
   font-weight: 700;
   font-size: 24px;
   line-height: 1;
-  color: #f1ecff;
+  color: var(--title-text);
   text-transform: uppercase;
-  text-shadow: 0 var(--title-px) 0 #2b1c92;
+  text-shadow: 0 var(--title-px) 0 var(--title-shadow);
 }
 
 .tile-title-icon {
   flex: none;
   width: 1em;
   height: 1em;
-  color: #e3dcff;
-  filter: drop-shadow(0 var(--title-px) 0 #2b1c92);
+  color: var(--title-icon);
+  filter: drop-shadow(0 var(--title-px) 0 var(--title-shadow));
 }
 
 /* Two gold sparkles after the title (pixel art at 2×). */
@@ -3013,8 +3148,8 @@ select {
   width: 40px;
   height: 18px;
   margin-left: 2px;
-  background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 9' shape-rendering='crispEdges'%3E%3Cg fill='%23fee797'%3E%3Crect x='4' width='1' height='9'/%3E%3Crect y='4' width='9' height='1'/%3E%3Crect x='3' y='3' width='3' height='3'/%3E%3C/g%3E%3Crect x='4' y='4' width='1' height='1' fill='%23fff'/%3E%3Cg fill='%23fee797'%3E%3Crect x='15' y='2' width='1' height='5'/%3E%3Crect x='13' y='4' width='5' height='1'/%3E%3C/g%3E%3C/svg%3E") center / 40px 18px no-repeat;
-  filter: drop-shadow(0 2px 0 #2b1c92);
+  background: var(--title-sparkles-img) center / 40px 18px no-repeat;
+  filter: drop-shadow(0 2px 0 var(--title-shadow));
 }
 
 .tile-head {
@@ -3039,17 +3174,17 @@ select {
 
 .tile-num {
   font-size: 32px;
-  color: #fd93bb;
+  color: var(--highlight);
   text-shadow:
-    2px 0 0 #1d1660, -2px 0 0 #1d1660, 0 2px 0 #1d1660, 0 -2px 0 #1d1660,
-    2px 2px 0 #1d1660, -2px 2px 0 #1d1660, 2px -2px 0 #1d1660, -2px -2px 0 #1d1660,
-    0 4px 0 #1d1660;
+    2px 0 0 var(--pixel-shadow), -2px 0 0 var(--pixel-shadow), 0 2px 0 var(--pixel-shadow), 0 -2px 0 var(--pixel-shadow),
+    2px 2px 0 var(--pixel-shadow), -2px 2px 0 var(--pixel-shadow), 2px -2px 0 var(--pixel-shadow), -2px -2px 0 var(--pixel-shadow),
+    0 4px 0 var(--pixel-shadow);
 }
 
 .tile-unit {
   font-size: 24px;
-  color: #f3d5f3;
-  text-shadow: 0 2px 0 #1d1660;
+  color: var(--count-unit);
+  text-shadow: 0 2px 0 var(--pixel-shadow);
 }
 
 .track-preview {
@@ -3184,7 +3319,7 @@ select {
   font-weight: 700;
   font-size: 1rem;
   color: var(--text);
-  text-shadow: 0 0 8px rgb(255 122 198 / 0.35);
+  text-shadow: 0 0 8px color-mix(in srgb, var(--glow) 35%, transparent);
   cursor: default;
 }
 
@@ -3196,7 +3331,6 @@ select {
 /* Retro game gauge: pixel frame with a dark outline, an inset trough, and
    cells cut by an overlay so the fill and the empty part share one grid. */
 .progress-track {
-  --gauge-gap: #15174a; /* between cells, and the ring inside the frame */
   position: relative;
   display: flex;
   height: 16px;
@@ -3204,8 +3338,8 @@ select {
   padding: 2px;
   border: 2px solid var(--panel-border);
   border-radius: 4px;
-  background: #2a2d78; /* unlit cells */
-  box-shadow: 0 0 0 2px #1c1e5c, inset 0 0 0 2px var(--gauge-gap);
+  background: var(--gauge-empty); /* unlit cells */
+  box-shadow: 0 0 0 2px var(--gauge-outline), inset 0 0 0 2px var(--gauge-gap);
   overflow: hidden;
 }
 
@@ -3254,8 +3388,8 @@ select {
   padding: 2px 12px 4px;
   border: 2px solid var(--panel-border);
   border-radius: 6px;
-  background: #1c1e5c;
-  box-shadow: 0 0 12px rgb(255 122 198 / 0.35), inset 0 2px 0 rgb(255 255 255 / 0.12);
+  background: var(--badge-bg);
+  box-shadow: 0 0 12px color-mix(in srgb, var(--glow) 35%, transparent), inset 0 2px 0 rgb(255 255 255 / 0.12);
 }
 
 .level-lv {
@@ -3270,7 +3404,7 @@ select {
   font-size: 1.9rem;
   line-height: 1;
   color: #fff;
-  text-shadow: 0 0 10px rgb(255 122 198 / 0.6);
+  text-shadow: 0 0 10px color-mix(in srgb, var(--glow) 60%, transparent);
 }
 
 .level-info {
@@ -3324,7 +3458,7 @@ select {
   width: 9px;
   height: 9px;
   border-radius: 2px;
-  background: #2a2d78;
+  background: var(--gauge-empty);
   box-shadow: inset 0 0 0 1px var(--panel-border);
 }
 
@@ -3342,7 +3476,7 @@ select {
   width: 160px;
   height: 8px;
   border-radius: 4px;
-  background: #2a2d78;
+  background: var(--gauge-empty);
   box-shadow: inset 0 0 0 1px var(--panel-border);
   overflow: hidden;
 }
@@ -3395,7 +3529,7 @@ select {
   font-size: clamp(10px, min(100cqw / 12.5, 100cqh / 8.4), 22px);
   line-height: 1.15;
   white-space: pre;
-  color: #f3eaff;
+  color: var(--cat-art);
   position: relative; /* above the heart */
 }
 
@@ -3416,12 +3550,12 @@ select {
 
 .kaomoji-heart-frame path {
   fill: none;
-  stroke: #ffb3dc;
+  stroke: var(--heart-dots);
   stroke-width: 3px;
   stroke-linecap: round;
   stroke-dasharray: 0 8px;
   vector-effect: non-scaling-stroke; /* dots stay 3px whatever the heart's size */
-  filter: drop-shadow(0 0 3px rgb(255 140 200 / 0.6));
+  filter: drop-shadow(0 0 3px var(--heart-glow));
 }
 
 .kaomoji-star {
@@ -3436,8 +3570,8 @@ select {
 .kaomoji-sparkle {
   color: transparent;
   text-shadow: none; /* or the panel's text shadow draws the hidden ☆ behind the sparkle */
-  background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='9' height='9' shape-rendering='crispEdges'%3E%3Cg fill='%23fee797'%3E%3Crect x='4' width='1' height='9'/%3E%3Crect y='4' width='9' height='1'/%3E%3Crect x='3' y='3' width='3' height='3'/%3E%3C/g%3E%3Crect x='4' y='4' width='1' height='1' fill='%23fff'/%3E%3C/svg%3E") center / 0.9em 0.9em no-repeat;
-  filter: drop-shadow(0 0 3px rgb(255 214 120 / 0.7));
+  background: var(--kaomoji-sparkle-img) center / 0.9em 0.9em no-repeat;
+  filter: drop-shadow(0 0 3px color-mix(in srgb, var(--sparkle-glow) 70%, transparent));
 }
 
 /* Reviews' sleeping cat (SleepyCat in CatArt.tsx): pixel art at 2×, with a
@@ -3459,8 +3593,8 @@ select {
   font-family: var(--font-num);
   font-size: 16px;
   line-height: 1;
-  color: #beaff8;
-  text-shadow: 0 2px 0 #1d1660;
+  color: var(--cat-z);
+  text-shadow: 0 2px 0 var(--pixel-shadow);
   animation: card-twinkle 3s ease-in-out infinite;
 }
 
@@ -3500,8 +3634,8 @@ select {
   padding-right: 10px;
   font-size: 22px;
   white-space: nowrap;
-  color: #e3dcff;
-  text-shadow: 0 2px 0 #1d1660;
+  color: var(--cat-face);
+  text-shadow: 0 2px 0 var(--pixel-shadow);
 }
 
 /* No room in narrow or short windows: the gauges get the whole card. */
@@ -3587,7 +3721,7 @@ select {
   border: none;
   border-radius: 0;
   /* Solid enough to hide the Start button underneath for the moment. */
-  background: radial-gradient(ellipse at center, rgb(24 20 70 / 0.95) 0%, rgb(24 20 70 / 0.88) 55%, rgb(24 20 70 / 0.72) 100%);
+  background: var(--level-up-backdrop);
   backdrop-filter: blur(3px);
   color: #fff;
   cursor: pointer;
@@ -3604,11 +3738,11 @@ select {
   font-weight: 700;
   font-size: clamp(2rem, 7vw, 3.6rem);
   letter-spacing: 0.04em;
-  background: linear-gradient(90deg, #ff8fd0, #ffe08a 50%, #8fdcff);
+  background: linear-gradient(90deg, var(--prize-start), var(--prize-mid) 50%, var(--prize-end));
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
-  filter: drop-shadow(0 3px 0 #1c1e5c) drop-shadow(0 0 18px rgb(255 122 198 / 0.6));
+  filter: drop-shadow(0 3px 0 var(--level-up-shadow)) drop-shadow(0 0 18px color-mix(in srgb, var(--glow) 60%, transparent));
 }
 
 .level-up-level {
@@ -3642,7 +3776,7 @@ select {
   left: 50%;
   width: 8px;
   height: 8px;
-  background: #ffe08a;
+  background: var(--prize-mid);
   clip-path: polygon(50% 0, 62% 38%, 100% 50%, 62% 62%, 50% 100%, 38% 62%, 0 50%, 38% 38%);
   animation: level-up-sparkle 900ms ease-out both;
   animation-delay: calc(var(--i) * 40ms);
@@ -3966,8 +4100,7 @@ select {
 .split-card,
 .field {
   --card-veil: transparent; /* the reading panels (.card-panel, .field-body) do the darkening */
-  --card-text-shadow: 0 1px 0 rgb(28 20 80 / 0.9), 1px 0 0 rgb(28 20 80 / 0.6), -1px 0 0 rgb(28 20 80 / 0.6),
-    0 0 3px rgb(28 20 80 / 0.85), 0 0 8px rgb(28 20 80 / 0.45);
+  --card-text-shadow: var(--pattern-text-shadow);
   position: relative;
   z-index: 2; /* above the cherry branches that hang down from the banner */
   isolation: isolate; /* keeps the dot (::before) and grid (::after) layers above the background, below the content */
@@ -3975,7 +4108,7 @@ select {
   background:
     linear-gradient(var(--card-veil), var(--card-veil)),
     url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' shape-rendering='crispEdges'%3E%3Crect width='2' height='2' fill='%23fff' opacity='.16'/%3E%3C/svg%3E") var(--pat-x, 0px) var(--pat-y, 0px) / 12px 12px,
-    linear-gradient(#b8a0f2, #d9a6ec 60%, #eaaee4)
+    var(--card-gradient)
       var(--pat-x, 0px) var(--pat-y, 0px) / var(--pat-w, 100%) var(--pat-h, 100%) no-repeat;
 }
 
@@ -3990,8 +4123,8 @@ select {
 :is(.session, .item-body) :is(.card, .split-card, .field) {
   --card-veil: transparent;
   background:
-    linear-gradient(rgb(255 170 230 / 0.07) 0 2px, transparent 2px) var(--pat-x, 0px) var(--pat-y, 0px) / 20px 20px,
-    linear-gradient(90deg, rgb(255 170 230 / 0.07) 0 2px, transparent 2px) var(--pat-x, 0px) var(--pat-y, 0px) / 20px 20px,
+    linear-gradient(var(--study-grid) 0 2px, transparent 2px) var(--pat-x, 0px) var(--pat-y, 0px) / 20px 20px,
+    linear-gradient(90deg, var(--study-grid) 0 2px, transparent 2px) var(--pat-x, 0px) var(--pat-y, 0px) / 20px 20px,
     var(--surface);
 }
 
@@ -4009,27 +4142,27 @@ select {
    and a faint pixel texture, like an old game's text box. */
 .card-panel,
 :is(.card, .split-card, .field) .field-body {
-  --card-text-shadow: 0 1px 0 rgb(12 10 40 / 0.8);
+  --card-text-shadow: var(--panel-text-shadow);
   margin-top: 8px;
   padding: 10px 14px 12px;
-  border: 2px solid #8d82e6;
+  border: 2px solid var(--panel-edge);
   border-radius: 6px;
-  background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='4' height='4' shape-rendering='crispEdges'%3E%3Crect width='1' height='1' fill='%23fff' opacity='.035'/%3E%3Crect x='2' y='2' width='1' height='1' fill='%23fff' opacity='.035'/%3E%3C/svg%3E") 0 0 / 4px 4px, #25235f;
-  box-shadow: inset 0 0 0 2px #17154a;
-  outline: 1px solid rgb(141 130 230 / 0.25);
+  background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='4' height='4' shape-rendering='crispEdges'%3E%3Crect width='1' height='1' fill='%23fff' opacity='.035'/%3E%3Crect x='2' y='2' width='1' height='1' fill='%23fff' opacity='.035'/%3E%3C/svg%3E") 0 0 / 4px 4px, var(--panel-bg);
+  box-shadow: inset 0 0 0 2px var(--panel-inner);
+  outline: 1px solid color-mix(in srgb, var(--panel-edge) 25%, transparent);
   outline-offset: -6px;
   text-shadow: var(--card-text-shadow);
 }
 
 /* Today's panels: a pixel cloud wisp low on the right and two little twinkles above it. */
 .card-panel {
-  --panel-twinkles: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='18' height='13' shape-rendering='crispEdges'%3E%3Cg fill='%23a99cf0' opacity='.7'%3E%3Crect x='3' y='0' width='1' height='7'/%3E%3Crect x='0' y='3' width='7' height='1'/%3E%3Crect x='2' y='2' width='3' height='3'/%3E%3C/g%3E%3Cg fill='%23fd93bb' opacity='.6'%3E%3Crect x='15' y='9' width='1' height='3'/%3E%3Crect x='14' y='10' width='3' height='1'/%3E%3C/g%3E%3C/svg%3E") right 22px top 10px / 36px 26px no-repeat;
-  --panel-wisp: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='42' height='6' shape-rendering='crispEdges'%3E%3Cg fill='%234a46a8' opacity='.55'%3E%3Crect x='10' y='0' width='22' height='2'/%3E%3Crect x='2' y='2' width='36' height='2'/%3E%3Crect x='14' y='4' width='26' height='2'/%3E%3C/g%3E%3C/svg%3E") right 10px bottom 10px / 84px 12px no-repeat;
+  --panel-twinkles: var(--panel-twinkles-img) right 22px top 10px / 36px 26px no-repeat;
+  --panel-wisp: var(--panel-wisp-img) right 10px bottom 10px / 84px 12px no-repeat;
   background:
     var(--panel-twinkles),
     var(--panel-wisp),
     url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='4' height='4' shape-rendering='crispEdges'%3E%3Crect width='1' height='1' fill='%23fff' opacity='.035'/%3E%3Crect x='2' y='2' width='1' height='1' fill='%23fff' opacity='.035'/%3E%3C/svg%3E") 0 0 / 4px 4px,
-    #25235f;
+    var(--panel-bg);
 }
 
 .card-panel {
@@ -4049,11 +4182,11 @@ select {
   height: 30px;
   pointer-events: none;
   background:
-    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 13 13' shape-rendering='crispEdges'%3E%3Cg fill='%23fff1c2'%3E%3Crect x='6' width='1' height='13'/%3E%3Crect y='6' width='13' height='1'/%3E%3Crect x='5' y='4' width='3' height='5'/%3E%3Crect x='4' y='5' width='5' height='3'/%3E%3C/g%3E%3Crect x='6' y='6' width='1' height='1' fill='white'/%3E%3C/svg%3E") right 0 top 0 / 26px 26px no-repeat,
-    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 9 9' shape-rendering='crispEdges'%3E%3Cg fill='%23ffd6ee'%3E%3Crect x='4' y='1' width='1' height='7'/%3E%3Crect x='1' y='4' width='7' height='1'/%3E%3Crect x='3' y='3' width='3' height='3'/%3E%3C/g%3E%3C/svg%3E") left 0 bottom 0 / 18px 18px no-repeat;
+    var(--card-sparkle-big-img) right 0 top 0 / 26px 26px no-repeat,
+    var(--card-sparkle-small-img) left 0 bottom 0 / 18px 18px no-repeat;
   /* A thin plum outline so the pale sparkles show on the pastel, then a warm glow. */
-  filter: drop-shadow(1px 0 0 #6b3fa0) drop-shadow(-1px 0 0 #6b3fa0) drop-shadow(0 1px 0 #6b3fa0) drop-shadow(0 -1px 0 #6b3fa0)
-    drop-shadow(0 0 4px rgb(255 214 120 / 0.9));
+  filter: drop-shadow(1px 0 0 var(--sparkle-outline)) drop-shadow(-1px 0 0 var(--sparkle-outline)) drop-shadow(0 1px 0 var(--sparkle-outline)) drop-shadow(0 -1px 0 var(--sparkle-outline))
+    drop-shadow(0 0 4px color-mix(in srgb, var(--sparkle-glow) 90%, transparent));
   animation: card-twinkle 3.6s ease-in-out infinite;
 }
 
@@ -4082,15 +4215,15 @@ select {
 
 /* No panel (e.g. the item page's progress strip, Settings): veil the whole pattern instead. */
 .card:not(:has(> .card-panel)) {
-  --card-veil: rgb(40 32 112 / 0.78);
+  --card-veil: var(--veil);
 }
 
 /* Item cards' small labels (MEANINGS, READINGS…) sit on the bright pattern: a crisp 1px outline. */
 .field h3 {
   color: #fff;
   text-shadow:
-    1px 0 0 #2a1f66, -1px 0 0 #2a1f66, 0 1px 0 #2a1f66, 0 -1px 0 #2a1f66,
-    1px 1px 0 #2a1f66, -1px 1px 0 #2a1f66, 1px -1px 0 #2a1f66, -1px -1px 0 #2a1f66;
+    1px 0 0 var(--label-outline), -1px 0 0 var(--label-outline), 0 1px 0 var(--label-outline), 0 -1px 0 var(--label-outline),
+    1px 1px 0 var(--label-outline), -1px 1px 0 var(--label-outline), 1px -1px 0 var(--label-outline), -1px -1px 0 var(--label-outline);
 }
 
 .split-card > .field::before,
@@ -4160,7 +4293,7 @@ select {
 
 .known-kana-sample {
   font-family: var(--font-kana);
-  color: #fd93bb;
+  color: var(--highlight);
 }
 
 /* Settings → Deki-senpai (AiSettingsCard.tsx). */
@@ -4181,8 +4314,8 @@ select {
 }
 
 .ai-provider.current {
-  border-color: #fd93bb;
-  background: rgb(253 147 187 / 0.08);
+  border-color: var(--hover-edge);
+  background: color-mix(in srgb, var(--hover-edge) 8%, transparent);
 }
 
 .ai-provider > span {
@@ -4249,7 +4382,7 @@ select {
 }
 
 .deck-tile:hover {
-  border-color: #fd93bb;
+  border-color: var(--hover-edge);
 }
 
 .deck-name {
@@ -4263,7 +4396,7 @@ select {
 }
 
 .deck-counts .due {
-  color: #fd93bb;
+  color: var(--highlight);
 }
 
 .deck-daily {
@@ -4306,8 +4439,8 @@ select {
 }
 
 button.danger {
-  background: #d84d6e;
-  border-color: #d84d6e;
+  background: var(--danger);
+  border-color: var(--danger);
   color: #fff;
 }
 
@@ -4463,10 +4596,10 @@ button.danger {
   color: var(--muted);
 }
 
-.flip-grade.grade-again { border-color: #d84d6e; }
-.flip-grade.grade-hard { border-color: #e0a75a; }
-.flip-grade.grade-good { border-color: #6fd39b; }
-.flip-grade.grade-easy { border-color: #63a4fb; }
+.flip-grade.grade-again { border-color: var(--grade-again); }
+.flip-grade.grade-hard { border-color: var(--grade-hard); }
+.flip-grade.grade-good { border-color: var(--grade-good); }
+.flip-grade.grade-easy { border-color: var(--grade-easy); }
 
 .flip-grade:hover {
   background: rgb(255 255 255 / 0.08);
@@ -4494,7 +4627,7 @@ button.danger {
   padding: 8px;
   border: 2px solid var(--panel-border);
   border-radius: 10px;
-  background: #25235f;
+  background: var(--popup-bg);
   box-shadow: 0 8px 24px rgb(0 0 0 / 0.4);
   text-shadow: none;
 }
@@ -4556,15 +4689,15 @@ button.danger {
 }
 
 .grammar-tile:hover {
-  border-color: #fd93bb;
+  border-color: var(--hover-edge);
 }
 
 .grammar-num {
   grid-row: span 2;
   font-family: var(--font-num);
   font-size: 1.5rem;
-  color: #fd93bb;
-  text-shadow: 0 2px 0 #1d1660;
+  color: var(--highlight);
+  text-shadow: 0 2px 0 var(--pixel-shadow);
 }
 
 .grammar-title {
@@ -4593,7 +4726,7 @@ button.danger {
 
 .pattern-slot {
   padding: 2px 10px;
-  border: 1px dashed rgb(206 196 255 / 0.6);
+  border: 1px dashed color-mix(in srgb, var(--glass-edge) 60%, transparent);
   border-radius: 6px;
   color: var(--muted);
   font-style: italic;
@@ -4602,7 +4735,7 @@ button.danger {
 .pattern-fixed {
   font-family: var(--font-kana);
   font-size: 1.35rem;
-  color: #fd93bb;
+  color: var(--highlight);
 }
 
 .grammar-para {
@@ -4640,7 +4773,7 @@ button.danger {
 }
 
 .grammar-related:hover {
-  border-color: #fd93bb;
+  border-color: var(--hover-edge);
 }
 
 /* Dictionary: "Find by parts" (PartsFinder in Dictionary.tsx). */
@@ -4747,9 +4880,9 @@ button.danger {
   align-items: center;
   gap: 4px;
   padding: 2px 10px;
-  border: 1px solid rgb(206 196 255 / 0.45);
+  border: 1px solid color-mix(in srgb, var(--glass-edge) 45%, transparent);
   border-radius: 999px;
-  background: rgb(46 40 128 / 0.85);
+  background: color-mix(in srgb, var(--glass) 85%, transparent);
   color: var(--text);
   font-size: 0.78rem;
   text-decoration: none;
@@ -4893,11 +5026,11 @@ button.danger {
 }
 
 /* Reading (Reading.tsx): your bookshelf, the reader, and your glossary. */
-.kind-speech { --mark: #7fd8ff; }
-.kind-sfx { --mark: #ff8fd0; }
-.kind-sign { --mark: #ffe08a; }
-.kind-narration { --mark: #b48cff; }
-.kind-other { --mark: #7ee0a8; }
+.kind-speech { --mark: var(--mark-speech); }
+.kind-sfx { --mark: var(--mark-sfx); }
+.kind-sign { --mark: var(--mark-sign); }
+.kind-narration { --mark: var(--mark-narration); }
+.kind-other { --mark: var(--mark-other); }
 
 .reading-intro {
   margin: -4px 0 14px;
@@ -4945,7 +5078,7 @@ button.danger {
 }
 
 .shelf-book:hover {
-  border-color: #fd93bb;
+  border-color: var(--hover-edge);
 }
 
 .shelf-cover {
@@ -5098,8 +5231,8 @@ button.danger {
 
 .icon-action.danger {
   color: #fff;
-  background: #d84d6e;
-  border-color: #d84d6e;
+  background: var(--danger);
+  border-color: var(--danger);
 }
 
 .reader-stage {
@@ -5812,7 +5945,7 @@ button.danger {
   justify-content: center;
   gap: 6px;
   padding: 8px;
-  background: linear-gradient(transparent, rgb(11 10 73 / 0.9) 40%);
+  background: linear-gradient(transparent, color-mix(in srgb, var(--bg) 90%, transparent) 40%);
   color: var(--text);
   font-size: 0.85rem;
   font-weight: 700;
@@ -5920,8 +6053,8 @@ button.danger {
 }
 
 .aka-remove:hover {
-  border-color: #d84d6e;
-  background: #d84d6e;
+  border-color: var(--danger);
+  background: var(--danger);
   color: #fff;
 }
 
@@ -6099,7 +6232,7 @@ button.aka-add {
 }
 
 .chapter-bar:hover {
-  border-color: #fd93bb;
+  border-color: var(--hover-edge);
 }
 
 .chapter-bar.drag-source {
@@ -6285,7 +6418,7 @@ button.aka-add {
   padding: 14px 16px 16px;
   border: 2px solid var(--panel-border);
   border-radius: 12px;
-  background: #25235f;
+  background: var(--popup-bg);
   box-shadow: 0 10px 28px rgb(0 0 0 / 0.5);
 }
 
@@ -6414,7 +6547,7 @@ button.aka-add {
 
 .series-nav-ends button:hover,
 .series-bookmark:hover {
-  border-color: #fd93bb;
+  border-color: var(--hover-edge);
 }
 
 .series-nav-ends svg {
@@ -6803,7 +6936,7 @@ button.aka-add {
   margin: -4px 0 0;
   padding: 6px 10px;
   border-radius: 8px;
-  border: 1px dashed #ffe08a;
+  border: 1px dashed var(--hint);
   font-size: 0.8rem;
 }
 
@@ -6870,13 +7003,13 @@ button.aka-add {
 }
 
 .word-chip.status-known {
-  border-color: #6fdc9a;
-  background: color-mix(in srgb, #6fdc9a 16%, transparent);
+  border-color: var(--status-known);
+  background: color-mix(in srgb, var(--status-known) 16%, transparent);
 }
 
 .word-chip.status-learning {
-  border-color: #ffd36e;
-  background: color-mix(in srgb, #ffd36e 16%, transparent);
+  border-color: var(--status-learning);
+  background: color-mix(in srgb, var(--status-learning) 16%, transparent);
 }
 
 .word-chip.status-grammar {
@@ -6938,11 +7071,11 @@ button.aka-add {
 }
 
 .word-status.status-known {
-  background: color-mix(in srgb, #6fdc9a 30%, transparent);
+  background: color-mix(in srgb, var(--status-known) 30%, transparent);
 }
 
 .word-status.status-learning {
-  background: color-mix(in srgb, #ffd36e 30%, transparent);
+  background: color-mix(in srgb, var(--status-learning) 30%, transparent);
 }
 
 .word-card-meanings {
@@ -6980,20 +7113,20 @@ button.aka-add {
 }
 
 .readable-bar .status-known {
-  background: #6fdc9a;
+  background: var(--status-known);
 }
 
 .readable-bar .status-learning {
-  background: #ffd36e;
+  background: var(--status-learning);
 }
 
 /* The hover card's words in their colours (PageView). */
 .peek-word.status-known {
-  color: #8ff0b5;
+  color: var(--peek-known);
 }
 
 .peek-word.status-learning {
-  color: #ffe08a;
+  color: var(--peek-learning);
 }
 
 .peek-word.status-grammar,
@@ -7212,19 +7345,19 @@ button.aka-add {
 }
 
 .drop-overlay.done {
-  border-color: #6fdc9a;
+  border-color: var(--drop-done);
 }
 
 .drop-overlay.done svg {
-  color: #6fdc9a;
+  color: var(--drop-done);
 }
 
 .drop-overlay.problem {
-  border-color: #ffb37a;
+  border-color: var(--drop-problem);
 }
 
 .drop-overlay.problem svg {
-  color: #ffb37a;
+  color: var(--drop-problem);
 }
 
 .spin {
