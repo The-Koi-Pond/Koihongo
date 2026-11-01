@@ -134,6 +134,9 @@
   /* Status bar: the moon. */
   --moon: #ffe08a;
 
+  /* Xel's pixel-art panel frame (see .card's border-image near the end of the file). */
+  --frame-img: url("./assets/ui/frame.png");
+
   /* Flashcard grade buttons. */
   --grade-again: #d84d6e;
   --grade-hard: #e0a75a;
@@ -176,6 +179,266 @@
   line-height: 1.5;
   color: var(--text);
   background: var(--bg);
+}
+
+/* Night Water theme: a cold, moonlit koi pond. Teal-black water, koi-orange
+   actions, jade highlights, smaller glows (BRAND.md's pond colours, at night).
+   Tokens not listed here (window buttons, grade buttons) keep the purple values. */
+:root[data-theme="night-water"] {
+  --bg: #0b171b; /* the bushes' darkest colour (scripts/scenery/recolour.py), so the banners melt into the page */
+  --surface: #15292f;
+  --surface-2: #0f1f24;
+  --chrome: #0c1a1e;
+  --text: #eef5f3;
+  --muted: #9fbcb6;
+  --border: #2b4a50;
+  --panel-border: #3f7a80;
+  --panel-glow: inset 0 0 0 2px #0f1f24, 0 0 10px rgb(63 122 128 / 0.22);
+  --accent: #f08a5a;
+  --accent-text: #0b171b;
+  --on-kind: #0b171b;
+  --kana: #ff9bb0;
+  --component: #7fe0d4;
+  --kanji: #c9b0ff;
+  --word: #ffd880;
+  --right: #8ee6b0;
+  --wrong: #ff7b7b;
+  --hint: #ffd880;
+
+  --bg-low: #10262c;
+
+  --nav-current: #7fbfae;
+  --menu-cursor-img: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 4 7' shape-rendering='crispEdges'%3E%3Cpath fill='%23f08a5a' d='M0 0h1v7H0zM1 1h1v5H1zM2 2h1v3H2zM3 3h1v1H3z'/%3E%3C/svg%3E");
+
+  --pixel-shadow: #061114;
+  --highlight: #ffa27a;
+  --hover-edge: #f08a5a;
+  --glow: #f08a5a;
+
+  --go-gradient: linear-gradient(90deg, #f08a5a 0%, #f2a866 55%, #f2c46d 100%);
+  --danger: #ff7b7b;
+
+  --prize-start: #f08a5a;
+  --prize-mid: #f2c46d;
+  --prize-end: #7fe0d4;
+  --level-up-shadow: #071a1f;
+  --level-up-backdrop: radial-gradient(ellipse at center, rgb(6 20 24 / 0.95) 0%, rgb(6 20 24 / 0.88) 55%, rgb(6 20 24 / 0.72) 100%);
+
+  --ask-meaning: #ff9bb0;
+  --ask-reading: #7fe0d4;
+
+  --done-text: #dcebe7;
+  --done-title-shadow: #a8502c;
+
+  --sky-top: #0c2229; /* the sky's first colour in Scene.tsx */
+  --horizon-glow: #7fbfae33;
+  --star-glow: rgb(200 240 235 / 0.8);
+  --banner-tint: rgb(6 20 24 / 0.4);
+
+  --glass: #12323a;
+  --glass-edge: #a8dcd2;
+  --pill-glass: rgb(16 44 52 / 0.65);
+  --progress-glass: rgb(8 26 32 / 0.55);
+  --chip-drop: rgb(4 14 18 / 0.55);
+
+  --greeting-shadow: #3f7a80;
+  --halftone-small-img: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='4' height='4' shape-rendering='crispEdges'%3E%3Crect width='2' height='2' fill='%23061317'/%3E%3C/svg%3E");
+  --halftone-big-img: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='4' height='4' shape-rendering='crispEdges'%3E%3Crect width='3' height='3' fill='%23061317'/%3E%3C/svg%3E");
+  --flair-pink: #ff9bb0;
+  --sparkle-gold: #f2c46d;
+  --flair-lilac: #7fbfae;
+
+  --title-band: linear-gradient(90deg, #123a44, #1b5660 55%, #22646c);
+  --title-band-stars-img: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='96' height='40' shape-rendering='crispEdges'%3E%3Cg fill='%23fff'%3E%3Crect x='7' y='6' width='1' height='1' opacity='.7'/%3E%3Crect x='29' y='27' width='1' height='1' opacity='.5'/%3E%3Crect x='44' y='9' width='2' height='2' opacity='.45'/%3E%3Crect x='61' y='31' width='1' height='1' opacity='.75'/%3E%3Crect x='78' y='15' width='1' height='1' opacity='.55'/%3E%3Crect x='18' y='19' width='1' height='1' opacity='.4'/%3E%3Crect x='88' y='33' width='1' height='1' opacity='.6'/%3E%3C/g%3E%3Cg fill='%23ffd0b8' opacity='.8'%3E%3Crect x='70' y='3' width='1' height='5'/%3E%3Crect x='68' y='5' width='5' height='1'/%3E%3C/g%3E%3Cg fill='%237fbfae' opacity='.8'%3E%3Crect x='36' y='30' width='1' height='3'/%3E%3Crect x='35' y='31' width='3' height='1'/%3E%3C/g%3E%3C/svg%3E");
+  --title-band-edge: rgb(127 191 174 / 0.45);
+  --title-band-drop: rgb(2 12 16 / 0.35);
+  --title-text: #e8fff8;
+  --title-icon: #cdeee6;
+  --title-shadow: #071a1f;
+  --title-sparkles-img: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 9' shape-rendering='crispEdges'%3E%3Cg fill='%23f2c46d'%3E%3Crect x='4' width='1' height='9'/%3E%3Crect y='4' width='9' height='1'/%3E%3Crect x='3' y='3' width='3' height='3'/%3E%3C/g%3E%3Crect x='4' y='4' width='1' height='1' fill='%23fff'/%3E%3Cg fill='%23f2c46d'%3E%3Crect x='15' y='2' width='1' height='5'/%3E%3Crect x='13' y='4' width='5' height='1'/%3E%3C/g%3E%3C/svg%3E");
+
+  --count-unit: #cfe6e0;
+
+  --card-gradient: linear-gradient(#3f7f7e, #5b9a92 60%, #7fb4a4);
+  --study-grid: rgb(127 191 174 / 0.07);
+  --veil: rgb(12 34 40 / 0.78);
+  --pattern-text-shadow: 0 1px 0 rgb(6 20 24 / 0.9), 1px 0 0 rgb(6 20 24 / 0.6), -1px 0 0 rgb(6 20 24 / 0.6),
+    0 0 3px rgb(6 20 24 / 0.85), 0 0 8px rgb(6 20 24 / 0.45);
+  --panel-text-shadow: 0 1px 0 rgb(4 12 14 / 0.8);
+  --label-outline: #0f2a30;
+  --glyph-shade: #061114;
+
+  --panel-bg: #11262c;
+  --panel-edge: #3f7a80;
+  --panel-inner: #08161a;
+  --panel-twinkles-img: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='18' height='13' shape-rendering='crispEdges'%3E%3Cg fill='%237fbfae' opacity='.7'%3E%3Crect x='3' y='0' width='1' height='7'/%3E%3Crect x='0' y='3' width='7' height='1'/%3E%3Crect x='2' y='2' width='3' height='3'/%3E%3C/g%3E%3Cg fill='%23f08a5a' opacity='.6'%3E%3Crect x='15' y='9' width='1' height='3'/%3E%3Crect x='14' y='10' width='3' height='1'/%3E%3C/g%3E%3C/svg%3E");
+  --panel-wisp-img: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='42' height='6' shape-rendering='crispEdges'%3E%3Cg fill='%231f4a52' opacity='.55'%3E%3Crect x='10' y='0' width='22' height='2'/%3E%3Crect x='2' y='2' width='36' height='2'/%3E%3Crect x='14' y='4' width='26' height='2'/%3E%3C/g%3E%3C/svg%3E");
+  --card-sparkle-small-img: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 9 9' shape-rendering='crispEdges'%3E%3Cg fill='%23d6f4ee'%3E%3Crect x='4' y='1' width='1' height='7'/%3E%3Crect x='1' y='4' width='7' height='1'/%3E%3Crect x='3' y='3' width='3' height='3'/%3E%3C/g%3E%3C/svg%3E");
+  --sparkle-outline: #1f4a52;
+  --sparkle-glow: #f2c46d;
+
+  --popup-bg: #11262c;
+
+  --gauge-gap: #08161a;
+  --gauge-empty: #1b3a40;
+  --gauge-outline: #071a1f;
+  --badge-bg: #071a1f;
+
+  --cat-art: #e8f5f2;
+  --heart-dots: #ffb3a0;
+  --heart-glow: rgb(240 138 90 / 0.6);
+  --kaomoji-sparkle-img: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='9' height='9' shape-rendering='crispEdges'%3E%3Cg fill='%23f2c46d'%3E%3Crect x='4' width='1' height='9'/%3E%3Crect y='4' width='9' height='1'/%3E%3Crect x='3' y='3' width='3' height='3'/%3E%3C/g%3E%3Crect x='4' y='4' width='1' height='1' fill='%23fff'/%3E%3C/svg%3E");
+  --cat-z: #7fbfae;
+  --cat-face: #cdeee6;
+
+  --moon: #f2c46d;
+
+  --frame-img: url("./assets/ui/night-water/frame.png"); /* recoloured by scripts/scenery/recolour.py */
+
+  --mark-speech: #7fe0d4;
+  --mark-sfx: #f08a5a;
+  --mark-sign: #ffd880;
+  --mark-narration: #c9b0ff;
+  --mark-other: #8ee6b0;
+  --status-known: #8ee6b0;
+  --status-learning: #ffd880;
+  --peek-known: #a8f0c4;
+  --peek-learning: #ffd880;
+  --drop-done: #8ee6b0;
+}
+
+/* Lantern Dusk theme: a warm dusk. BRAND.md's "night water" candidate colours
+   (stone page, teal-tinted cards), copper rims, koi orange and lantern amber.
+   Tokens not listed here (window buttons, grade buttons) keep the purple values. */
+:root[data-theme="lantern-dusk"] {
+  --bg: #141b1b; /* the bushes' darkest colour (scripts/scenery/recolour.py), so the banners melt into the page */
+  --surface: #202928;
+  --surface-2: #1a2322;
+  --chrome: #111717;
+  --text: #f1ebe5;
+  --muted: #a89a8f;
+  --border: #3a4644;
+  --panel-border: #7a5a44;
+  --panel-glow: inset 0 0 0 2px #1a2322, 0 0 14px rgb(224 122 79 / 0.18);
+  --accent: #e07a4f;
+  --accent-text: #141b1b;
+  --on-kind: #141b1b;
+  --kana: #ff9eb5;
+  --component: #8fd3c8;
+  --kanji: #c6b1ea;
+  --word: #f5d58a;
+  --right: #8ee6b0;
+  --wrong: #ff7b7b;
+  --hint: #f5d58a;
+
+  --bg-low: #1c2524;
+
+  --nav-current: #f2c46d;
+  --menu-cursor-img: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 4 7' shape-rendering='crispEdges'%3E%3Cpath fill='%23e07a4f' d='M0 0h1v7H0zM1 1h1v5H1zM2 2h1v3H2zM3 3h1v1H3z'/%3E%3C/svg%3E");
+
+  --pixel-shadow: #0b100f;
+  --highlight: #f2a77a;
+  --hover-edge: #e07a4f;
+  --glow: #e07a4f;
+
+  --go-gradient: linear-gradient(90deg, #e07a4f 0%, #eba05e 55%, #f2c46d 100%);
+  --danger: #ff7b7b;
+
+  --prize-start: #e07a4f;
+  --prize-mid: #f2c46d;
+  --prize-end: #8fd3c8;
+  --level-up-shadow: #2a1a12;
+  --level-up-backdrop: radial-gradient(ellipse at center, rgb(14 18 18 / 0.95) 0%, rgb(14 18 18 / 0.88) 55%, rgb(14 18 18 / 0.72) 100%);
+
+  --ask-meaning: #ff9eb5;
+  --ask-reading: #8fd3c8;
+
+  --done-text: #ece4dc;
+  --done-title-shadow: #8a4528;
+
+  --sky-top: #121f24; /* the sky's first colour in Scene.tsx */
+  --horizon-glow: #f2c46d40;
+  --star-glow: rgb(242 196 109 / 0.8);
+  --banner-tint: rgb(16 22 22 / 0.4);
+
+  --glass: #2a2622;
+  --glass-edge: #f2d8b0;
+  --pill-glass: rgb(30 34 32 / 0.65);
+  --progress-glass: rgb(16 20 20 / 0.55);
+  --chip-drop: rgb(8 10 10 / 0.55);
+
+  --greeting-shadow: #7a5a44;
+  --halftone-small-img: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='4' height='4' shape-rendering='crispEdges'%3E%3Crect width='2' height='2' fill='%230b100f'/%3E%3C/svg%3E");
+  --halftone-big-img: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='4' height='4' shape-rendering='crispEdges'%3E%3Crect width='3' height='3' fill='%230b100f'/%3E%3C/svg%3E");
+  --flair-pink: #ff9eb5;
+  --sparkle-gold: #f2c46d;
+  --flair-lilac: #7fbfae;
+
+  --title-band: linear-gradient(90deg, #5a3a2a, #6b4530 55%, #7a4c33);
+  --title-band-stars-img: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='96' height='40' shape-rendering='crispEdges'%3E%3Cg fill='%23fff'%3E%3Crect x='7' y='6' width='1' height='1' opacity='.7'/%3E%3Crect x='29' y='27' width='1' height='1' opacity='.5'/%3E%3Crect x='44' y='9' width='2' height='2' opacity='.45'/%3E%3Crect x='61' y='31' width='1' height='1' opacity='.75'/%3E%3Crect x='78' y='15' width='1' height='1' opacity='.55'/%3E%3Crect x='18' y='19' width='1' height='1' opacity='.4'/%3E%3Crect x='88' y='33' width='1' height='1' opacity='.6'/%3E%3C/g%3E%3Cg fill='%23ffe4b8' opacity='.8'%3E%3Crect x='70' y='3' width='1' height='5'/%3E%3Crect x='68' y='5' width='5' height='1'/%3E%3C/g%3E%3Cg fill='%23f2c46d' opacity='.8'%3E%3Crect x='36' y='30' width='1' height='3'/%3E%3Crect x='35' y='31' width='3' height='1'/%3E%3C/g%3E%3C/svg%3E");
+  --title-band-edge: rgb(242 196 109 / 0.4);
+  --title-band-drop: rgb(10 6 4 / 0.35);
+  --title-text: #ffe4b8;
+  --title-icon: #f6dcc0;
+  --title-shadow: #2a1a12;
+  --title-sparkles-img: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 9' shape-rendering='crispEdges'%3E%3Cg fill='%23f2c46d'%3E%3Crect x='4' width='1' height='9'/%3E%3Crect y='4' width='9' height='1'/%3E%3Crect x='3' y='3' width='3' height='3'/%3E%3C/g%3E%3Crect x='4' y='4' width='1' height='1' fill='%23fff'/%3E%3Cg fill='%23f2c46d'%3E%3Crect x='15' y='2' width='1' height='5'/%3E%3Crect x='13' y='4' width='5' height='1'/%3E%3C/g%3E%3C/svg%3E");
+
+  --count-unit: #e8d8c8;
+
+  --card-gradient: linear-gradient(#6b4a3a, #855a42 60%, #9c6c4c);
+  --study-grid: rgb(242 196 109 / 0.06);
+  --veil: rgb(26 33 32 / 0.8);
+  --pattern-text-shadow: 0 1px 0 rgb(12 16 16 / 0.9), 1px 0 0 rgb(12 16 16 / 0.6), -1px 0 0 rgb(12 16 16 / 0.6),
+    0 0 3px rgb(12 16 16 / 0.85), 0 0 8px rgb(12 16 16 / 0.45);
+  --panel-text-shadow: 0 1px 0 rgb(8 10 10 / 0.8);
+  --label-outline: #2a1a12;
+  --glyph-shade: #0b100f;
+
+  --panel-bg: #1c2524;
+  --panel-edge: #7a5a44;
+  --panel-inner: #0f1514;
+  --panel-twinkles-img: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='18' height='13' shape-rendering='crispEdges'%3E%3Cg fill='%23f2c46d' opacity='.7'%3E%3Crect x='3' y='0' width='1' height='7'/%3E%3Crect x='0' y='3' width='7' height='1'/%3E%3Crect x='2' y='2' width='3' height='3'/%3E%3C/g%3E%3Cg fill='%23e07a4f' opacity='.6'%3E%3Crect x='15' y='9' width='1' height='3'/%3E%3Crect x='14' y='10' width='3' height='1'/%3E%3C/g%3E%3C/svg%3E");
+  --panel-wisp-img: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='42' height='6' shape-rendering='crispEdges'%3E%3Cg fill='%233a4644' opacity='.55'%3E%3Crect x='10' y='0' width='22' height='2'/%3E%3Crect x='2' y='2' width='36' height='2'/%3E%3Crect x='14' y='4' width='26' height='2'/%3E%3C/g%3E%3C/svg%3E");
+  --card-sparkle-small-img: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 9 9' shape-rendering='crispEdges'%3E%3Cg fill='%23ffe4b8'%3E%3Crect x='4' y='1' width='1' height='7'/%3E%3Crect x='1' y='4' width='7' height='1'/%3E%3Crect x='3' y='3' width='3' height='3'/%3E%3C/g%3E%3C/svg%3E");
+  --sparkle-outline: #5a3a2a;
+  --sparkle-glow: #f2c46d;
+
+  --popup-bg: #1c2524;
+
+  --gauge-gap: #0f1514;
+  --gauge-empty: #2a3533;
+  --gauge-outline: #0b100f;
+  --badge-bg: #0b100f;
+
+  --cat-art: #f1ebe5;
+  --heart-dots: #ffb39a;
+  --heart-glow: rgb(224 122 79 / 0.6);
+  --kaomoji-sparkle-img: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='9' height='9' shape-rendering='crispEdges'%3E%3Cg fill='%23f2c46d'%3E%3Crect x='4' width='1' height='9'/%3E%3Crect y='4' width='9' height='1'/%3E%3Crect x='3' y='3' width='3' height='3'/%3E%3C/g%3E%3Crect x='4' y='4' width='1' height='1' fill='%23fff'/%3E%3C/svg%3E");
+  --cat-z: #a89a8f;
+  --cat-face: #f6dcc0;
+
+  --moon: #f2c46d;
+
+  --frame-img: url("./assets/ui/lantern-dusk/frame.png"); /* recoloured by scripts/scenery/recolour.py */
+
+  --mark-speech: #8fd3c8;
+  --mark-sfx: #e07a4f;
+  --mark-sign: #f5d58a;
+  --mark-narration: #c6b1ea;
+  --mark-other: #8ee6b0;
+  --status-known: #8ee6b0;
+  --status-learning: #f5d58a;
+  --peek-known: #a8f0c4;
+  --peek-learning: #f5d58a;
+  --drop-done: #8ee6b0;
+}
+
+/* The cherry branches, a little dimmer at night (the blossom art itself is the same in every theme). */
+:root[data-theme="night-water"] .banner-branch {
+  filter: brightness(0.82);
+}
+:root[data-theme="lantern-dusk"] .banner-branch {
+  filter: brightness(0.92);
 }
 
 /* When scrolling can't be avoided (e.g. the library grid), a thin, faint scrollbar. */
@@ -4078,7 +4341,7 @@ select {
 .card,
 .split-card,
 .field {
-  border-image: url("./assets/ui/frame.png") 14 / 28px / 2px stretch;
+  border-image: var(--frame-img) 14 / 28px / 2px stretch;
   image-rendering: pixelated;
 }
 
@@ -4296,14 +4559,16 @@ select {
   color: var(--highlight);
 }
 
-/* Settings → Deki-senpai (AiSettingsCard.tsx). */
-.ai-providers {
+/* Settings → Deki-senpai (AiSettingsCard.tsx) and Settings → Theme: a list of choices. */
+.ai-providers,
+.theme-choices {
   display: grid;
   gap: 6px;
   margin: 10px 0 14px;
 }
 
-.ai-provider {
+.ai-provider,
+.theme-choice {
   display: flex;
   align-items: flex-start;
   gap: 10px;
@@ -4313,16 +4578,19 @@ select {
   cursor: pointer;
 }
 
-.ai-provider.current {
+.ai-provider.current,
+.theme-choice.current {
   border-color: var(--hover-edge);
   background: color-mix(in srgb, var(--hover-edge) 8%, transparent);
 }
 
-.ai-provider > span {
+.ai-provider > span,
+.theme-choice > span {
   display: grid;
 }
 
-.ai-provider input {
+.ai-provider input,
+.theme-choice input {
   margin-top: 4px;
 }
 

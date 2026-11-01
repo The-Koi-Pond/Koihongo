@@ -1,10 +1,11 @@
-import { ArchiveRestore, FolderOpen, Gauge, HardDriveDownload, ScanText, ScrollText, Trash2 } from "lucide-react";
+import { ArchiveRestore, FolderOpen, Gauge, HardDriveDownload, Palette, ScanText, ScrollText, Trash2 } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { backupKind, createBackup, listBackups, openBackupsFolder, restoreBackup, AUTO_KEEP, type BackupInfo, type BackupKind } from "../backup.ts";
 import { migrate } from "../db/migrations.ts";
 import { downloadOcr, ocrStatus, removeOcr, type OcrStatus } from "../ocr.ts";
 import { tauriDb } from "../db/tauriDb.ts";
 import { DEFAULT_PACING, loadPacing, PACING_LIMITS, savePacing, type Pacing } from "../srs/settings.ts";
+import { setTheme, THEMES, useTheme } from "../theme.ts";
 import { AiSettingsCard } from "../ui/AiSettingsCard.tsx";
 import { useSharedCardPattern } from "../ui/useSharedCardPattern.ts";
 
@@ -17,6 +18,7 @@ export function Settings({ onOpenSources }: { onOpenSources: () => void }) {
         <span lang="ja">設定</span> Settings
       </h1>
       <PacingCard />
+      <ThemeCard />
       <AiSettingsCard />
       <TextReadingCard />
       <BackupsCard />
@@ -30,6 +32,29 @@ export function Settings({ onOpenSources }: { onOpenSources: () => void }) {
         <button onClick={onOpenSources}>Open</button>
       </section>
     </div>
+  );
+}
+
+/** The colour theme. It changes straight away and is remembered on this PC. */
+function ThemeCard() {
+  const current = useTheme();
+  return (
+    <section className="card">
+      <h2>
+        <Palette size={16} aria-hidden="true" /> Theme
+      </h2>
+      <div className="theme-choices" role="radiogroup" aria-label="Theme">
+        {THEMES.map((t) => (
+          <label key={t.id} className={`theme-choice ${current === t.id ? "current" : ""}`}>
+            <input type="radio" name="theme" checked={current === t.id} onChange={() => setTheme(t.id)} />
+            <span>
+              <strong>{t.name}</strong>
+              <span className="muted small">{t.blurb}</span>
+            </span>
+          </label>
+        ))}
+      </div>
+    </section>
   );
 }
 
