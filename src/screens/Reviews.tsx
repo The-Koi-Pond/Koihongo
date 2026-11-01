@@ -94,7 +94,7 @@ export function Reviews({
   const question = session && !stopped ? currentQuestion(session) : undefined;
   const deckId = question ? deckCardId(question) : null;
   const { item, error: itemError, reload } = useItem(question && deckId === null ? question.item_key : undefined);
-  const deckCard = useDeckCard(deckId);
+  const deckCard = useDeckCard(deckId, turn);
   const rankUp = useCallback(
     (correct: boolean) =>
       question && question.card_type !== "flip" && session && !(questionId(question) in session.firstTry)
@@ -203,18 +203,23 @@ export function Reviews({
   );
 }
 
-/** The deck card with this id, loaded from the database (undefined while loading or for null). */
-export function useDeckCard(id: number | null): DeckCard | undefined {
-  const [card, setCard] = useState<DeckCard>();
+/**
+ * The deck card with this id, loaded from the database for this turn
+ * (undefined while loading or for null). Loading again each turn matters when
+ * a card rated Again comes straight back: its "in 3d" labels must come from
+ * the schedule that rating just saved.
+ */
+export function useDeckCard(id: number | null, turn: number): DeckCard | undefined {
+  const [loaded, setLoaded] = useState<{ card: DeckCard; turn: number }>();
   useEffect(() => {
-    if (id === null) return setCard(undefined);
+    if (id === null) return;
     let cancelled = false;
-    getDeckCard(tauriDb, id).then((c) => !cancelled && setCard(c));
+    getDeckCard(tauriDb, id).then((card) => !cancelled && card && setLoaded({ card, turn }));
     return () => {
       cancelled = true;
     };
-  }, [id]);
-  return card;
+  }, [id, turn]);
+  return loaded && loaded.turn === turn && loaded.card.id === id ? loaded.card : undefined;
 }
 
 export function ErrorView({ message, onExit }: { message: string; onExit: () => void }) {

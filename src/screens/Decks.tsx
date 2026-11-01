@@ -371,7 +371,12 @@ function DeckStudy({ id, all, onExit }: { id: number; all: boolean; onExit: () =
     answered.current = session;
     const { session: next, firstAttempt } = answerCurrent(session, rating !== Rating.Again);
     try {
-      if (firstAttempt && !all) await recordDeckReview(tauriDb, cardId, rating, Date.now());
+      if (firstAttempt && !all) {
+        // Keep the saved schedule, so a card that comes straight back shows
+        // "in 3d"-style labels from it, not from before this rating.
+        const saved = await recordDeckReview(tauriDb, cardId, rating, Date.now());
+        setCards((m) => m && new Map(m).set(cardId, saved));
+      }
     } catch (e) {
       answered.current = undefined;
       return setError(String(e));
