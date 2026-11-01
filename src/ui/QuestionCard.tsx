@@ -2,7 +2,7 @@ import { Check, FastForward, X } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { toKana } from "wanakana";
 import { tauriDb } from "../db/tauriDb.ts";
-import { acceptedAnswers, addSynonym, type ItemDetails } from "../items.ts";
+import { acceptedAnswers, addSynonym, pathMeaningKeys, type ItemDetails } from "../items.ts";
 import { checkKana, checkMeaning, checkReading, type Verdict } from "../srs/answers.ts";
 import { isFastTracked, setFastTrack } from "../srs/fastTrack.ts";
 import type { RankUp } from "../srs/ranks.ts";
@@ -14,6 +14,18 @@ import { useSharedCardPattern } from "./useSharedCardPattern.ts";
 import { itemLabel } from "./useItem.ts";
 
 const KIND_NAME = { kana: "Kana", component: "Component", kanji: "Kanji", word: "Word" } as const;
+
+/**
+ * The path's meanings, loaded once (content.db only changes with a restart).
+ * Until they've loaded, typos are judged without them.
+ */
+let pathMeanings: Set<string> | undefined;
+let loadingPathMeanings: Promise<void> | undefined;
+function loadPathMeanings() {
+  loadingPathMeanings ??= pathMeaningKeys(tauriDb)
+    .then((keys) => void (pathMeanings = keys))
+    .catch(() => void (loadingPathMeanings = undefined)); // try again on the next question
+}
 
 /** What the answer box asks for: "Reading" (sound) or "Meaning" (English/name). */
 function askFor(item: ItemDetails, cardType: CardType): { kind: "reading" | "meaning"; label: string } {
@@ -51,6 +63,7 @@ export function QuestionCard({
   const [verdict, setVerdict] = useState<Verdict>();
   const [showInfo, setShowInfo] = useState(false);
   const [overridden, setOverridden] = useState(false);
+  const [synonymError, setSynonymError] = useState<string>();
   const inputRef = useRef<HTMLInputElement>(null);
   const page = useRef<HTMLDivElement>(null);
   useSharedCardPattern(page);
@@ -67,6 +80,8 @@ export function QuestionCard({
   const [rankNews, setRankNews] = useState<RankUp | null>(null);
   // Reviews only (they pass rankUp): whether the item is on fast track.
   const [fast, setFast] = useState<boolean>();
+
+  useEffect(loadPathMeanings, []);
 
   useEffect(() => {
     if (!graded || !rankUp) return;
@@ -95,18 +110,24 @@ export function QuestionCard({
       item.kind === "kana"
         ? checkKana(answer, label, accepted.readings[0], accepted.readings.slice(1))
         : cardType === "meaning"
-          ? checkMeaning(answer, accepted.meanings, accepted.readings)
+          ? checkMeaning(answer, accepted.meanings, accepted.readings, pathMeanings)
           : checkReading(answer, accepted.readings);
     setVerdict(v);
     // Open on the next frames, so the panel first renders closed and then animates open.
     if (v.result === "wrong") requestAnimationFrame(() => requestAnimationFrame(() => setShowInfo(true)));
   }
 
+  // Counts as right straight away, so an Enter pressed while the synonym is
+  // still being saved moves on with a right answer, not a miss.
   async function acceptMine() {
-    await addSynonym(tauriDb, item.item_key, answer, Date.now());
     setOverridden(true);
-    onReload();
     inputRef.current?.focus(); // the link is gone now; Enter should still move on
+    try {
+      await addSynonym(tauriDb, item.item_key, answer, Date.now());
+      onReload();
+    } catch (e) {
+      setSynonymError(String(e));
+    }
   }
 
   async function tooEasy() {
@@ -184,7 +205,12 @@ export function QuestionCard({
               Answer: <strong lang={kanaInput ? "ja" : "en"}>{expected}</strong>
             </p>
           )}
-          {overridden && <p className="hint">Added “{answer.trim()}” as a synonym and counted as correct.</p>}
+          {overridden &&
+            (synonymError ? (
+              <p className="hint">Counted as correct, but “{answer.trim()}” couldn't be saved as a synonym: {synonymError}</p>
+            ) : (
+              <p className="hint">Added “{answer.trim()}” as a synonym and counted as correct.</p>
+            ))}
           {graded && (
             <p className="feedback-links">
               {rankNews && (

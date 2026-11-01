@@ -148,13 +148,33 @@ test("a wrong answer brings the card back within about a day and is logged", asy
   assert.deepEqual(log, [{ rating: 1, answer: "wood" }]);
 });
 
-test("due cards come most-at-risk first", async () => {
+test("due cards: reviewed ones most-at-risk first, then never-reviewed ones", async () => {
   const db = await freshDb();
-  await startLessons(db, [{ item_key: "component:木", kind: "component" }, { item_key: "component:化", kind: "component" }], T0);
-  // 化 gets reviewed (so it's fresh in memory); 木 is still a never-reviewed card.
+  const lessons = [
+    { item_key: "component:木", kind: "component" as const },
+    { item_key: "component:化", kind: "component" as const },
+    { item_key: "kanji:木", kind: "kanji" as const },
+  ];
+  await startLessons(db, lessons, T0);
+  // 化 is reviewed early and 木 later, so 化 is the more at risk of the two.
+  // kanji:木 is never reviewed: FSRS calls that "most at risk", but it mustn't
+  // push real reviews out of catch-up's share.
   await recordReview(db, "component:化", "meaning", true, "person", T0 + FIRST_REVIEW_DELAY_MS);
+  await recordReview(db, "component:木", "meaning", true, "tree", T0 + 2 * DAY);
   const later = T0 + 30 * DAY;
-  assert.deepEqual(keys(await dueCards(db, later)), ["component:木", "component:化"]);
+  assert.deepEqual(keys(await dueCards(db, later)), ["component:化", "component:木", "kanji:木", "kanji:木"]);
+});
+
+test("due cards and counts skip items that left the path", async () => {
+  const db = await freshDb();
+  // 消 was on the path once; a content rebuild dropped it.
+  await startLessons(db, [{ item_key: "component:木", kind: "component" }, { item_key: "kanji:消", kind: "kanji" }], T0);
+  assert.equal((await reviewForecast(db, T0)).reduce((a, b) => a + b), 1, "forecast");
+  const later = T0 + FIRST_REVIEW_DELAY_MS;
+  assert.deepEqual(keys(await dueCards(db, later)), ["component:木"]);
+  const summary = await todaySummary(db, later);
+  assert.equal(summary.reviewsDue, 1);
+  assert.equal(summary.nextReviewAt, null);
 });
 
 test("reviewing a card that doesn't exist is an error", async () => {
@@ -238,13 +258,17 @@ test("catch-up: a pile bigger than today's share is spread over days", () => {
 test("today summary offers only today's catch-up share", async () => {
   const db = await freshDb();
   await savePacing(db, { ...DEFAULT_PACING, catchUpPerDay: 30 });
-  // 40 due cards, all overdue (fake items: only the counts matter here).
+  // 40 due cards, all overdue (fake items: only the counts matter here, but
+  // they must be on the path, as cards that left it don't count).
   await db.batch(
-    Array.from({ length: 40 }, (_, i) => ({
-      sql: `INSERT INTO srs_cards (item_key, card_type, state, due, stability, difficulty, scheduled_days, learning_steps, reps, lapses, started_at)
-            VALUES (?, 'meaning', 2, ?, 5, 5, 1, 0, 1, 0, 0)`,
-      params: [`kanji:x${i}`, T0 - DAY],
-    })),
+    Array.from({ length: 40 }, (_, i) => [
+      { sql: "INSERT INTO content.path (position, item_key, kind) VALUES (?, ?, 'kanji')", params: [100 + i, `kanji:x${i}`] },
+      {
+        sql: `INSERT INTO srs_cards (item_key, card_type, state, due, stability, difficulty, scheduled_days, learning_steps, reps, lapses, started_at)
+              VALUES (?, 'meaning', 2, ?, 5, 5, 1, 0, 1, 0, 0)`,
+        params: [`kanji:x${i}`, T0 - DAY],
+      },
+    ]).flat(),
   );
   const s = await todaySummary(db, T0);
   assert.equal(s.reviewsDue, 40);

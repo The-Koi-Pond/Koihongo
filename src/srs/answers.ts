@@ -1,7 +1,7 @@
 // Checks typed answers. Meanings forgive small typos; readings must be exact
 // (a one-letter slip in kana is a different word).
 
-import { isKana, isRomaji, toHiragana, toKana } from "wanakana";
+import { isKana, isRomaji, toHiragana, toKana, toKatakana } from "wanakana";
 
 export type Verdict =
   /** Right (possibly with a small typo, see `typo`). */
@@ -23,11 +23,20 @@ export function meaningKey(text: string): string {
     .replace(/^(to|a|an|the) /, "");
 }
 
-/** Readings as typed answers: hiragana, no "-" markers; "た.べる" accepts "たべる" and "た". */
+/**
+ * Kana as hiragana with the long-vowel mark spelled out, so the stored
+ * reading ゲーム (which wanakana turns into げえむ) and the typed "ge-mu"
+ * (げーむ) compare equal.
+ */
+export function kanaKey(kana: string): string {
+  return toHiragana(toKatakana(kana, { passRomaji: true }), { passRomaji: true });
+}
+
+/** Readings as typed answers: hiragana, no "-" markers, ー spelled out; "た.べる" accepts "たべる" and "た". */
 export function readingKeys(reading: string): string[] {
   const clean = toHiragana(reading.replace(/-/g, ""), { passRomaji: true });
   const [stem] = clean.split(".");
-  return [...new Set([clean.replace(/\./g, ""), stem])].filter(Boolean);
+  return [...new Set([clean.replace(/\./g, ""), stem].map(kanaKey))].filter(Boolean);
 }
 
 export function allowedTypos(length: number): number {
@@ -49,16 +58,22 @@ export function editDistance(a: string, b: string): number {
   return prev[b.length];
 }
 
-export function checkMeaning(answer: string, meanings: string[], readings: string[]): Verdict {
+/**
+ * `otherMeanings`: meaning keys (see `meaningKey`) of other items. A typed
+ * answer that is one of them is a different word, not a typo ("lose" for
+ * "love"), so it doesn't get typo tolerance.
+ */
+export function checkMeaning(answer: string, meanings: string[], readings: string[], otherMeanings?: ReadonlySet<string>): Verdict {
   const key = meaningKey(answer);
   if (!key) return { result: "retry", message: "Type a meaning in English." };
   const accepted = meanings.map(meaningKey).filter(Boolean);
   if (accepted.includes(key)) return { result: "correct", typo: false };
 
   // Typed the reading in romaji ("ki" for 木)? Point it out instead of failing.
-  if (isRomaji(answer.trim()) && readings.flatMap(readingKeys).includes(toHiragana(toKana(answer.trim().toLowerCase())))) {
+  if (isRomaji(answer.trim()) && readings.flatMap(readingKeys).includes(kanaKey(toKana(answer.trim().toLowerCase())))) {
     return { result: "retry", message: "That's the reading. What does it mean?" };
   }
+  if (otherMeanings?.has(key)) return { result: "wrong" };
   if (accepted.some((m) => editDistance(key, m) <= allowedTypos(m.length))) return { result: "correct", typo: true };
   return { result: "wrong" };
 }
@@ -76,5 +91,5 @@ export function checkReading(answer: string, readings: string[]): Verdict {
   const typed = toHiragana(toKana(answer.trim()), { passRomaji: true });
   if (!typed) return { result: "retry", message: "Type the reading." };
   if (!isKana(typed)) return { result: "retry", message: "Type the reading in kana (romaji turns into kana as you type)." };
-  return readings.flatMap(readingKeys).includes(typed) ? { result: "correct", typo: false } : { result: "wrong" };
+  return readings.flatMap(readingKeys).includes(kanaKey(typed)) ? { result: "correct", typo: false } : { result: "wrong" };
 }

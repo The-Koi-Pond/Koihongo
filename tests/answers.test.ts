@@ -17,6 +17,15 @@ test("meanings: exact, typo-tolerant, and wrong", () => {
   assert.deepEqual(checkMeaning("tree", meanings, []), { result: "wrong" });
 });
 
+test("a typo that is another item's meaning is a different word, not a typo", () => {
+  const others = new Set(["lose", "brown", "love"]);
+  assert.deepEqual(checkMeaning("lose", ["love"], [], others), { result: "wrong" });
+  assert.deepEqual(checkMeaning("Brown", ["crown"], [], others), { result: "wrong" });
+  // Its own meanings still count, and real typos are still forgiven.
+  assert.deepEqual(checkMeaning("love", ["love"], [], others), { result: "correct", typo: false });
+  assert.deepEqual(checkMeaning("lovve", ["love"], [], others), { result: "correct", typo: true });
+});
+
 test("short meanings allow no typos", () => {
   assert.deepEqual(checkMeaning("dar", ["day"], []), { result: "wrong" });
   assert.deepEqual(checkMeaning("day", ["day"], []), { result: "correct", typo: false });
@@ -47,6 +56,14 @@ test("readings: kana, romaji, katakana all compare as hiragana; no typo toleranc
   assert.deepEqual(checkReading("ショク", readings), { result: "correct", typo: false });
   assert.deepEqual(checkReading("たべる", readings), { result: "correct", typo: false });
   assert.deepEqual(checkReading("しょっく", readings), { result: "wrong" });
+});
+
+test("the long-vowel mark ー matches however it's typed", () => {
+  assert.deepEqual(checkReading("ge-mu", ["ゲーム"]), { result: "correct", typo: false });
+  assert.deepEqual(checkReading("geemu", ["ゲーム"]), { result: "correct", typo: false });
+  assert.deepEqual(checkReading("ko-hi-", ["コーヒー"]), { result: "correct", typo: false });
+  assert.deepEqual(checkReading("ra-men", ["らーめん"]), { result: "correct", typo: false });
+  assert.deepEqual(checkReading("gemu", ["ゲーム"]), { result: "wrong" });
 });
 
 test("trailing n becomes ん on submit", () => {

@@ -58,15 +58,21 @@ export function Reviews({
     const now = Date.now();
     Promise.all([dueCards(tauriDb, now), dueDeckCards(tauriDb, now), todaySummary(tauriDb, now)])
       .then(([pathCards, deckCards, summary]) => {
-        // One queue, most likely to be forgotten first, whichever kind of card;
-        // brand-new deck cards come after all of it and aren't part of catch-up.
-        const reviews = byRisk(
-          [
-            ...pathCards.map((c) => ({ ...c, q: { item_key: c.item_key, card_type: c.card_type } as ReviewQuestion })),
-            ...deckCards.filter((c) => c.state !== 0).map((c) => ({ ...c, q: deckQuestion(c.id) as ReviewQuestion })),
-          ],
-          now,
-        );
+        // One queue, most likely to be forgotten first, whichever kind of card.
+        // Path cards that have never had a review come next (FSRS rates them
+        // "most at risk", which would let fresh lessons fill catch-up's share).
+        // Brand-new deck cards come after all of it and aren't part of catch-up.
+        const pathQuestion = (c: (typeof pathCards)[number]) => ({ ...c, q: { item_key: c.item_key, card_type: c.card_type } as ReviewQuestion });
+        const reviews = [
+          ...byRisk(
+            [
+              ...pathCards.filter((c) => c.state !== 0).map(pathQuestion),
+              ...deckCards.filter((c) => c.state !== 0).map((c) => ({ ...c, q: deckQuestion(c.id) as ReviewQuestion })),
+            ],
+            now,
+          ),
+          ...pathCards.filter((c) => c.state === 0).map(pathQuestion),
+        ];
         const fresh = deckCards.filter((c) => c.state === 0).map((c) => ({ q: deckQuestion(c.id) as ReviewQuestion }));
         const cards = [...reviews, ...fresh];
         // Risk picks which reviews make today's share; they're then asked in a

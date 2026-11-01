@@ -1,8 +1,9 @@
 // Your progress: which lessons are available, what's due, recording answers.
 
 import type { Db, Statement } from "../db/db.ts";
+import { reviewedFirst } from "../decks.ts";
 import { fastTrackStatements, isFastTracked } from "./fastTrack.ts";
-import { newCard, PASS_STABILITY_DAYS, retrievability, review, type CardRow, type CardType } from "./scheduler.ts";
+import { newCard, PASS_STABILITY_DAYS, review, type CardRow, type CardType } from "./scheduler.ts";
 import { DEFAULT_PACING, LESSON_WINDOW, loadPacing, type Pacing } from "./settings.ts";
 
 export type ItemKind = "kana" | "component" | "kanji" | "word";
@@ -16,8 +17,11 @@ export type Lesson = { item_key: string; kind: ItemKind; track: Track; position:
 const HOUR_MS = 60 * 60 * 1000;
 const DAY_MS = 24 * HOUR_MS;
 
+/** An srs_cards row whose item is still on the path (dueCards skips the rest). */
+const ON_PATH = "item_key IN (SELECT item_key FROM content.path)";
+
 /** Due times of everything in daily reviews: path cards, plus cards from decks that are in daily reviews (src/decks.ts). */
-const DAILY_DUES = `SELECT due FROM srs_cards
+const DAILY_DUES = `SELECT due FROM srs_cards WHERE ${ON_PATH}
   UNION ALL SELECT c.due FROM deck_cards c JOIN decks d ON d.id = c.deck_id WHERE d.in_daily = 1`;
 
 /** Kana are learned by reading, components by meaning, kanji and words by both. */
@@ -128,13 +132,16 @@ export async function kanaGroups(db: Db): Promise<KanaGroup[]> {
   return groups;
 }
 
-/** Cards due now, most likely to be forgotten first. */
+/**
+ * Cards due now: ones you've reviewed before, most likely to be forgotten
+ * first, then never-reviewed ones (FSRS rates those "most at risk", so they'd
+ * otherwise fill catch-up's share ahead of real reviews). Cards whose item has
+ * left the path (a content rebuild dropped or renamed it) are skipped: one of
+ * them would end every session with an error.
+ */
 export async function dueCards(db: Db, now: number): Promise<CardRow[]> {
-  const rows = await db.all<CardRow>("SELECT * FROM srs_cards WHERE due <= ?", [now]);
-  return rows
-    .map((row) => ({ row, r: retrievability(row, now) }))
-    .sort((a, b) => a.r - b.r || a.row.due - b.row.due)
-    .map((x) => x.row);
+  const rows = await db.all<CardRow>(`SELECT * FROM srs_cards WHERE due <= ? AND ${ON_PATH}`, [now]);
+  return reviewedFirst(rows, now);
 }
 
 /** Schedules the card's next review from a right/wrong answer and logs it. */
@@ -241,8 +248,8 @@ export async function todaySummary(db: Db, now: number): Promise<TodaySummary> {
     next_due: number | null;
   }>(
     `SELECT
-       (SELECT count(*) FROM srs_cards WHERE due <= ?) AS due,
-       (SELECT count(*) FROM srs_cards WHERE due <= ? AND NOT (started_known = 1 AND reps = 0)) AS throttle_due,
+       (SELECT count(*) FROM srs_cards WHERE due <= ? AND ${ON_PATH}) AS due,
+       (SELECT count(*) FROM srs_cards WHERE due <= ? AND ${ON_PATH} AND NOT (started_known = 1 AND reps = 0)) AS throttle_due,
        (SELECT count(*) FROM deck_cards c JOIN decks d ON d.id = c.deck_id WHERE d.in_daily = 1 AND c.due <= ? AND c.state != 0) AS deck_due,
        (SELECT count(*) FROM deck_cards c JOIN decks d ON d.id = c.deck_id WHERE d.in_daily = 1 AND c.due <= ? AND c.state = 0) AS deck_new_due,
        (SELECT min(due) FROM (${DAILY_DUES}) WHERE due > ?) AS next_due,

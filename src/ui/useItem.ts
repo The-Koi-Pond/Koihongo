@@ -9,6 +9,8 @@ export function useItem(itemKey: string | undefined): { item?: ItemDetails; erro
   const [version, setVersion] = useState(0);
 
   useEffect(() => {
+    // A failed load belongs to its item: the next item starts without the error.
+    setError(undefined);
     if (!itemKey) return;
     let cancelled = false;
     getItemDetails(tauriDb, itemKey)

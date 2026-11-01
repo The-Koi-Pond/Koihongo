@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 import { migrate } from "../src/db/migrations.ts";
-import { acceptedAnswers, addSynonym, getItemDetails, removeSynonym, saveNote, sentenceWords } from "../src/items.ts";
+import { acceptedAnswers, addSynonym, getItemDetails, pathMeaningKeys, removeSynonym, saveNote, sentenceWords } from "../src/items.ts";
 import { openTestDb } from "./nodeDb.ts";
 
 async function freshDb() {
@@ -25,6 +25,11 @@ async function freshDb() {
   await migrate(db);
   return db;
 }
+
+test("path meaning keys cover kanji meanings, word glosses and component names", async () => {
+  const keys = await pathMeaningKeys(await freshDb());
+  assert.deepEqual([...keys].sort(), ["break", "holiday", "person", "rest", "tree", "wood"]);
+});
 
 test("component details list the kanji that use it, in path order", async () => {
   const d = await getItemDetails(await freshDb(), "component:木");

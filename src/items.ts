@@ -2,6 +2,7 @@
 
 import { toRomaji } from "wanakana";
 import type { Db } from "./db/db.ts";
+import { meaningKey } from "./srs/answers.ts";
 import type { ItemKind } from "./srs/progress.ts";
 
 export type NoteKind = "mnemonic_meaning" | "mnemonic_reading" | "note";
@@ -272,6 +273,24 @@ export function acceptedAnswers(d: ItemDetails): { meanings: string[]; readings:
         readings: [d.reading, ...d.otherForms.filter((f) => KANA_ONLY.test(f))],
       };
   }
+}
+
+/**
+ * Every meaning on the path (kanji meanings, word glosses, component names),
+ * as `meaningKey`s: answer checking uses them to tell a typo from a different
+ * word ("lose" typed for "love").
+ */
+export async function pathMeaningKeys(db: Db): Promise<Set<string>> {
+  const rows = await db.all<{ meaning: string }>(
+    `SELECT e.value AS meaning FROM content.path p
+       JOIN content.kanji k ON p.kind = 'kanji' AND k.character = substr(p.item_key, 7), json_each(k.meanings) e
+     UNION SELECT g.value FROM content.path p
+       JOIN content.words w ON p.kind = 'word' AND w.id = substr(p.item_key, 6),
+       json_each(w.senses) s, json_each(s.value, '$.glosses') g
+     UNION SELECT c.name FROM content.path p
+       JOIN content.components c ON p.kind = 'component' AND c.glyph = substr(p.item_key, 11)`,
+  );
+  return new Set(rows.map((r) => meaningKey(r.meaning)).filter(Boolean));
 }
 
 /** Saves a new version of a note; older versions are kept. */
