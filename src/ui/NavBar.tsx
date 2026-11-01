@@ -1,12 +1,9 @@
 import { getCurrentWindow } from "@tauri-apps/api/window";
 import { GraduationCap, Keyboard, Maximize2, Minimize2, Minus, RotateCcw, Settings, X, type LucideIcon } from "lucide-react";
 import { useEffect, useState } from "react";
-import wordmark from "../assets/ui/koihongo-wordmark.png";
-import lanternDuskWordmark from "../assets/ui/lantern-dusk/koihongo-wordmark.png";
-import nightWaterWordmark from "../assets/ui/night-water/koihongo-wordmark.png";
 import type { TodaySummary } from "../srs/progress.ts";
-import { useTheme, type ThemeId } from "../theme.ts";
 import { PixelIcon, type PixelIconName } from "./PixelIcon.tsx";
+import { Wordmark } from "./Wordmark.tsx";
 
 export type Screen =
   | "today"
@@ -33,13 +30,6 @@ const SECTIONS: { screen: Screen; icon: PixelIconName; ja: string; en: string; s
 
 const ICON = { size: 19, strokeWidth: 1.75 };
 
-/** Xel's wordmark, recoloured per theme by scripts/scenery/recolour.py. */
-const WORDMARKS: Record<ThemeId, string> = {
-  purple: wordmark,
-  "night-water": nightWaterWordmark,
-  "lantern-dusk": lanternDuskWordmark,
-};
-
 /**
  * The app's title bar (the window has no Windows frame): drag empty space to
  * move, double-click to maximise. It always works, even mid-session: reviews
@@ -59,11 +49,10 @@ export function NavBar({
   keyboardOpen: boolean;
   onToggleKeyboard: () => void;
 }) {
-  const theme = useTheme();
   return (
     <header className="titlebar" data-tauri-drag-region>
       <button className="brand" onClick={() => go("today")} title="Koihongo">
-        <img className="brand-logo" src={WORDMARKS[theme]} alt="Koihongo" width={192} height={32} />
+        <Wordmark />
       </button>
 
       <nav className="nav-group" aria-label="Main" data-tauri-drag-region>

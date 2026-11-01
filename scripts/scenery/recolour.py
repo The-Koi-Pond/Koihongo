@@ -1,5 +1,6 @@
 # Recolours Xel's pixel art for each colour theme (src/theme.ts): the banner
-# scenery, the panel frame and the KOIHONGO wordmark.
+# scenery and the panel frame. (The wordmark takes its colours from the theme
+# directly: src/ui/Wordmark.tsx.)
 #
 # Run from the repo root (needs Python 3 and Pillow: `pip install pillow`):
 #
@@ -9,14 +10,12 @@
 # writes recoloured copies next to them, in a folder named after the theme:
 # scenery/hills.png → scenery/night-water/hills.png.
 #
-# A picture's recolour is either a ramp or a swap:
-# - A ramp (a list) swaps each colour by its lightness: the darkest colour in
-#   the picture becomes the first colour of the ramp, the lightest becomes the
-#   last, and everything in between is blended along the ramp in OKLab (a
-#   colour space where equal steps look equally different). So the pixel
-#   art's shading survives while its hue changes.
-# - A swap (a dict) replaces exact colours, for art with only a few colours.
-# Transparent pixels and the picture sizes stay as they are.
+# Each colour is swapped by its lightness: the darkest colour in a picture
+# becomes the first colour of the theme's ramp, the lightest becomes the last,
+# and everything in between is blended along the ramp in OKLab (a colour space
+# where equal steps look equally different). So the pixel art's shading
+# survives while its hue changes. Transparent pixels and the picture sizes
+# stay as they are.
 #
 # Not recoloured: treeline-front.png (only a stencil; CSS paints it) and the
 # cherry blossoms (kept as they are in every theme).
@@ -33,29 +32,24 @@ ASSETS = Path(__file__).resolve().parents[2] / "src" / "assets"
 BUSHES_NIGHT_WATER = ["#0b171b", "#10404a", "#1a5e66", "#2f8085", "#6cb8b2", "#d2f4ee"]
 BUSHES_LANTERN_DUSK = ["#141b1b", "#173f37", "#215a4d", "#327563", "#78a88a", "#e6efcf"]
 
-# The wordmark's three colours: white letters, a violet outline, a navy shadow.
-WORDMARK_LETTERS, WORDMARK_OUTLINE, WORDMARK_SHADOW = "#ffffff", "#7753d7", "#16194f"
-
-# Per theme, per picture (path inside src/assets/): a ramp (dark to light) or a swap.
+# Per theme, per picture (path inside src/assets/): the ramp, dark to light.
 THEMES = {
     # Cold and moonlit: teal hills with pale moonlit ridges, deep teal bushes,
-    # a jade frame, the wordmark outlined in teal.
+    # a jade frame.
     "night-water": {
         "scenery/hills.png": ["#0f2a30", "#1b4a52", "#2a6a70", "#4f9aa0", "#b8ecea"],
         "scenery/newTreesLeft.png": BUSHES_NIGHT_WATER,
         "scenery/newTreesRight.png": BUSHES_NIGHT_WATER,
         "ui/frame.png": ["#0b2a30", "#2f6a70", "#5f9c98", "#9fd4c8", "#e8fff8"],
-        "ui/koihongo-wordmark.png": {WORDMARK_LETTERS: "#ffffff", WORDMARK_OUTLINE: "#2f8085", WORDMARK_SHADOW: "#061114"},
     },
     # Warm dusk: dark teal-stone hills whose lit ridges (the pink rims) go amber,
     # deep jade bushes. The hills stay teal until the rims, so the middle never
-    # turns olive. A copper frame, the wordmark outlined in koi orange.
+    # turns olive. A copper frame.
     "lantern-dusk": {
         "scenery/hills.png": ["#17201f", "#1f2c2b", "#283a37", "#334a44", "#42594f", "#7f6e57", "#c79860", "#f2c46d"],
         "scenery/newTreesLeft.png": BUSHES_LANTERN_DUSK,
         "scenery/newTreesRight.png": BUSHES_LANTERN_DUSK,
         "ui/frame.png": ["#2a1a12", "#6b4530", "#a0704c", "#e0b07a", "#fff0d6"],
-        "ui/koihongo-wordmark.png": {WORDMARK_LETTERS: "#ffffff", WORDMARK_OUTLINE: "#c8643a", WORDMARK_SHADOW: "#2a1a12"},
     },
 }
 
@@ -111,24 +105,16 @@ def along_ramp(ramp, t):
     return oklab_to_rgb(tuple(a[i] * (1 - f) + b[i] * f for i in range(3)))
 
 
-def recolour(image, ramp_or_swap):
+def recolour(image, ramp_hex):
+    ramp = [rgb_to_oklab(hex_to_rgb(c)) for c in ramp_hex]
     pixels = image.load()
     width, height = image.size
 
-    # The picture's own colours, ignoring fully transparent pixels.
+    # The picture's own colours (ignoring fully transparent pixels) and their lightness.
     colours = {pixels[x, y][:3] for y in range(height) for x in range(width) if pixels[x, y][3] > 0}
-
-    if isinstance(ramp_or_swap, dict):
-        swap = {hex_to_rgb(old): hex_to_rgb(new) for old, new in ramp_or_swap.items()}
-        missing = colours - swap.keys()
-        if missing:
-            raise SystemExit(f"no swap for these colours: {sorted(missing)}")
-        new = swap
-    else:
-        ramp = [rgb_to_oklab(hex_to_rgb(c)) for c in ramp_or_swap]
-        lightness = {c: rgb_to_oklab(c)[0] for c in colours}
-        lo, hi = min(lightness.values()), max(lightness.values())
-        new = {c: along_ramp(ramp, (l - lo) / (hi - lo) if hi > lo else 0) for c, l in lightness.items()}
+    lightness = {c: rgb_to_oklab(c)[0] for c in colours}
+    lo, hi = min(lightness.values()), max(lightness.values())
+    new = {c: along_ramp(ramp, (l - lo) / (hi - lo) if hi > lo else 0) for c, l in lightness.items()}
 
     for y in range(height):
         for x in range(width):
@@ -140,12 +126,12 @@ def recolour(image, ramp_or_swap):
 
 def main():
     for theme, pictures in THEMES.items():
-        for path, ramp_or_swap in pictures.items():
+        for path, ramp in pictures.items():
             original = ASSETS / path
             out = original.parent / theme / original.name
             out.parent.mkdir(exist_ok=True)
             image = Image.open(original).convert("RGBA")
-            recolour(image, ramp_or_swap).save(out)
+            recolour(image, ramp).save(out)
             print(f"wrote {out}")
 
 
